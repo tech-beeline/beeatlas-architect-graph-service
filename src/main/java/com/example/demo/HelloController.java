@@ -25,6 +25,12 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 @RequestMapping("/api/v1") // Базовый путь для всех методов в этом контроллере
 public class HelloController {
 
+    private final Neo4jConfig autorization;
+
+    public HelloController(Neo4jConfig autorization) {
+        this.autorization = autorization;
+    }
+
     public static void saveJsonToFile(Object jsonObject, String fileName) throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();
         File file = new File(fileName);
@@ -71,10 +77,8 @@ public class HelloController {
     public String sayHello1(@PathVariable("docId") Long id) {
 
         // Проверка подключения к БД
-        String uri = "bolt://neo4j:7687";
-        String user = "neo4j";
-        String password = "test1234";
-        Driver driver = GraphDatabase.driver(uri, AuthTokens.basic(user, password));
+        Driver driver = GraphDatabase.driver(autorization.getUri(),
+                AuthTokens.basic(autorization.getUser(), autorization.getPassword()));
         try (Session session = driver.session()) {
 
         } catch (ServiceUnavailableException e) {
@@ -121,7 +125,8 @@ public class HelloController {
 
         try {
             // Построение графа
-            MinorGraph.createGraph(workspace);
+            MinorGraph.createGraph(workspace, autorization.getUri(), autorization.getUser(),
+                    autorization.getPassword());
         } catch (IOException e) {
             // Обработка исключения
             return "400 Граф не построен";
@@ -134,10 +139,8 @@ public class HelloController {
     public String sayHello2(@PathVariable("docId") Long id) {
 
         // Проверка подключения к БД
-        String uri = "bolt://neo4j:7687";
-        String user = "neo4j";
-        String password = "test1234";
-        Driver driver = GraphDatabase.driver(uri, AuthTokens.basic(user, password));
+        Driver driver = GraphDatabase.driver(autorization.getUri(),
+                AuthTokens.basic(autorization.getUser(), autorization.getPassword()));
         try (Session session = driver.session()) {
 
         } catch (ServiceUnavailableException e) {
@@ -184,7 +187,8 @@ public class HelloController {
 
         try {
             // Построение графа
-            MajorGraph.createGraph(workspace);
+            MajorGraph.createGraph(workspace, autorization.getUri(), autorization.getUser(),
+                    autorization.getPassword());
         } catch (IOException e) {
             // Обработка исключения
             return "400 Граф не построен";

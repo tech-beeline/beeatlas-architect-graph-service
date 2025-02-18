@@ -1,7 +1,6 @@
 package com.example.demo;
 
 import java.io.IOException;
-import org.neo4j.driver.exceptions.ServiceUnavailableException;
 import org.neo4j.driver.*;
 import java.util.HashMap;
 import java.util.Map;
@@ -1496,7 +1495,7 @@ public class MajorGraph {
         puttingEndVersionRelations(session, curVersion, cmdb);
     }
 
-    public static void createGraph(Workspace workspace) throws IOException {
+    public static void createGraph(Workspace workspace, String uri, String user, String password) throws IOException {
 
         // Получение нужной SoftwareSystem
         Model model = workspace.getModel();
@@ -1510,9 +1509,6 @@ public class MajorGraph {
         }
 
         // Подключение к БД
-        String uri = "bolt://neo4j:7687";
-        String user = "neo4j";
-        String password = "test1234";
         Driver driver = GraphDatabase.driver(uri, AuthTokens.basic(user, password));
         try (Session session = driver.session()) {
 
@@ -1701,8 +1697,6 @@ public class MajorGraph {
                             cont, comp, deplNode, infNode);
                 }
             }
-
-        } catch (ServiceUnavailableException e) {
 
         } finally {
             driver.close();
