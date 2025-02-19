@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import org.neo4j.driver.exceptions.ServiceUnavailableException;
 import org.neo4j.driver.*;
-
+import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
@@ -74,7 +74,7 @@ public class HelloController {
     }
 
     @PostMapping("/graph/local/{docId}") // Локальный граф
-    public String sayHello1(@PathVariable("docId") Long id) {
+    public ResponseEntity<String> sayHello1(@PathVariable("docId") Long id) {
 
         // Проверка подключения к БД
         Driver driver = GraphDatabase.driver(autorization.getUri(),
@@ -82,8 +82,8 @@ public class HelloController {
         try (Session session = driver.session()) {
 
         } catch (ServiceUnavailableException e) {
-            // Обработка исключения
-            return "400 нет подключения к БД";
+            // Возвращаем 400 Bad Request с сообщением
+            return ResponseEntity.badRequest().body("400 нет подключения к БД");
         } finally {
             driver.close();
         }
@@ -95,18 +95,19 @@ public class HelloController {
             // Обработка ошибок 4xx (клиентские ошибки)
             HttpStatusCode statusCode = e.getStatusCode();
             if (statusCode.value() == 404) {
-                return "404 документ не найден";
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("404 документ не найден");
             } else if (statusCode.value() == 400) {
-                return "400";
+                return ResponseEntity.badRequest().body("400 ошибка при получении документа");
             } else {
-                return "Client error: " + statusCode;
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("Ошибка при получении документа\n" + e.getMessage());
             }
         } catch (HttpServerErrorException e) {
             // Обработка ошибок 5xx (серверные ошибки)
-            return "503";
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body("503 сервис документов не доступен");
         } catch (Exception e) {
             // Обработка других исключений (например, сетевых ошибок)
-            return "An error occurred: " + e.getMessage();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Неизвестная ошибка");
         }
 
         // Загрузка workspace
@@ -120,7 +121,7 @@ public class HelloController {
             workspace = getWorkspace(file);
         } catch (IOException e) {
             // Обработка исключения
-            return "400 Воркспейс не валиден";
+            return ResponseEntity.badRequest().body("400 воркспейс не валиден");
         }
 
         try {
@@ -129,14 +130,14 @@ public class HelloController {
                     autorization.getPassword());
         } catch (IOException e) {
             // Обработка исключения
-            return "400 Граф не построен";
+            return ResponseEntity.badRequest().body("400 граф не построен");
         }
 
-        return "201 Граф построен";
+        return ResponseEntity.status(HttpStatus.CREATED).body("Граф построен");
     }
 
     @PostMapping("/graph/{docId}") // Глобальный граф
-    public String sayHello2(@PathVariable("docId") Long id) {
+    public ResponseEntity<String> sayHello2(@PathVariable("docId") Long id) {
 
         // Проверка подключения к БД
         Driver driver = GraphDatabase.driver(autorization.getUri(),
@@ -144,8 +145,8 @@ public class HelloController {
         try (Session session = driver.session()) {
 
         } catch (ServiceUnavailableException e) {
-            // Обработка исключения
-            return "400 нет подключения к БД";
+            // Возвращаем 400 Bad Request с сообщением
+            return ResponseEntity.badRequest().body("400 нет подключения к БД");
         } finally {
             driver.close();
         }
@@ -157,18 +158,19 @@ public class HelloController {
             // Обработка ошибок 4xx (клиентские ошибки)
             HttpStatusCode statusCode = e.getStatusCode();
             if (statusCode.value() == 404) {
-                return "404 документ не найден";
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("404 документ не найден");
             } else if (statusCode.value() == 400) {
-                return "400";
+                return ResponseEntity.badRequest().body("400 ошибка при получении документа");
             } else {
-                return "Client error: " + statusCode;
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("Ошибка при получении документа\n" + e.getMessage());
             }
         } catch (HttpServerErrorException e) {
             // Обработка ошибок 5xx (серверные ошибки)
-            return "503";
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body("503 сервис документов не доступен");
         } catch (Exception e) {
             // Обработка других исключений (например, сетевых ошибок)
-            return "An error occurred: " + e.getMessage();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Неизвестная ошибка");
         }
 
         // Загрузка workspace
@@ -182,7 +184,7 @@ public class HelloController {
             workspace = getWorkspace(file);
         } catch (IOException e) {
             // Обработка исключения
-            return "400 Воркспейс не валиден";
+            return ResponseEntity.badRequest().body("400 воркспейс не валиден");
         }
 
         try {
@@ -191,9 +193,9 @@ public class HelloController {
                     autorization.getPassword());
         } catch (IOException e) {
             // Обработка исключения
-            return "400 Граф не построен";
+            return ResponseEntity.badRequest().body("400 граф не построен");
         }
 
-        return "201 Граф построен";
+        return ResponseEntity.status(HttpStatus.CREATED).body("Граф построен");
     }
 }

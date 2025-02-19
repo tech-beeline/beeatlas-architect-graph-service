@@ -166,6 +166,10 @@ public class MajorGraph {
                         number2 = container.getRelationships().size();
                     }
 
+                    if (container.getComponents() != null) {
+                        number2 = number2 + container.getComponents().size();
+                    }
+
                     if (number1 >= number2 || source.equals("\"landscape\"")) {
                         return;
                     }
@@ -226,6 +230,10 @@ public class MajorGraph {
 
                     if (container.getRelationships() != null) {
                         number2 = container.getRelationships().size();
+                    }
+
+                    if (container.getComponents() != null) {
+                        number2 = number2 + container.getComponents().size();
                     }
 
                     if (number1 >= number2 || source.equals("\"landscape\"")) {
@@ -618,6 +626,10 @@ public class MajorGraph {
 
                         if (cont.getRelationships() != null) {
                             number2 = cont.getRelationships().size();
+                        }
+
+                        if (cont.getComponents() != null) {
+                            number2 = number2 + cont.getComponents().size();
                         }
 
                         if (number1 < number2 && !source.equals("\"landscape\"")) {
