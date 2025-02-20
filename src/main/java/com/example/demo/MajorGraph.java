@@ -1,7 +1,6 @@
 package com.example.demo;
 
 import java.io.IOException;
-import org.neo4j.driver.exceptions.ServiceUnavailableException;
 import org.neo4j.driver.*;
 import java.util.HashMap;
 import java.util.Map;
@@ -167,6 +166,10 @@ public class MajorGraph {
                         number2 = container.getRelationships().size();
                     }
 
+                    if (container.getComponents() != null) {
+                        number2 = number2 + container.getComponents().size();
+                    }
+
                     if (number1 >= number2 || source.equals("\"landscape\"")) {
                         return;
                     }
@@ -227,6 +230,10 @@ public class MajorGraph {
 
                     if (container.getRelationships() != null) {
                         number2 = container.getRelationships().size();
+                    }
+
+                    if (container.getComponents() != null) {
+                        number2 = number2 + container.getComponents().size();
                     }
 
                     if (number1 >= number2 || source.equals("\"landscape\"")) {
@@ -619,6 +626,10 @@ public class MajorGraph {
 
                         if (cont.getRelationships() != null) {
                             number2 = cont.getRelationships().size();
+                        }
+
+                        if (cont.getComponents() != null) {
+                            number2 = number2 + cont.getComponents().size();
                         }
 
                         if (number1 < number2 && !source.equals("\"landscape\"")) {
@@ -1496,7 +1507,7 @@ public class MajorGraph {
         puttingEndVersionRelations(session, curVersion, cmdb);
     }
 
-    public static void createGraph(Workspace workspace) throws IOException {
+    public static void createGraph(Workspace workspace, String uri, String user, String password) throws IOException {
 
         // Получение нужной SoftwareSystem
         Model model = workspace.getModel();
@@ -1510,9 +1521,6 @@ public class MajorGraph {
         }
 
         // Подключение к БД
-        String uri = "bolt://neo4j:7687";
-        String user = "neo4j";
-        String password = "test1234";
         Driver driver = GraphDatabase.driver(uri, AuthTokens.basic(user, password));
         try (Session session = driver.session()) {
 
@@ -1701,8 +1709,6 @@ public class MajorGraph {
                             cont, comp, deplNode, infNode);
                 }
             }
-
-        } catch (ServiceUnavailableException e) {
 
         } finally {
             driver.close();
