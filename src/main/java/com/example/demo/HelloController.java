@@ -36,11 +36,13 @@ public class HelloController {
         File file = new File(fileName);
         file.delete();
         file = new File(fileName);
+        file.setWritable(true);
 
         // Записываем JSON в файл с красивым форматированием
         try (FileWriter fileWriter = new FileWriter(file)) {
             objectMapper.writerWithDefaultPrettyPrinter().writeValue(fileWriter, jsonObject);
         } catch (Exception e) {
+            file.delete();
             throw e;
         }
     }
