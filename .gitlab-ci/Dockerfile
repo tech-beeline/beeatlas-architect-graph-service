@@ -15,9 +15,7 @@ RUN keytool -import -alias apps.yd-m6-kt22.vimpelcom -keystore $JAVA_HOME/lib/se
 USER app
 RUN keytool -importcert -file VC_RootCA.crt -alias VC_RootCA -storepass changeit -noprompt -trustcacerts
 RUN keytool -importcert -file VC_BEERootCA.crt -alias VC_BEERootCA -storepass changeit -noprompt -trustcacerts
-RUN keytool -importcert -file apps.yd-m6-kt22.vimpelcom.ru.crt -alias apps.yd-m6-kt22.vimpelcom.ru -storepass changeit -noprompt -trustcacerts -cacerts
-RUN keytool -importcert -file Vimpelcom_InternalCA_G2.crt -alias Vimpelcom_InternalCA_G2 -storepass changeit -noprompt -trustcacerts  -cacerts
-RUN keytool -importcert -file Vimpelcom_RootCA_G2.crt -alias Vimpelcom_RootCA_G2 -storepass changeit -noprompt -trustcacerts -cacerts
+RUN keytool -importcert -file apps.yd-m6-kt22.vimpelcom.ru.crt -alias apps.yd-m6-kt22.vimpelcom.ru -storepass changeit -noprompt -trustcacerts
 EXPOSE 8080/tcp
 EXPOSE 8090/tcp
 EXPOSE 10260/tcp
