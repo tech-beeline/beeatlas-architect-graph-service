@@ -25,9 +25,9 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 @RequestMapping("/api/v1") // Базовый путь для всех методов в этом контроллере
 public class HelloController {
 
-    private final Neo4jConfig autorization;
+    private final Config autorization;
 
-    public HelloController(Neo4jConfig autorization) {
+    public HelloController(Config autorization) {
         this.autorization = autorization;
     }
 
@@ -45,14 +45,13 @@ public class HelloController {
         }
     }
 
-    public static void getFile(Long id) throws IOException {
+    public void getFile(Long id) throws IOException {
 
         // Создаем RestTemplate
         RestTemplate restTemplate = new RestTemplate();
 
         // URL вашего API
-        String url = "https://document-service-dev-eafdmmart.apps.yd-m6-kt22.vimpelcom.ru/api/v1/documents/"
-                + Long.toString(id);
+        String url = autorization.getUrl() + Long.toString(id);
 
         // Выполняем GET-запрос без заголовков
         ResponseEntity<byte[]> response = restTemplate.getForEntity(url, byte[].class);

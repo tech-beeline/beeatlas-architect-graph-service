@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
-public class Neo4jConfig {
+public class Config {
 
     @Value("${spring.neo4j.uri}")
     private String uri;
@@ -14,6 +14,9 @@ public class Neo4jConfig {
 
     @Value("${spring.neo4j.authentication.password}")
     private String password;
+
+    @Value("${spring.url}")
+    private String url;
 
     public String getUri() {
         return uri;
@@ -25,5 +28,9 @@ public class Neo4jConfig {
 
     public String getPassword() {
         return password;
+    }
+
+    public String getUrl() {
+        return url;
     }
 }
