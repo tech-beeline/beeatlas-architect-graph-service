@@ -34,10 +34,14 @@ public class HelloController {
     public static void saveJsonToFile(Object jsonObject, String fileName) throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();
         File file = new File(fileName);
+        file.delete();
+        file = new File(fileName);
 
         // Записываем JSON в файл с красивым форматированием
         try (FileWriter fileWriter = new FileWriter(file)) {
             objectMapper.writerWithDefaultPrettyPrinter().writeValue(fileWriter, jsonObject);
+        } catch (Exception e) {
+            throw e;
         }
     }
 
@@ -83,7 +87,7 @@ public class HelloController {
 
         } catch (ServiceUnavailableException e) {
             // Возвращаем 400 Bad Request с сообщением
-            return ResponseEntity.badRequest().body("400 нет подключения к БД");
+            return ResponseEntity.badRequest().body("400 нет подключения к БД\n" + e.getMessage());
         } finally {
             driver.close();
         }
@@ -95,19 +99,21 @@ public class HelloController {
             // Обработка ошибок 4xx (клиентские ошибки)
             HttpStatusCode statusCode = e.getStatusCode();
             if (statusCode.value() == 404) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("404 документ не найден");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("404 документ не найден\n" + e.getMessage());
             } else if (statusCode.value() == 400) {
-                return ResponseEntity.badRequest().body("400 ошибка при получении документа");
+                return ResponseEntity.badRequest().body("400 ошибка при получении документа\n" + e.getMessage());
             } else {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body("Ошибка при получении документа\n" + e.getMessage());
             }
         } catch (HttpServerErrorException e) {
             // Обработка ошибок 5xx (серверные ошибки)
-            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body("503 сервис документов не доступен");
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body("503 сервис документов не доступен\n" + e.getMessage());
         } catch (Exception e) {
             // Обработка других исключений (например, сетевых ошибок)
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Неизвестная ошибка");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Неизвестная ошибка\n" + e.getMessage());
         }
 
         // Загрузка workspace
@@ -121,8 +127,11 @@ public class HelloController {
             workspace = getWorkspace(file);
         } catch (IOException e) {
             // Обработка исключения
-            return ResponseEntity.badRequest().body("400 воркспейс не валиден");
+            file.delete();
+            return ResponseEntity.badRequest().body("400 воркспейс не валиден\n" + e.getMessage());
         }
+
+        file.delete();
 
         try {
             // Построение графа
@@ -130,7 +139,7 @@ public class HelloController {
                     autorization.getPassword());
         } catch (IOException e) {
             // Обработка исключения
-            return ResponseEntity.badRequest().body("400 граф не построен");
+            return ResponseEntity.badRequest().body("400 граф не построен\n" + e.getMessage());
         }
 
         return ResponseEntity.status(HttpStatus.CREATED).body("Граф построен");
@@ -146,7 +155,7 @@ public class HelloController {
 
         } catch (ServiceUnavailableException e) {
             // Возвращаем 400 Bad Request с сообщением
-            return ResponseEntity.badRequest().body("400 нет подключения к БД");
+            return ResponseEntity.badRequest().body("400 нет подключения к БД\n" + e.getMessage());
         } finally {
             driver.close();
         }
@@ -158,19 +167,21 @@ public class HelloController {
             // Обработка ошибок 4xx (клиентские ошибки)
             HttpStatusCode statusCode = e.getStatusCode();
             if (statusCode.value() == 404) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("404 документ не найден");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("404 документ не найден\n" + e.getMessage());
             } else if (statusCode.value() == 400) {
-                return ResponseEntity.badRequest().body("400 ошибка при получении документа");
+                return ResponseEntity.badRequest().body("400 ошибка при получении документа\n" + e.getMessage());
             } else {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body("Ошибка при получении документа\n" + e.getMessage());
             }
         } catch (HttpServerErrorException e) {
             // Обработка ошибок 5xx (серверные ошибки)
-            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body("503 сервис документов не доступен");
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body("503 сервис документов не доступен\n" + e.getMessage());
         } catch (Exception e) {
             // Обработка других исключений (например, сетевых ошибок)
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Неизвестная ошибка");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Неизвестная ошибка\n" + e.getMessage());
         }
 
         // Загрузка workspace
@@ -184,8 +195,11 @@ public class HelloController {
             workspace = getWorkspace(file);
         } catch (IOException e) {
             // Обработка исключения
-            return ResponseEntity.badRequest().body("400 воркспейс не валиден");
+            file.delete();
+            return ResponseEntity.badRequest().body("400 воркспейс не валиден\n" + e.getMessage());
         }
+
+        file.delete();
 
         try {
             // Построение графа
@@ -193,7 +207,7 @@ public class HelloController {
                     autorization.getPassword());
         } catch (IOException e) {
             // Обработка исключения
-            return ResponseEntity.badRequest().body("400 граф не построен");
+            return ResponseEntity.badRequest().body("400 граф не построен\n" + e.getMessage());
         }
 
         return ResponseEntity.status(HttpStatus.CREATED).body("Граф построен");

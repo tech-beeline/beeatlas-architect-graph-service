@@ -8,14 +8,14 @@ import java.util.Map;
 public class MajorGraph {
 
     public static boolean checkIfObjectExists(Session session, String label, String propertyKey, Object propertyValue) {
-        String query = "MATCH (n:" + label + " {" + propertyKey + ": $value}) RETURN n";
+        String query = "MATCH (n:" + label + " {" + propertyKey + ": $value, graph: \"Global\"}) RETURN n";
         Result result = session.run(query, Values.parameters("value", propertyValue));
         return result.hasNext();
     }
 
     public static Integer updateSoftware(Session session, SoftwareSystem softwareSystem, Object cmdb) {
         // Вычисление текущей версии
-        String findVersion = "MATCH (n:SoftwareSystem {cmdb: $cmdb1}) RETURN n.version AS version";
+        String findVersion = "MATCH (n:SoftwareSystem {graph: \"Global\", cmdb: $cmdb1}) RETURN n.version AS version";
         Value parameters = Values.parameters("cmdb1", cmdb);
         Result result = session.run(findVersion, parameters);
 
@@ -23,7 +23,7 @@ public class MajorGraph {
         version = version + 1;
 
         // Обновление компонентов
-        String updateNode = "MATCH (n:SoftwareSystem {cmdb: $cmdb1}) SET n.name = $name1, n.description = $description1, n.tags = $tags1, n.url = $url1, n.group = $group1, n.version = $version1 RETURN n";
+        String updateNode = "MATCH (n:SoftwareSystem {graph: \"Global\", cmdb: $cmdb1}) SET n.name = $name1, n.description = $description1, n.tags = $tags1, n.url = $url1, n.group = $group1, n.version = $version1 RETURN n";
         parameters = Values.parameters("cmdb1", cmdb, "name1", softwareSystem.getName(), "description1",
                 softwareSystem.getDescription(), "tags1", softwareSystem.getTags(), "url1",
                 softwareSystem.getUrl(), "group1", softwareSystem.getGroup(), "version1", version);
@@ -35,7 +35,8 @@ public class MajorGraph {
                 String key = entry.getKey();
                 key = key.replace(' ', '_');
                 key = key.replace('.', '_');
-                updateNode = "MATCH (n:SoftwareSystem {cmdb: $cmdb1}) SET n." + key + " = $value RETURN n";
+                updateNode = "MATCH (n:SoftwareSystem {graph: \"Global\", cmdb: $cmdb1}) SET n." + key
+                        + " = $value RETURN n";
                 parameters = Values.parameters("cmdb1", cmdb, "value", entry.getValue());
                 session.run(updateNode, parameters);
             }
@@ -50,20 +51,20 @@ public class MajorGraph {
         if (exists) {
 
             // Проверка на неполное создание
-            String findVersion = "MATCH (n:SoftwareSystem {cmdb: $cmdb1}) RETURN n.version AS version";
+            String findVersion = "MATCH (n:SoftwareSystem {graph: \"Global\", cmdb: $cmdb1}) RETURN n.version AS version";
             Value parameters = Values.parameters("cmdb1", cmdb);
             Result result = session.run(findVersion, parameters);
 
             Object version = result.next().get("version").toString();
             if (version.equals("NULL")) {
-                String updateNode = "MATCH (n:SoftwareSystem {cmdb: $cmdb1}) SET n.version = $version1 RETURN n";
+                String updateNode = "MATCH (n:SoftwareSystem {graph: \"Global\", cmdb: $cmdb1}) SET n.version = $version1 RETURN n";
                 parameters = Values.parameters("cmdb1", cmdb, "version1", 0);
                 session.run(updateNode, parameters);
             }
 
             return updateSoftware(session, softwareSystem, cmdb);
         } else {
-            String createNodeQuery = "CREATE (n:SoftwareSystem {cmdb: $cmdb1, name: $name1, description: $description1, tags: $tags1, url: $url1, group: $group1, version: $version1}) RETURN n";
+            String createNodeQuery = "CREATE (n:SoftwareSystem {graph: \"Global\", cmdb: $cmdb1, name: $name1, description: $description1, tags: $tags1, url: $url1, group: $group1, version: $version1}) RETURN n";
             Value parameters = Values.parameters("cmdb1", cmdb, "name1", softwareSystem.getName(),
                     "description1", softwareSystem.getDescription(), "tags1", softwareSystem.getTags(),
                     "url1", softwareSystem.getUrl(), "group1", softwareSystem.getGroup(), "version1", 1);
@@ -75,7 +76,8 @@ public class MajorGraph {
                     String key = entry.getKey();
                     key = key.replace(' ', '_');
                     key = key.replace('.', '_');
-                    createNodeQuery = "MATCH (n:SoftwareSystem {cmdb: $cmdb1}) SET n." + key + " = $value RETURN n";
+                    createNodeQuery = "MATCH (n:SoftwareSystem {graph: \"Global\", cmdb: $cmdb1}) SET n." + key
+                            + " = $value RETURN n";
                     parameters = Values.parameters("cmdb1", cmdb, "value", entry.getValue());
                     session.run(createNodeQuery, parameters);
                 }
@@ -85,7 +87,7 @@ public class MajorGraph {
     }
 
     public static void updateContainer(Session session, Container container) {
-        String updateNode = "MATCH (n:Container {name: $name1}) SET n.description = $description1, n.technology = $technology1, n.tags = $tags1, n.url = $url1, n.group = $group1, n.end_version = $end_version1 RETURN n";
+        String updateNode = "MATCH (n:Container {graph: \"Global\", name: $name1}) SET n.description = $description1, n.technology = $technology1, n.tags = $tags1, n.url = $url1, n.group = $group1, n.end_version = $end_version1 RETURN n";
         Value parameters = Values.parameters("name1", container.getName(), "description1",
                 container.getDescription(), "technology1", container.getTechnology(), "tags1",
                 container.getTags(), "url1", container.getUrl(), "group1", container.getGroup(), "end_version1", null);
@@ -97,7 +99,8 @@ public class MajorGraph {
                 String key = entry.getKey();
                 key = key.replace(' ', '_');
                 key = key.replace('.', '_');
-                updateNode = "MATCH (n:Container {name: $name1}) SET n." + key + " = $value RETURN n";
+                updateNode = "MATCH (n:Container {graph: \"Global\", name: $name1}) SET n." + key
+                        + " = $value RETURN n";
                 parameters = Values.parameters("name1", container.getName(), "value", entry.getValue());
                 session.run(updateNode, parameters);
             }
@@ -116,7 +119,7 @@ public class MajorGraph {
         if (exists) {
 
             // Проверка на неполное создание
-            String findVersion = "MATCH (n:Container {name: $name1}) RETURN n.start_version AS start_version";
+            String findVersion = "MATCH (n:Container {graph: \"Global\", name: $name1}) RETURN n.start_version AS start_version";
             Value parameters = Values.parameters("name1", container.getName());
             Result result = session.run(findVersion, parameters);
 
@@ -124,13 +127,13 @@ public class MajorGraph {
 
             Object version = record.get("start_version").toString();
             if (version.equals("NULL")) {
-                String updateNode = "MATCH (n:Container {name: $name1}) SET n.start_version = $start_version1 RETURN n";
+                String updateNode = "MATCH (n:Container {graph: \"Global\", name: $name1}) SET n.start_version = $start_version1 RETURN n";
                 parameters = Values.parameters("name1", container.getName(), "start_version1", curVersion);
                 session.run(updateNode, parameters);
             } else {
 
                 // Проверка на существование в текущей версии
-                findVersion = "MATCH (n:Container {name: $name1}) RETURN n.end_version AS end_version";
+                findVersion = "MATCH (n:Container {graph: \"Global\", name: $name1}) RETURN n.end_version AS end_version";
                 parameters = Values.parameters("name1", container.getName());
                 result = session.run(findVersion, parameters);
                 record = result.next();
@@ -140,7 +143,7 @@ public class MajorGraph {
 
                     // Сохранение параметров объекта, имеющего label = landscape или имеющего больше
                     // связей
-                    String findconnects = "MATCH (n:Container {name: $name1})-[r]-() RETURN count(r) AS numberOfRelationships";
+                    String findconnects = "MATCH (n:Container {graph: \"Global\", name: $name1})-[r]-() RETURN count(r) AS numberOfRelationships";
                     parameters = Values.parameters("name1", container.getName());
                     result = session.run(findconnects, parameters);
                     record = result.next();
@@ -153,7 +156,7 @@ public class MajorGraph {
                         number1 = Integer.parseInt(str_num);
                     }
 
-                    String findLabel = "MATCH (n:Container {name: $name1}) RETURN n.source AS source";
+                    String findLabel = "MATCH (n:Container {graph: \"Global\", name: $name1}) RETURN n.source AS source";
                     parameters = Values.parameters("name1", container.getName());
                     result = session.run(findLabel, parameters);
                     record = result.next();
@@ -181,7 +184,7 @@ public class MajorGraph {
 
             // Проверка на неполное создание
             Object val = container.getProperties().get("external_name").toString();
-            String findVersion = "MATCH (n:Container {external_name: $name1}) RETURN n.start_version AS start_version";
+            String findVersion = "MATCH (n:Container {graph: \"Global\", external_name: $name1}) RETURN n.start_version AS start_version";
             Value parameters = Values.parameters("name1", val);
             Result result = session.run(findVersion, parameters);
 
@@ -189,14 +192,14 @@ public class MajorGraph {
 
             Object version = record.get("start_version").toString();
             if (version.equals("NULL")) {
-                String updateNode = "MATCH (n:Container {external_name: $external_name1}) SET n.name = $name1, n.start_version = $start_version1 RETURN n";
+                String updateNode = "MATCH (n:Container {graph: \"Global\", external_name: $external_name1}) SET n.name = $name1, n.start_version = $start_version1 RETURN n";
                 parameters = Values.parameters("external_name1", val, "name1", container.getName(), "start_version1",
                         curVersion);
                 session.run(updateNode, parameters);
             } else {
 
                 // Проверка на существование в текущей версии
-                findVersion = "MATCH (n:Container {external_name: $name1}) RETURN n.end_version AS end_version";
+                findVersion = "MATCH (n:Container {graph: \"Global\", external_name: $name1}) RETURN n.end_version AS end_version";
                 parameters = Values.parameters("name1", val);
                 result = session.run(findVersion, parameters);
                 record = result.next();
@@ -206,7 +209,7 @@ public class MajorGraph {
 
                     // Сохранение параметров объекта, имеющего label = landscape или имеющего больше
                     // связей
-                    String findconnects = "MATCH (n:Container {external_name: $name1})-[r]-() RETURN count(r) AS numberOfRelationships";
+                    String findconnects = "MATCH (n:Container {graph: \"Global\", external_name: $name1})-[r]-() RETURN count(r) AS numberOfRelationships";
                     parameters = Values.parameters("name1", val);
                     result = session.run(findconnects, parameters);
                     record = result.next();
@@ -219,7 +222,7 @@ public class MajorGraph {
                         number1 = Integer.parseInt(str_num);
                     }
 
-                    String findLabel = "MATCH (n:Container {external_name: $name1}) RETURN n.source AS source";
+                    String findLabel = "MATCH (n:Container {graph: \"Global\", external_name: $name1}) RETURN n.source AS source";
                     parameters = Values.parameters("name1", val);
                     result = session.run(findLabel, parameters);
                     record = result.next();
@@ -244,7 +247,7 @@ public class MajorGraph {
 
             updateContainer(session, container);
         } else {
-            String createNodeQuery = "CREATE (n:Container {name: $name1, description: $description1, technology: $technology1, tags: $tags1, url: $url1, group: $group1, start_version: $start_version1, end_version: $end_version1}) RETURN n";
+            String createNodeQuery = "CREATE (n:Container {graph: \"Global\", name: $name1, description: $description1, technology: $technology1, tags: $tags1, url: $url1, group: $group1, start_version: $start_version1, end_version: $end_version1}) RETURN n";
             Value parameters = Values.parameters("name1", container.getName(), "description1",
                     container.getDescription(), "technology1", container.getTechnology(), "tags1",
                     container.getTags(), "url1", container.getUrl(), "group1", container.getGroup(), "start_version1",
@@ -257,7 +260,8 @@ public class MajorGraph {
                     String key = entry.getKey();
                     key = key.replace(' ', '_');
                     key = key.replace('.', '_');
-                    createNodeQuery = "MATCH (n:Container {name: $name1}) SET n." + key + " = $value RETURN n";
+                    createNodeQuery = "MATCH (n:Container {graph: \"Global\", name: $name1}) SET n." + key
+                            + " = $value RETURN n";
                     parameters = Values.parameters("name1", container.getName(), "value", entry.getValue());
                     session.run(createNodeQuery, parameters);
                 }
@@ -266,7 +270,7 @@ public class MajorGraph {
     }
 
     public static void updateComponent(Session session, Component component) {
-        String updateNode = "MATCH (n:Component {name: $name1}) SET n.description = $description1, n.technology = $technology1, n.tags = $tags1, n.url = $url1, n.group = $group1, n.end_version = $end_version1 RETURN n";
+        String updateNode = "MATCH (n:Component {graph: \"Global\", name: $name1}) SET n.description = $description1, n.technology = $technology1, n.tags = $tags1, n.url = $url1, n.group = $group1, n.end_version = $end_version1 RETURN n";
         Value parameters = Values.parameters("name1", component.getName(), "description1",
                 component.getDescription(), "technology1", component.getTechnology(), "tags1",
                 component.getTags(), "url1", component.getUrl(), "group1", component.getGroup(), "end_version1", null);
@@ -278,7 +282,8 @@ public class MajorGraph {
                 String key = entry.getKey();
                 key = key.replace(' ', '_');
                 key = key.replace('.', '_');
-                updateNode = "MATCH (n:Component {name: $name1}) SET n." + key + " = $value RETURN n";
+                updateNode = "MATCH (n:Component {graph: \"Global\", name: $name1}) SET n." + key
+                        + " = $value RETURN n";
                 parameters = Values.parameters("name1", component.getName(), "value", entry.getValue());
                 session.run(updateNode, parameters);
             }
@@ -297,7 +302,7 @@ public class MajorGraph {
         if (exists) {
 
             // Проверка на неполное создание
-            String findVersion = "MATCH (n:Component {name: $name1}) RETURN n.start_version AS start_version";
+            String findVersion = "MATCH (n:Component {graph: \"Global\", name: $name1}) RETURN n.start_version AS start_version";
             Value parameters = Values.parameters("name1", component.getName());
             Result result = session.run(findVersion, parameters);
 
@@ -305,13 +310,13 @@ public class MajorGraph {
 
             Object version = record.get("start_version").toString();
             if (version.equals("NULL")) {
-                String updateNode = "MATCH (n:Component {name: $name1}) SET n.start_version = $start_version1 RETURN n";
+                String updateNode = "MATCH (n:Component {graph: \"Global\", name: $name1}) SET n.start_version = $start_version1 RETURN n";
                 parameters = Values.parameters("name1", component.getName(), "start_version1", curVersion);
                 session.run(updateNode, parameters);
             } else {
 
                 // Проверка на существование в текущей версии
-                findVersion = "MATCH (n:Component {name: $name1}) RETURN n.end_version AS end_version";
+                findVersion = "MATCH (n:Component {graph: \"Global\", name: $name1}) RETURN n.end_version AS end_version";
                 parameters = Values.parameters("name1", component.getName());
                 result = session.run(findVersion, parameters);
                 record = result.next();
@@ -321,7 +326,7 @@ public class MajorGraph {
 
                     // Сохранение параметров объекта, имеющего label = landscape или имеющего больше
                     // связей
-                    String findconnects = "MATCH (n:Component {name: $name1})-[r]-() RETURN count(r) AS numberOfRelationships";
+                    String findconnects = "MATCH (n:Component {graph: \"Global\", name: $name1})-[r]-() RETURN count(r) AS numberOfRelationships";
                     parameters = Values.parameters("name1", component.getName());
                     result = session.run(findconnects, parameters);
                     record = result.next();
@@ -334,7 +339,7 @@ public class MajorGraph {
                         number1 = Integer.parseInt(str_num);
                     }
 
-                    String findLabel = "MATCH (n:Component {name: $name1}) RETURN n.source AS source";
+                    String findLabel = "MATCH (n:Component {graph: \"Global\", name: $name1}) RETURN n.source AS source";
                     parameters = Values.parameters("name1", component.getName());
                     result = session.run(findLabel, parameters);
                     record = result.next();
@@ -358,7 +363,7 @@ public class MajorGraph {
 
             // Проверка на неполное создание
             Object val = component.getProperties().get("external_name").toString();
-            String findVersion = "MATCH (n:Component {external_name: $name1}) RETURN n.start_version AS start_version";
+            String findVersion = "MATCH (n:Component {graph: \"Global\", external_name: $name1}) RETURN n.start_version AS start_version";
             Value parameters = Values.parameters("name1", val);
             Result result = session.run(findVersion, parameters);
 
@@ -366,14 +371,14 @@ public class MajorGraph {
 
             Object version = record.get("start_version").toString();
             if (version.equals("NULL")) {
-                String updateNode = "MATCH (n:Component {external_name: $external_name1}) SET n.name = $name1, n.start_version = $start_version1 RETURN n";
+                String updateNode = "MATCH (n:Component {graph: \"Global\", external_name: $external_name1}) SET n.name = $name1, n.start_version = $start_version1 RETURN n";
                 parameters = Values.parameters("external_name1", val, "name1", component.getName(), "start_version1",
                         curVersion);
                 session.run(updateNode, parameters);
             } else {
 
                 // Проверка на существование в текущей версии
-                findVersion = "MATCH (n:Component {external_name: $name1}) RETURN n.end_version AS end_version";
+                findVersion = "MATCH (n:Component {graph: \"Global\", external_name: $name1}) RETURN n.end_version AS end_version";
                 parameters = Values.parameters("name1", val);
                 result = session.run(findVersion, parameters);
                 record = result.next();
@@ -383,7 +388,7 @@ public class MajorGraph {
 
                     // Сохранение параметров объекта, имеющего label = landscape или имеющего больше
                     // связей
-                    String findconnects = "MATCH (n:Component {external_name: $name1})-[r]-() RETURN count(r) AS numberOfRelationships";
+                    String findconnects = "MATCH (n:Component {graph: \"Global\", external_name: $name1})-[r]-() RETURN count(r) AS numberOfRelationships";
                     parameters = Values.parameters("name1", val);
                     result = session.run(findconnects, parameters);
                     record = result.next();
@@ -396,7 +401,7 @@ public class MajorGraph {
                         number1 = Integer.parseInt(str_num);
                     }
 
-                    String findLabel = "MATCH (n:Component {external_name: $name1}) RETURN n.source AS source";
+                    String findLabel = "MATCH (n:Component {graph: \"Global\", external_name: $name1}) RETURN n.source AS source";
                     parameters = Values.parameters("name1", val);
                     result = session.run(findLabel, parameters);
                     record = result.next();
@@ -417,7 +422,7 @@ public class MajorGraph {
 
             updateComponent(session, component);
         } else {
-            String createNodeQuery = "CREATE (n:Component {name: $name1, description: $description1, technology: $technology1, tags: $tags1, url: $url1, group: $group1, start_version: $start_version1, end_version: $end_version1}) RETURN n";
+            String createNodeQuery = "CREATE (n:Component {graph: \"Global\", name: $name1, description: $description1, technology: $technology1, tags: $tags1, url: $url1, group: $group1, start_version: $start_version1, end_version: $end_version1}) RETURN n";
             Value parameters = Values.parameters("name1", component.getName(), "description1",
                     component.getDescription(), "technology1", component.getTechnology(), "tags1",
                     component.getTags(), "url1", component.getUrl(), "group1", component.getGroup(), "start_version1",
@@ -430,7 +435,8 @@ public class MajorGraph {
                     String key = entry.getKey();
                     key = key.replace(' ', '_');
                     key = key.replace('.', '_');
-                    createNodeQuery = "MATCH (n:Component {name: $name1}) SET n." + key + " = $value RETURN n";
+                    createNodeQuery = "MATCH (n:Component {graph: \"Global\", name: $name1}) SET n." + key
+                            + " = $value RETURN n";
                     parameters = Values.parameters("name1", component.getName(), "value", entry.getValue());
                     session.run(createNodeQuery, parameters);
                 }
@@ -442,9 +448,9 @@ public class MajorGraph {
             Object val1, String type2, String key2, Object val2, String level, Object cmdb) {
 
         // Добавление end_version
-        String updateNode = "MATCH (a:" + type1 + " {" + key1 + ": $val1})-[r:" + rel_type
-                + " {source_workspace: $cmdb, description: $description1}]->(b:" + type2 + " {" + key2
-                + ": $val2}) SET r.end_version = $end_version1";
+        String updateNode = "MATCH (a:" + type1 + " {graph: \"Global\", " + key1 + ": $val1})-[r:"
+                + rel_type + " {graph: \"Global\", source_workspace: $cmdb, description: $description1}]->(b:" + type2
+                + " {graph: \"Global\", " + key2 + ": $val2}) SET r.end_version = $end_version1";
 
         if (rel_type.equals("Child")) {
             updateNode = updateNode + " RETURN r";
@@ -466,9 +472,9 @@ public class MajorGraph {
             Integer number = 0;
 
             // Вычисление текущего количества связей
-            updateNode = "MATCH (a:" + type1 + " {" + key1 + ": $val1})-[r:" + rel_type
-                    + " {source_workspace: $cmdb, description: $description1}]->(b:" + type2 + " {" + key2
-                    + ": $val2}) RETURN r";
+            updateNode = "MATCH (a:" + type1 + " {graph: \"Global\", " + key1 + ": $val1})-[r:" + rel_type
+                    + " {graph: \"Global\", source_workspace: $cmdb, description: $description1}]->(b:" + type2
+                    + " {graph: \"Global\", " + key2 + ": $val2}) RETURN r";
             parameters = Values.parameters("val1", val1, "cmdb", cmdb, "description1", rel.getDescription(),
                     "val2", val2);
             Result result = session.run(updateNode, parameters);
@@ -487,8 +493,9 @@ public class MajorGraph {
                 }
             }
 
-            updateNode = "MATCH (a:" + type1 + " {" + key1 + ": $val1})-[r:" + rel_type
-                    + " {source_workspace: $cmdb, description: $description1}]->(b:" + type2 + " {" + key2
+            updateNode = "MATCH (a:" + type1 + " {graph: \"Global\", " + key1 + ": $val1})-[r:" + rel_type
+                    + " {graph: \"Global\", source_workspace: $cmdb, description: $description1}]->(b:" + type2
+                    + " {graph: \"Global\", " + key2
                     + ": $val2}) SET r.number_of_connects = $number_of_connects1, r.cur_id = $cur_id1";
             parameters = Values.parameters("val1", val1, "cmdb", cmdb, "description1", rel.getDescription(), "val2",
                     val2, "number_of_connects1", number, "cur_id1", rel.getId());
@@ -501,9 +508,9 @@ public class MajorGraph {
                 String key = entry.getKey();
                 key = key.replace(' ', '_');
                 key = key.replace('.', '_');
-                updateNode = "MATCH (a:" + type1 + " {" + key1 + ": $val1})-[r:" + rel_type
-                        + " {source_workspace: $cmdb, description: $description1}]->(b:" + type2 +
-                        " {" + key2 + ": $val2}) SET r." + key + " = $value";
+                updateNode = "MATCH (a:" + type1 + " {graph: \"Global\", " + key1 + ": $val1})-[r:" + rel_type
+                        + " {graph: \"Global\", source_workspace: $cmdb, description: $description1}]->(b:" + type2 +
+                        " {graph: \"Global\", " + key2 + ": $val2}) SET r." + key + " = $value";
                 parameters = Values.parameters("val1", val1, "cmdb", cmdb, "description1", rel.getDescription(), "val2",
                         val2, "value", entry.getValue());
                 session.run(updateNode, parameters);
@@ -528,7 +535,7 @@ public class MajorGraph {
                 boolean exists = checkIfObjectExists(session, "SoftwareSystem", "cmdb", cmdb);
 
                 if (!exists) {
-                    String createNodeQuery = "CREATE (n:SoftwareSystem {cmdb: $cmdb1, name: $name1, description: $description1, tags: $tags1, url: $url1, group: $group1}) RETURN n";
+                    String createNodeQuery = "CREATE (n:SoftwareSystem {graph: \"Global\", cmdb: $cmdb1, name: $name1, description: $description1, tags: $tags1, url: $url1, group: $group1}) RETURN n";
                     Value parameters = Values.parameters("cmdb1", cmdb, "name1", system.getName(),
                             "description1", system.getDescription(), "tags1", system.getTags(),
                             "url1", system.getUrl(), "group1", system.getGroup());
@@ -540,7 +547,7 @@ public class MajorGraph {
                             String key = entry.getKey();
                             key = key.replace(' ', '_');
                             key = key.replace('.', '_');
-                            createNodeQuery = "MATCH (n:SoftwareSystem {cmdb: $cmdb1}) SET n." + key
+                            createNodeQuery = "MATCH (n:SoftwareSystem {graph: \"Global\", cmdb: $cmdb1}) SET n." + key
                                     + " = $value RETURN n";
                             parameters = Values.parameters("cmdb1", cmdb, "value", entry.getValue());
                             session.run(createNodeQuery, parameters);
@@ -576,7 +583,7 @@ public class MajorGraph {
                     boolean exists = checkIfObjectExists(session, "Container", "external_name", cont_name);
 
                     if (!exists) {
-                        String createNodeQuery = "CREATE (n:Container {external_name: $external_name1, name: $name1, description: $description1, technology: $technology1, tags: $tags1, url: $url1, group: $group1}) RETURN n";
+                        String createNodeQuery = "CREATE (n:Container {graph: \"Global\", external_name: $external_name1, name: $name1, description: $description1, technology: $technology1, tags: $tags1, url: $url1, group: $group1}) RETURN n";
                         Value parameters = Values.parameters("external_name1", cont_name, "name1", cont.getName(),
                                 "description1", cont.getDescription(), "technology1", cont.getTechnology(), "tags1",
                                 cont.getTags(), "url1", cont.getUrl(), "group1", cont.getGroup());
@@ -591,8 +598,8 @@ public class MajorGraph {
                                 if (key.equals("external_name")) {
                                     continue;
                                 }
-                                createNodeQuery = "MATCH (n:Container {external_name: $external_name1}) SET n." + key
-                                        + " = $value RETURN n";
+                                createNodeQuery = "MATCH (n:Container {graph: \"Global\", external_name: $external_name1}) SET n."
+                                        + key + " = $value RETURN n";
                                 parameters = Values.parameters("external_name1", cont_name, "value", entry.getValue());
                                 session.run(createNodeQuery, parameters);
                             }
@@ -601,7 +608,7 @@ public class MajorGraph {
 
                         // Сохранение параметров объекта, имеющего label = landscape или имеющего больше
                         // связей
-                        String findconnects = "MATCH (n:Container {external_name: $name1})-[r]-() RETURN count(r) AS numberOfRelationships";
+                        String findconnects = "MATCH (n:Container {graph: \"Global\", external_name: $name1})-[r]-() RETURN count(r) AS numberOfRelationships";
                         Value parameters = Values.parameters("name1", cont_name);
                         Result result = session.run(findconnects, parameters);
 
@@ -615,7 +622,7 @@ public class MajorGraph {
                             number1 = Integer.parseInt(str_num);
                         }
 
-                        String findLabel = "MATCH (n:Container {external_name: $name1}) RETURN n.source AS source";
+                        String findLabel = "MATCH (n:Container {graph: \"Global\", external_name: $name1}) RETURN n.source AS source";
                         parameters = Values.parameters("name1", cont_name);
                         result = session.run(findLabel, parameters);
                         record = result.next();
@@ -634,7 +641,7 @@ public class MajorGraph {
 
                         if (number1 < number2 && !source.equals("\"landscape\"")) {
 
-                            String updateNode = "MATCH (n:Container {external_name: $external_name1}) SET n.name = $name1, n.description = $description1, n.technology = $technology1, n.tags = $tags1, n.url = $url1, n.group = $group1 RETURN n";
+                            String updateNode = "MATCH (n:Container {graph: \"Global\", external_name: $external_name1}) SET n.name = $name1, n.description = $description1, n.technology = $technology1, n.tags = $tags1, n.url = $url1, n.group = $group1 RETURN n";
                             parameters = Values.parameters("external_name1", cont_name, "name1", cont.getName(),
                                     "description1",
                                     cont.getDescription(), "technology1", cont.getTechnology(), "tags1",
@@ -650,8 +657,8 @@ public class MajorGraph {
                                     if (key.equals("external_name")) {
                                         continue;
                                     }
-                                    updateNode = "MATCH (n:Container {external_name: $name1}) SET n." + key
-                                            + " = $value RETURN n";
+                                    updateNode = "MATCH (n:Container {graph: \"Global\", external_name: $name1}) SET n."
+                                            + key + " = $value RETURN n";
                                     parameters = Values.parameters("name1", cont_name, "value", entry.getValue());
                                     session.run(updateNode, parameters);
                                 }
@@ -702,7 +709,7 @@ public class MajorGraph {
                                     if (key.equals("external_name")) {
                                         continue;
                                     }
-                                    createNodeQuery = "MATCH (n:Component {external_name: $external_name1}) SET n."
+                                    createNodeQuery = "MATCH (n:Component {graph: \"Global\", external_name: $external_name1}) SET n."
                                             + key + " = $value RETURN n";
                                     parameters = Values.parameters("external_name1", comp_name, "value",
                                             entry.getValue());
@@ -713,7 +720,7 @@ public class MajorGraph {
 
                             // Сохранение параметров объекта, имеющего label = landscape или имеющего больше
                             // связей
-                            String findconnects = "MATCH (n:Component {external_name: $external_name1})-[r]-() RETURN count(r) AS numberOfRelationships";
+                            String findconnects = "MATCH (n:Component {graph: \"Global\", external_name: $external_name1})-[r]-() RETURN count(r) AS numberOfRelationships";
                             Value parameters = Values.parameters("external_name1", comp_name);
                             Result result = session.run(findconnects, parameters);
 
@@ -727,7 +734,7 @@ public class MajorGraph {
                                 number1 = Integer.parseInt(str_num);
                             }
 
-                            String findLabel = "MATCH (n:Component {external_name: $external_name1}) RETURN n.source AS source";
+                            String findLabel = "MATCH (n:Component {graph: \"Global\", external_name: $external_name1}) RETURN n.source AS source";
                             parameters = Values.parameters("external_name1", comp_name);
                             result = session.run(findLabel, parameters);
                             record = result.next();
@@ -741,7 +748,7 @@ public class MajorGraph {
                             }
 
                             if (number1 < number2 && !source.equals("\"landscape\"")) {
-                                String updateNode = "MATCH (n:Component {external_name: $external_name1}) SET n.name = $name1, n.description = $description1, n.technology = $technology1, n.tags = $tags1, n.url = $url1, n.group = $group1 RETURN n";
+                                String updateNode = "MATCH (n:Component {graph: \"Global\", external_name: $external_name1}) SET n.name = $name1, n.description = $description1, n.technology = $technology1, n.tags = $tags1, n.url = $url1, n.group = $group1 RETURN n";
                                 parameters = Values.parameters("external_name1", comp_name, "name1", comp.getName(),
                                         "description1",
                                         comp.getDescription(), "technology1", comp.getTechnology(), "tags1",
@@ -757,8 +764,8 @@ public class MajorGraph {
                                         if (key.equals("external_name")) {
                                             continue;
                                         }
-                                        updateNode = "MATCH (n:Component {external_name: $external_name1}) SET n." + key
-                                                + " = $value RETURN n";
+                                        updateNode = "MATCH (n:Component {graph: \"Global\", external_name: $external_name1}) SET n."
+                                                + key + " = $value RETURN n";
                                         parameters = Values.parameters("external_name1", comp_name, "value",
                                                 entry.getValue());
                                         session.run(updateNode, parameters);
@@ -861,9 +868,9 @@ public class MajorGraph {
         }
 
         // Проверка на существование связи
-        String createRelationshipQuery = "MATCH (a:" + type1 + " {" + key1 + ": $val1})-[r:" + rel_type + "]->(b:"
-                + type2 + " {" + key2
-                + ": $val2}) WHERE r.source_workspace = $cmdb AND r.description = $description1 RETURN EXISTS((a)-->(b)) AS relationship_exists";
+        String createRelationshipQuery = "MATCH (a:" + type1 + " {graph: \"Global\", " + key1 + ": $val1})-[r:"
+                + rel_type + "]->(b:" + type2 + " {graph: \"Global\", " + key2
+                + ": $val2}) WHERE r.source_workspace = $cmdb AND r.description = $description1 AND r.graph = \"Global\"  RETURN EXISTS((a)-->(b)) AS relationship_exists";
         Value parameters = Values.parameters("val1", val1, "val2", val2, "cmdb", cmdb, "description1",
                 rel.getDescription());
         Result result = session.run(createRelationshipQuery, parameters);
@@ -873,16 +880,17 @@ public class MajorGraph {
         }
 
         // Создание соединения
-        createRelationshipQuery = "MATCH (a:" + type1 + " {" + key1 + ": $val1}), (b:" + type2 + " {"
-                + key2 + ": $val2}) CREATE (a)-[r:" + rel_type
-                + " {source_workspace: $cmdb, start_version: $start_version1, description: $description1}]->(b) RETURN a, b";
+        createRelationshipQuery = "MATCH (a:" + type1 + " {graph: \"Global\", " + key1 + ": $val1}), (b:" + type2
+                + " {graph: \"Global\", " + key2 + ": $val2}) CREATE (a)-[r:" + rel_type
+                + " {graph: \"Global\", source_workspace: $cmdb, start_version: $start_version1, description: $description1}]->(b) RETURN a, b";
         parameters = Values.parameters("val1", val1, "cmdb", cmdb, "val2", val2, "start_version1", curVersion,
                 "description1", rel.getDescription());
         session.run(createRelationshipQuery, parameters);
 
         if (rel.getDescription().equals("None")) {
-            String updateNode = "MATCH (a:" + type1 + " {" + key1 + ": $val1})-[r:" + rel_type
-                    + " {source_workspace: $cmdb, description: $description1}]->(b:" + type2 + " {" + key2
+            String updateNode = "MATCH (a:" + type1 + " {graph: \"Global\", " + key1 + ": $val1})-[r:" + rel_type
+                    + " {graph: \"Global\", source_workspace: $cmdb, description: $description1}]->(b:" + type2
+                    + " {graph: \"Global\", " + key2
                     + ": $val2}) SET r.number_of_connects = $number_of_connects1, r.cur_id = $cur_id1";
             parameters = Values.parameters("val1", val1, "cmdb", cmdb, "description1", rel.getDescription(), "val2",
                     val2, "number_of_connects1", 1, "cur_id1", rel.getId());
@@ -899,7 +907,7 @@ public class MajorGraph {
         Integer number = 0;
 
         // Вычисление текущего количества связей
-        String updateNode = "MATCH (a:SoftwareSystem {name: $val2})-[r:Deploy {source_workspace: $cmdb}]->(b:DeploymentNode {cmdb: $val1}) RETURN r";
+        String updateNode = "MATCH (a:SoftwareSystem {graph: \"Global\", name: $val2})-[r:Deploy {graph: \"Global\", source_workspace: $cmdb}]->(b:DeploymentNode {graph: \"Global\", cmdb: $val1}) RETURN r";
         Value parameters = Values.parameters("val1", deploymentNode.getName(), "cmdb", cmdb,
                 "val2", cur_cmdb);
         Result result = session.run(updateNode, parameters);
@@ -919,7 +927,7 @@ public class MajorGraph {
         }
 
         // Обновление характеристик
-        updateNode = "MATCH (a:SoftwareSystem {name: $val2})-[r:Deploy {source_workspace: $cmdb}]->(b:DeploymentNode {cmdb: $val1}) SET r.cur_id = $cur_id1, r.environment = $environment1, r.tags = $tags1,  r.end_version = $end_version1, r.number_of_connects: $number RETURN r";
+        updateNode = "MATCH (a:SoftwareSystem {graph: \"Global\", name: $val2})-[r:Deploy {graph: \"Global\", source_workspace: $cmdb}]->(b:DeploymentNode {graph: \"Global\", cmdb: $val1}) SET r.cur_id = $cur_id1, r.environment = $environment1, r.tags = $tags1,  r.end_version = $end_version1, r.number_of_connects: $number RETURN r";
         parameters = Values.parameters("val1", deploymentNode.getName(), "cmdb", cmdb,
                 "val2", cur_cmdb, "cur_id1", softwareSystemInstance.getId(), "environment1",
                 softwareSystemInstance.getEnvironment(), "tags1", softwareSystemInstance.getTags(), "end_version1",
@@ -932,7 +940,7 @@ public class MajorGraph {
                 String key = entry.getKey();
                 key = key.replace(' ', '_');
                 key = key.replace('.', '_');
-                updateNode = "MATCH (a:SoftwareSystem {name: $val2})-[r:Deploy {source_workspace: $cmdb}]->(b:DeploymentNode {cmdb: $val1}) SET r."
+                updateNode = "MATCH (a:SoftwareSystem {graph: \"Global\", name: $val2})-[r:Deploy {graph: \"Global\", source_workspace: $cmdb}]->(b:DeploymentNode {graph: \"Global\", cmdb: $val1}) SET r."
                         + key + " = $value";
                 parameters = Values.parameters("val1", deploymentNode.getName(), "cmdb", cmdb, "val2",
                         cur_cmdb, "value", entry.getValue());
@@ -959,14 +967,14 @@ public class MajorGraph {
         }
 
         // Проверка на существование
-        String createRelationshipQuery = "MATCH (a:SoftwareSystem {name: $val2})-[r:Deploy]->(b:DeploymentNode {cmdb: $val1}) WHERE r.source_workspace = $cmdb RETURN EXISTS((a)-->(b)) AS relationship_exists";
+        String createRelationshipQuery = "MATCH (a:SoftwareSystem {graph: \"Global\", name: $val2})-[r:Deploy]->(b:DeploymentNode {graph: \"Global\", cmdb: $val1}) WHERE r.source_workspace = $cmdb AND r.graph = \"Global\"  RETURN EXISTS((a)-->(b)) AS relationship_exists";
         Value parameters = Values.parameters("val1", deploymentNode.getName(), "val2", cur_cmdb, "cmdb", cmdb);
         Result result = session.run(createRelationshipQuery, parameters);
         if (result.hasNext()) {
             updateDeployRelationSystem(session, model, deploymentNode, softwareSystemInstance, cmdb, cur_cmdb);
         } else {
             // Создание соединения
-            createRelationshipQuery = "MATCH (a:SoftwareSystem {name: $val2}), (b:DeploymentNode {cmdb: $val1}) CREATE (a)-[r:Deploy {description: $description1, cur_id: $cur_id1, source_workspace: $cmdb, start_version: $start_version1, number_of_connects: $number_of_connects1, environment: $environment1, tags: $tags1}]->(b) RETURN a, b";
+            createRelationshipQuery = "MATCH (a:SoftwareSystem {graph: \"Global\", name: $val2}), (b:DeploymentNode {graph: \"Global\", cmdb: $val1}) CREATE (a)-[r:Deploy {graph: \"Global\", description: $description1, cur_id: $cur_id1, source_workspace: $cmdb, start_version: $start_version1, number_of_connects: $number_of_connects1, environment: $environment1, tags: $tags1}]->(b) RETURN a, b";
             parameters = Values.parameters("description1", "Deploy", "val1", deploymentNode.getName(), "cmdb", cmdb,
                     "val2", cur_cmdb, "cur_id1", softwareSystemInstance.getId(), "start_version1", curVersion,
                     "number_of_connects1", 1, "environment1", softwareSystemInstance.getEnvironment(), "tags1",
@@ -979,7 +987,7 @@ public class MajorGraph {
                     String key = entry.getKey();
                     key = key.replace(' ', '_');
                     key = key.replace('.', '_');
-                    createRelationshipQuery = "MATCH (a:SoftwareSystem {name: $val2})-[r:Deploy {source_workspace: $cmdb}]->(b:DeploymentNode {cmdb: $val1}) SET r."
+                    createRelationshipQuery = "MATCH (a:SoftwareSystem {graph: \"Global\", name: $val2})-[r:Deploy {graph: \"Global\", source_workspace: $cmdb}]->(b:DeploymentNode {graph: \"Global\", cmdb: $val1}) SET r."
                             + key + " = $value";
                     parameters = Values.parameters("val1", deploymentNode.getName(), "cmdb", cmdb, "val2",
                             cur_cmdb, "value", entry.getValue());
@@ -995,7 +1003,7 @@ public class MajorGraph {
         Integer number = 0;
 
         // Вычисление текущего количества связей
-        String updateNode = "MATCH (a:Container {name: $val2})-[r:Deploy {source_workspace: $cmdb}]->(b:DeploymentNode {name: $val1}) RETURN r";
+        String updateNode = "MATCH (a:Container {graph: \"Global\", name: $val2})-[r:Deploy {graph: \"Global\", source_workspace: $cmdb}]->(b:DeploymentNode {graph: \"Global\", name: $val1}) RETURN r";
         Value parameters = Values.parameters("val1", deploymentNode.getName(), "cmdb", cmdb,
                 "val2", cur_name);
         Result result = session.run(updateNode, parameters);
@@ -1015,11 +1023,11 @@ public class MajorGraph {
         }
 
         // Обновление характеристик
-        updateNode = "MATCH (a:Container {name: $val2})-[r:Deploy {source_workspace: $cmdb}]->(b:DeploymentNode {name: $val1}) SET r.cur_id = $cur_id1, r.environment = $environment1, r.tags = $tags1, r.end_version = $end_version1, r.number_of_connects = $number RETURN r";
+        updateNode = "MATCH (a:Container {graph: \"Global\", name: $val2})-[r:Deploy {graph: \"Global\", source_workspace: $cmdb}]->(b:DeploymentNode {graph: \"Global\", name: $val1}) SET r.cur_id = $cur_id1, r.environment = $environment1, r.tags = $tags1, r.end_version = $end_version1, r.number_of_connects = $number RETURN r";
         parameters = Values.parameters("val1", deploymentNode.getName(), "cmdb", cmdb,
                 "val2", cur_name, "cur_id1", containerInstance.getId(), "environment1",
-                containerInstance.getEnvironment(), "tags1", containerInstance.getTags(), "end_version1",
-                null, "number", number);
+                containerInstance.getEnvironment(), "tags1", containerInstance.getTags(), "end_version1", null,
+                "number", number);
         session.run(updateNode, parameters);
 
         // Обновление property
@@ -1028,7 +1036,7 @@ public class MajorGraph {
                 String key = entry.getKey();
                 key = key.replace(' ', '_');
                 key = key.replace('.', '_');
-                updateNode = "MATCH (a:Container {name: $val2})-[r:Deploy {source_workspace: $cmdb}]->(b:DeploymentNode {name: $val1}) SET r."
+                updateNode = "MATCH (a:Container {graph: \"Global\", name: $val2})-[r:Deploy {graph: \"Global\", source_workspace: $cmdb}]->(b:DeploymentNode {graph: \"Global\", name: $val1}) SET r."
                         + key + " = $value";
                 parameters = Values.parameters("val1", deploymentNode.getName(), "cmdb", cmdb, "val2",
                         cur_name, "value", entry.getValue());
@@ -1060,14 +1068,14 @@ public class MajorGraph {
         }
 
         // Проверка на существование
-        String createRelationshipQuery = "MATCH (a:Container {name: $val2})-[r:Deploy]->(b:DeploymentNode {name: $val1}) WHERE r.source_workspace = $cmdb RETURN EXISTS((a)-->(b)) AS relationship_exists";
+        String createRelationshipQuery = "MATCH (a:Container {graph: \"Global\", name: $val2})-[r:Deploy]->(b:DeploymentNode {graph: \"Global\", name: $val1}) WHERE r.source_workspace = $cmdb AND r.graph = \"Global\"  RETURN EXISTS((a)-->(b)) AS relationship_exists";
         Value parameters = Values.parameters("val1", deploymentNode.getName(), "val2", cur_name, "cmdb", cmdb);
         Result result = session.run(createRelationshipQuery, parameters);
         if (result.hasNext()) {
             updateDeployRelationContainer(session, model, deploymentNode, containerInstance, cmdb, cur_name);
         } else {
             // Создание соединения
-            createRelationshipQuery = "MATCH (a:Container {name: $val2}), (b:DeploymentNode {name: $val1}) CREATE (a)-[r:Deploy {description: $description1, cur_id: $cur_id1, source_workspace: $cmdb, start_version: $start_version1, number_of_connects: $number_of_connects1, environment: $environment1, tags: $tags1}]->(b) RETURN a, b";
+            createRelationshipQuery = "MATCH (a:Container {graph: \"Global\", name: $val2}), (b:DeploymentNode {graph: \"Global\", name: $val1}) CREATE (a)-[r:Deploy {graph: \"Global\", description: $description1, cur_id: $cur_id1, source_workspace: $cmdb, start_version: $start_version1, number_of_connects: $number_of_connects1, environment: $environment1, tags: $tags1}]->(b) RETURN a, b";
             parameters = Values.parameters("description1", "Deploy", "val1", deploymentNode.getName(), "cmdb", cmdb,
                     "val2", cur_name, "cur_id1", containerInstance.getId(), "start_version1", curVersion,
                     "number_of_connects1", 1, "environment1", containerInstance.getEnvironment(), "tags1",
@@ -1080,7 +1088,7 @@ public class MajorGraph {
                     String key = entry.getKey();
                     key = key.replace(' ', '_');
                     key = key.replace('.', '_');
-                    createRelationshipQuery = "MATCH (a:Container {name: $val2})-[r:Deploy {source_workspace: $cmdb}]->(b:DeploymentNode {name: $val1}) SET r."
+                    createRelationshipQuery = "MATCH (a:Container {graph: \"Global\", name: $val2})-[r:Deploy {graph: \"Global\", source_workspace: $cmdb}]->(b:DeploymentNode {graph: \"Global\", name: $val1}) SET r."
                             + key + " = $value";
                     parameters = Values.parameters("val1", deploymentNode.getName(), "cmdb", cmdb, "val2",
                             cur_name, "value", entry.getValue());
@@ -1095,19 +1103,19 @@ public class MajorGraph {
         boolean exists = checkIfObjectExists(session, "Environment", "name", deploymentNode.getEnvironment());
 
         if (!exists) {
-            String createNodeQuery = "CREATE (n:Environment {name: $name1}) RETURN n";
+            String createNodeQuery = "CREATE (n:Environment {graph: \"Global\", name: $name1}) RETURN n";
             Value parameters = Values.parameters("name1", deploymentNode.getEnvironment());
             session.run(createNodeQuery, parameters);
         }
 
         // Проверка на существование связи
-        String createRelationshipQuery = "MATCH (a:Environment {name: $val1})-[r:Child]->(b:DeploymentNode {name: $val2}) WHERE r.source_workspace = $cmdb AND r.description = $description1 RETURN EXISTS((a)-->(b)) AS relationship_exists";
+        String createRelationshipQuery = "MATCH (a:Environment {graph: \"Global\", name: $val1})-[r:Child]->(b:DeploymentNode {graph: \"Global\", name: $val2}) WHERE r.source_workspace = $cmdb AND r.description = $description1 AND r.graph = \"Global\" RETURN EXISTS((a)-->(b)) AS relationship_exists";
         Value parameters = Values.parameters("val1", deploymentNode.getEnvironment(), "val2", deploymentNode.getName(),
                 "cmdb", cmdb, "description1", "Child");
         Result result = session.run(createRelationshipQuery, parameters);
 
         if (result.hasNext()) {
-            String updateNode = "MATCH (a:Environment {name: $val1})-[r:Child]->(b:DeploymentNode {name: $val2}) WHERE r.source_workspace = $cmdb SET r.end_version = $end_version1 RETURN r";
+            String updateNode = "MATCH (a:Environment {graph: \"Global\", name: $val1})-[r:Child]->(b:DeploymentNode {graph: \"Global\", name: $val2}) WHERE r.source_workspace = $cmdb AND r.graph = \"Global\" SET r.end_version = $end_version1 RETURN r";
             parameters = Values.parameters("val1", deploymentNode.getEnvironment(), "cmdb", cmdb,
                     "val2", deploymentNode.getName(), "end_version1", null);
             session.run(updateNode, parameters);
@@ -1115,7 +1123,7 @@ public class MajorGraph {
         }
 
         // Создание соединения
-        createRelationshipQuery = "MATCH (a:Environment {name: $val1}), (b:DeploymentNode {name: $val2}) CREATE (a)-[r:Child {source_workspace: $cmdb, start_version: $start_version1, description: $description1}]->(b) RETURN a, b";
+        createRelationshipQuery = "MATCH (a:Environment {graph: \"Global\", name: $val1}), (b:DeploymentNode {graph: \"Global\", name: $val2}) CREATE (a)-[r:Child {graph: \"Global\", source_workspace: $cmdb, start_version: $start_version1, description: $description1}]->(b) RETURN a, b";
         parameters = Values.parameters("val1", deploymentNode.getEnvironment(), "cmdb", cmdb, "val2",
                 deploymentNode.getName(), "start_version1", curVersion, "description1", "Child");
         session.run(createRelationshipQuery, parameters);
@@ -1127,19 +1135,19 @@ public class MajorGraph {
         boolean exists = checkIfObjectExists(session, "Environment", "name", infrastructureNode.getEnvironment());
 
         if (!exists) {
-            String createNodeQuery = "CREATE (n:Environment {name: $name1}) RETURN n";
+            String createNodeQuery = "CREATE (n:Environment {graph: \"Global\", name: $name1}) RETURN n";
             Value parameters = Values.parameters("name1", infrastructureNode.getEnvironment());
             session.run(createNodeQuery, parameters);
         }
 
         // Проверка на существование связи
-        String createRelationshipQuery = "MATCH (a:Environment {name: $val1})-[r:Child]->(b:InfrastructureNode {name: $val2}) WHERE r.source_workspace = $cmdb AND r.description = $description1 RETURN EXISTS((a)-->(b)) AS relationship_exists";
+        String createRelationshipQuery = "MATCH (a:Environment {graph: \"Global\", name: $val1})-[r:Child]->(b:InfrastructureNode {graph: \"Global\", name: $val2}) WHERE r.source_workspace = $cmdb AND r.description = $description1 AND r.graph = \"Global\" RETURN EXISTS((a)-->(b)) AS relationship_exists";
         Value parameters = Values.parameters("val1", infrastructureNode.getEnvironment(), "val2",
                 infrastructureNode.getName(), "cmdb", cmdb, "description1", "Child");
         Result result = session.run(createRelationshipQuery, parameters);
 
         if (result.hasNext()) {
-            String updateNode = "MATCH (a:Environment {name: $val1})-[r:Child]->(b:InfrastructureNode {name: $val2}) WHERE r.source_workspace = $cmdb SET r.end_version = $end_version1 RETURN r";
+            String updateNode = "MATCH (a:Environment {graph: \"Global\", name: $val1})-[r:Child]->(b:InfrastructureNode {graph: \"Global\", name: $val2}) WHERE r.graph = \"Global\" AND r.source_workspace = $cmdb SET r.end_version = $end_version1 RETURN r";
             parameters = Values.parameters("val1", infrastructureNode.getEnvironment(), "cmdb", cmdb,
                     "val2", infrastructureNode.getName(), "end_version1", null);
             session.run(updateNode, parameters);
@@ -1147,7 +1155,7 @@ public class MajorGraph {
         }
 
         // Создание соединения
-        createRelationshipQuery = "MATCH (a:Environment {name: $val1}), (b:InfrastructureNode {name: $val2}) CREATE (a)-[r:Child {source_workspace: $cmdb, start_version: $start_version1, description: $description1}]->(b) RETURN a, b";
+        createRelationshipQuery = "MATCH (a:Environment {graph: \"Global\", name: $val1}), (b:InfrastructureNode {graph: \"Global\", name: $val2}) CREATE (a)-[r:Child {graph: \"Global\", source_workspace: $cmdb, start_version: $start_version1, description: $description1}]->(b) RETURN a, b";
         parameters = Values.parameters("val1", infrastructureNode.getEnvironment(), "cmdb", cmdb, "val2",
                 infrastructureNode.getName(), "start_version1", curVersion, "description1", "Child");
         session.run(createRelationshipQuery, parameters);
@@ -1155,7 +1163,7 @@ public class MajorGraph {
 
     public static void updateInfrastructureNode(Session session, InfrastructureNode infrastructureNode) {
 
-        String updateNode = "MATCH (n:InfrastructureNode {name: $name1}) SET n.description = $description1, n.technology = $technology1, n.tags = $tags1, n.url = $url1, n.end_version = $end_version1 RETURN n";
+        String updateNode = "MATCH (n:InfrastructureNode {graph: \"Global\", name: $name1}) SET n.description = $description1, n.technology = $technology1, n.tags = $tags1, n.url = $url1, n.end_version = $end_version1 RETURN n";
         Value parameters = Values.parameters("name1", infrastructureNode.getName(), "description1",
                 infrastructureNode.getDescription(), "technology1", infrastructureNode.getTechnology(), "tags1",
                 infrastructureNode.getTags(), "url1", infrastructureNode.getUrl(), "end_version1", null);
@@ -1167,7 +1175,8 @@ public class MajorGraph {
                 String key = entry.getKey();
                 key = key.replace(' ', '_');
                 key = key.replace('.', '_');
-                updateNode = "MATCH (n:InfrastructureNode {name: $name1}) SET n." + key + " = $value RETURN n";
+                updateNode = "MATCH (n:InfrastructureNode {graph: \"Global\", name: $name1}) SET n." + key
+                        + " = $value RETURN n";
                 parameters = Values.parameters("name1", infrastructureNode.getName(), "value", entry.getValue());
                 session.run(updateNode, parameters);
             }
@@ -1181,7 +1190,7 @@ public class MajorGraph {
         if (exists) {
             updateInfrastructureNode(session, infrastructureNode);
         } else {
-            String createNodeQuery = "CREATE (n:InfrastructureNode {name: $name1, description: $description1, technology: $technology1, tags: $tags1, url: $url1, start_version: $start_version1, end_version: $end_version1}) RETURN n";
+            String createNodeQuery = "CREATE (n:InfrastructureNode {graph: \"Global\", name: $name1, description: $description1, technology: $technology1, tags: $tags1, url: $url1, start_version: $start_version1, end_version: $end_version1}) RETURN n";
             Value parameters = Values.parameters("name1", infrastructureNode.getName(), "description1",
                     infrastructureNode.getDescription(), "technology1", infrastructureNode.getTechnology(),
                     "tags1", infrastructureNode.getTags(), "start_version1", curVersion, "url1",
@@ -1194,7 +1203,8 @@ public class MajorGraph {
                     String key = entry.getKey();
                     key = key.replace(' ', '_');
                     key = key.replace('.', '_');
-                    createNodeQuery = "MATCH (n:InfrastructureNode {name: $name1}) SET n." + key + " = $value RETURN n";
+                    createNodeQuery = "MATCH (n:InfrastructureNode {graph: \"Global\", name: $name1}) SET n." + key
+                            + " = $value RETURN n";
                     parameters = Values.parameters("name1", infrastructureNode.getName(), "value", entry.getValue());
                     session.run(createNodeQuery, parameters);
                 }
@@ -1203,7 +1213,7 @@ public class MajorGraph {
     }
 
     public static void updateDeploymentNode(Session session, DeploymentNode deploymentNode) {
-        String updateNode = "MATCH (n:DeploymentNode {name: $name1}) SET n.description = $description1, n.technology = $technology1, n.instances = $instances1, n.tags = $tags1, n.url = $url1, n.end_version = $end_version1 RETURN n";
+        String updateNode = "MATCH (n:DeploymentNode {graph: \"Global\", name: $name1}) SET n.description = $description1, n.technology = $technology1, n.instances = $instances1, n.tags = $tags1, n.url = $url1, n.end_version = $end_version1 RETURN n";
         Value parameters = Values.parameters("name1", deploymentNode.getName(), "description1",
                 deploymentNode.getDescription(), "technology1", deploymentNode.getTechnology(), "instances1",
                 deploymentNode.getInstances(), "tags1", deploymentNode.getTags(), "url1", deploymentNode.getUrl(),
@@ -1216,7 +1226,8 @@ public class MajorGraph {
                 String key = entry.getKey();
                 key = key.replace(' ', '_');
                 key = key.replace('.', '_');
-                updateNode = "MATCH (n:DeploymentNode {name: $name1}) SET n." + key + " = $value RETURN n";
+                updateNode = "MATCH (n:DeploymentNode {graph: \"Global\", name: $name1}) SET n." + key
+                        + " = $value RETURN n";
                 parameters = Values.parameters("name1", deploymentNode.getName(), "value", entry.getValue());
                 session.run(updateNode, parameters);
             }
@@ -1231,7 +1242,7 @@ public class MajorGraph {
         if (exists) {
             updateDeploymentNode(session, deploymentNode);
         } else {
-            String createNodeQuery = "CREATE (n:DeploymentNode {name: $name1, description: $description1, technology: $technology1, instances: $instances1, tags: $tags1, url: $url1, start_version: $start_version1, end_version: $end_version1}) RETURN n";
+            String createNodeQuery = "CREATE (n:DeploymentNode {graph: \"Global\", name: $name1, description: $description1, technology: $technology1, instances: $instances1, tags: $tags1, url: $url1, start_version: $start_version1, end_version: $end_version1}) RETURN n";
             Value parameters = Values.parameters("name1", deploymentNode.getName(), "description1",
                     deploymentNode.getDescription(), "technology1", deploymentNode.getTechnology(), "instances1",
                     deploymentNode.getInstances(), "tags1", deploymentNode.getTags(), "start_version1", curVersion,
@@ -1244,7 +1255,8 @@ public class MajorGraph {
                     String key = entry.getKey();
                     key = key.replace(' ', '_');
                     key = key.replace('.', '_');
-                    createNodeQuery = "MATCH (n:DeploymentNode {name: $name1}) SET n." + key + " = $value RETURN n";
+                    createNodeQuery = "MATCH (n:DeploymentNode {graph: \"Global\", name: $name1}) SET n." + key
+                            + " = $value RETURN n";
                     parameters = Values.parameters("name1", deploymentNode.getName(), "value", entry.getValue());
                     session.run(createNodeQuery, parameters);
                 }
@@ -1359,7 +1371,7 @@ public class MajorGraph {
 
     public static void puttingEndVersionRelations(Session session, Integer curVersion, Object cmdb) {
 
-        String query = "MATCH (n)-[r]->(m) WHERE r.source_workspace = $cmdb AND r.end_version IS NULL RETURN n,m,r";
+        String query = "MATCH (n)-[r]->(m) WHERE r.source_workspace = $cmdb AND r.graph = \"Global\" AND r.end_version IS NULL RETURN n,m,r";
         Value parameters = Values.parameters("cmdb", cmdb);
         Result result = session.run(query, parameters);
 
@@ -1403,9 +1415,10 @@ public class MajorGraph {
             String relType = connectValue.asRelationship().type().toString();
 
             // Проставление end_version для связи
-            String updateconnection = "MATCH (a:" + type1 + " {" + key1
-                    + ": $val1})-[r:" + relType + " {source_workspace: $cmdb, description: $description1}]->(b:"
-                    + type2 + " {" + key2 + ": $val2}) SET r.end_version = $end_version1 RETURN r";
+            String updateconnection = "MATCH (a:" + type1 + " {graph: \"Global\", " + key1
+                    + ": $val1})-[r:" + relType
+                    + " {graph: \"Global\", source_workspace: $cmdb, description: $description1}]->(b:"
+                    + type2 + " {graph: \"Global\", " + key2 + ": $val2}) SET r.end_version = $end_version1 RETURN r";
             parameters = Values.parameters("val1", val1, "val2", val2, "cmdb", cmdb, "description1", description,
                     "end_version1", curVersion);
             session.run(updateconnection, parameters);
@@ -1418,12 +1431,12 @@ public class MajorGraph {
         Object name1 = nodeValue.asNode().asMap().get("name");
 
         // Проставление end_version для DeploymentNode
-        String updateNode = "MATCH (n:DeploymentNode {name: $name1}) SET n.end_version = $end_version1 RETURN n";
+        String updateNode = "MATCH (n:DeploymentNode {graph: \"Global\", name: $name1}) SET n.end_version = $end_version1 RETURN n";
         Value parameters = Values.parameters("name1", name1, "end_version1", curVersion);
         session.run(updateNode, parameters);
 
         // Проставление end_version для InfrastructureNode
-        String query = "MATCH (n:DeploymentNode)-[r:Child]->(m:InfrastructureNode) WHERE n.name = $name1 AND m.end_version IS NULL RETURN m";
+        String query = "MATCH (n:DeploymentNode)-[r:Child]->(m:InfrastructureNode) WHERE n.name = $name1 AND n.graph = \"Global\" AND m.end_version IS NULL RETURN m";
         parameters = Values.parameters("name1", name1);
         Result result1 = session.run(query, parameters);
 
@@ -1435,14 +1448,14 @@ public class MajorGraph {
             Object childName1 = childNodeValue.asNode().asMap().get("name");
 
             // Проставление end_version для вершины
-            updateNode = "MATCH (n:InfrastructureNode {name: $name1}) SET n.end_version = $end_version1 RETURN n";
+            updateNode = "MATCH (n:InfrastructureNode {graph: \"Global\", name: $name1}) SET n.end_version = $end_version1 RETURN n";
             parameters = Values.parameters("name1", childName1, "end_version1", curVersion);
             session.run(updateNode, parameters);
 
         }
 
         // Проставление end_version для дочерних DeploymentNode
-        query = "MATCH (n:DeploymentNode)-[r:Child]->(m:DeploymentNode) WHERE n.name = $name1 AND m.end_version IS NULL RETURN m";
+        query = "MATCH (n:DeploymentNode)-[r:Child]->(m:DeploymentNode) WHERE n.name = $name1 AND n.graph = \"Global\" AND m.end_version IS NULL RETURN m";
         parameters = Values.parameters("name1", name1);
         result1 = session.run(query, parameters);
 
@@ -1456,7 +1469,7 @@ public class MajorGraph {
     public static void puttingEndVersion(Session session, SoftwareSystem softwareSystem, Object cmdb,
             Integer curVersion) {
 
-        String query = "MATCH (n)-[r:Child]->(m:Container) WHERE n.cmdb = $cmdb1 AND m.end_version IS NULL RETURN m";
+        String query = "MATCH (n)-[r:Child]->(m:Container) WHERE n.cmdb = $cmdb1 AND n.graph = \"Global\" AND m.end_version IS NULL RETURN m";
         Value parameters = Values.parameters("cmdb1", cmdb);
         Result result1 = session.run(query, parameters);
 
@@ -1469,12 +1482,12 @@ public class MajorGraph {
             Object name1 = nodeValue.asNode().asMap().get("name");
 
             // Проставление end_version для контейнера
-            String updateNode = "MATCH (n:Container {name: $name1}) SET n.end_version = $end_version1 RETURN n";
+            String updateNode = "MATCH (n:Container {graph: \"Global\", name: $name1}) SET n.end_version = $end_version1 RETURN n";
             parameters = Values.parameters("name1", name1, "end_version1", curVersion);
             session.run(updateNode, parameters);
 
             // Проход по всем компонентам системы
-            query = "MATCH (n)-[r:Child]->(m) WHERE n.name = $name1 AND m.end_version IS NULL RETURN m";
+            query = "MATCH (n)-[r:Child]->(m) WHERE n.name = $name1 AND n.graph = \"Global\" AND m.end_version IS NULL RETURN m";
             parameters = Values.parameters("name1", name1);
             Result result2 = session.run(query, parameters);
 
@@ -1486,14 +1499,14 @@ public class MajorGraph {
                 Object name2 = nodeValue.asNode().asMap().get("name");
 
                 // Проставление end_version для компонента
-                updateNode = "MATCH (n:Component {name: $name1}) SET n.end_version = $end_version1 RETURN n";
+                updateNode = "MATCH (n:Component {graph: \"Global\", name: $name1}) SET n.end_version = $end_version1 RETURN n";
                 parameters = Values.parameters("name1", name2, "end_version1", curVersion);
                 session.run(updateNode, parameters);
             }
         }
 
         // Проставление end_version для DeploymentNode
-        query = "MATCH (n)-[r:Child]->(m:DeploymentNode) WHERE n.cmdb = $cmdb1 AND m.end_version IS NULL RETURN m";
+        query = "MATCH (n)-[r:Child]->(m:DeploymentNode) WHERE n.cmdb = $cmdb1 AND n.graph = \"Global\" AND m.end_version IS NULL RETURN m";
         parameters = Values.parameters("cmdb1", cmdb);
         result1 = session.run(query, parameters);
 
@@ -1710,6 +1723,8 @@ public class MajorGraph {
                 }
             }
 
+        } catch (Exception e) {
+            throw e;
         } finally {
             driver.close();
         }

@@ -8,13 +8,13 @@ import java.util.Map;
 public class MinorGraph {
 
     public static boolean checkIfObjectExists(Session session, String label, String propertyKey, Object propertyValue) {
-        String query = "MATCH (n:" + label + " {" + propertyKey + ": $value}) RETURN n";
+        String query = "MATCH (n:" + label + " {" + propertyKey + ": $value, graph: \"Local\"}) RETURN n";
         Result result = session.run(query, Values.parameters("value", propertyValue));
         return result.hasNext();
     }
 
     public static void createSoftware(Session session, SoftwareSystem softwareSystem, Object cmdb) {
-        String createNodeQuery = "CREATE (n:SoftwareSystem {cmdb: $cmdb1, name: $name1, description: $description1, tags: $tags1, url: $url1, group: $group1}) RETURN n";
+        String createNodeQuery = "CREATE (n:SoftwareSystem {graph: \"Local\", cmdb: $cmdb1, name: $name1, description: $description1, tags: $tags1, url: $url1, group: $group1}) RETURN n";
         Value parameters = Values.parameters("cmdb1", cmdb, "name1", softwareSystem.getName(),
                 "description1", softwareSystem.getDescription(), "tags1", softwareSystem.getTags(),
                 "url1", softwareSystem.getUrl(), "group1", softwareSystem.getGroup());
@@ -26,7 +26,8 @@ public class MinorGraph {
                 String key = entry.getKey();
                 key = key.replace(' ', '_');
                 key = key.replace('.', '_');
-                createNodeQuery = "MATCH (n:SoftwareSystem {cmdb: $cmdb1}) SET n." + key + " = $value RETURN n";
+                createNodeQuery = "MATCH (n:SoftwareSystem {cmdb: $cmdb1, graph: \"Local\"}) SET n." + key
+                        + " = $value RETURN n";
                 parameters = Values.parameters("cmdb1", cmdb, "value", entry.getValue());
                 session.run(createNodeQuery, parameters);
             }
@@ -34,7 +35,7 @@ public class MinorGraph {
     }
 
     public static void createContainer(Session session, Container container) {
-        String createNodeQuery = "CREATE (n:Container {name: $name1, description: $description1, technology: $technology1, tags: $tags1, url: $url1, group: $group1}) RETURN n";
+        String createNodeQuery = "CREATE (n:Container {graph: \"Local\", name: $name1, description: $description1, technology: $technology1, tags: $tags1, url: $url1, group: $group1}) RETURN n";
         Value parameters = Values.parameters("name1", container.getName(), "description1",
                 container.getDescription(), "technology1", container.getTechnology(), "tags1",
                 container.getTags(), "url1", container.getUrl(), "group1", container.getGroup());
@@ -46,7 +47,8 @@ public class MinorGraph {
                 String key = entry.getKey();
                 key = key.replace(' ', '_');
                 key = key.replace('.', '_');
-                createNodeQuery = "MATCH (n:Container {name: $name1}) SET n." + key + " = $value RETURN n";
+                createNodeQuery = "MATCH (n:Container {graph: \"Local\", name: $name1}) SET n." + key
+                        + " = $value RETURN n";
                 parameters = Values.parameters("name1", container.getName(), "value", entry.getValue());
                 session.run(createNodeQuery, parameters);
             }
@@ -54,7 +56,7 @@ public class MinorGraph {
     }
 
     public static void createComponent(Session session, Component component) {
-        String createNodeQuery = "CREATE (n:Component {name: $name1, description: $description1, technology: $technology1, tags: $tags1, url: $url1, group: $group1}) RETURN n";
+        String createNodeQuery = "CREATE (n:Component {graph: \"Local\", name: $name1, description: $description1, technology: $technology1, tags: $tags1, url: $url1, group: $group1}) RETURN n";
         Value parameters = Values.parameters("name1", component.getName(), "description1",
                 component.getDescription(), "technology1", component.getTechnology(), "tags1",
                 component.getTags(), "url1", component.getUrl(), "group1", component.getGroup());
@@ -66,7 +68,8 @@ public class MinorGraph {
                 String key = entry.getKey();
                 key = key.replace(' ', '_');
                 key = key.replace('.', '_');
-                createNodeQuery = "MATCH (n:Component {name: $name1}) SET n." + key + " = $value RETURN n";
+                createNodeQuery = "MATCH (n:Component {graph: \"Local\", name: $name1}) SET n." + key
+                        + " = $value RETURN n";
                 parameters = Values.parameters("name1", component.getName(), "value", entry.getValue());
                 session.run(createNodeQuery, parameters);
             }
@@ -80,9 +83,9 @@ public class MinorGraph {
             return;
         }
 
-        String updateNode = "MATCH (a:" + type1 + " {" + key1 + ": $val1})-[r:" + rel_type
-                + " {source_workspace: $cmdb, description: $description1}]->(b:" + type2 + " {" + key2
-                + ": $val2}) SET r.tags = $tags1,  r.url = $url1, r.technology = $technology1,  r.interactionStyle = $interactionStyle1,  r.linkedRelationshipId = $linkedRelationshipId1, r.level = $level1 RETURN r";
+        String updateNode = "MATCH (a:" + type1 + " {" + key1 + ": $val1, graph: \"Local\"})-[r:" + rel_type
+                + " {source_workspace: $cmdb, graph: \"Local\", description: $description1}]->(b:" + type2 + " {" + key2
+                + ": $val2, graph: \"Local\"}) SET r.tags = $tags1,  r.url = $url1, r.technology = $technology1,  r.interactionStyle = $interactionStyle1,  r.linkedRelationshipId = $linkedRelationshipId1, r.level = $level1 RETURN r";
         Value parameters = Values.parameters("val1", val1, "cmdb", cmdb, "description1", rel.getDescription(), "val2",
                 val2, "tags1", rel.getTags(), "url1", rel.getUrl(), "technology1",
                 rel.getTechnology(), "interactionStyle1", rel.getInteractionStyle(), "linkedRelationshipId1",
@@ -93,9 +96,9 @@ public class MinorGraph {
             Integer number = 0;
 
             // Вычисление текущего количества связей
-            updateNode = "MATCH (a:" + type1 + " {" + key1 + ": $val1})-[r:" + rel_type
-                    + " {source_workspace: $cmdb, description: $description1}]->(b:" + type2 + " {" + key2
-                    + ": $val2}) RETURN r";
+            updateNode = "MATCH (a:" + type1 + " {" + key1 + ": $val1, graph: \"Local\"})-[r:" + rel_type
+                    + " {source_workspace: $cmdb, graph: \"Local\", description: $description1}]->(b:" + type2 + " {"
+                    + key2 + ": $val2, graph: \"Local\"}) RETURN r";
             parameters = Values.parameters("val1", val1, "cmdb", cmdb, "description1", rel.getDescription(),
                     "val2", val2);
             Result result = session.run(updateNode, parameters);
@@ -109,9 +112,10 @@ public class MinorGraph {
                 number = number + 1;
             }
 
-            updateNode = "MATCH (a:" + type1 + " {" + key1 + ": $val1})-[r:" + rel_type
-                    + " {source_workspace: $cmdb, description: $description1}]->(b:" + type2 + " {" + key2
-                    + ": $val2}) SET r.number_of_connects = $number_of_connects1, r.cur_id = $cur_id1";
+            updateNode = "MATCH (a:" + type1 + " {" + key1 + ": $val1, graph: \"Local\"})-[r:" + rel_type
+                    + " {source_workspace: $cmdb, graph: \"Local\", description: $description1}]->(b:"
+                    + type2 + " {" + key2
+                    + ": $val2, graph: \"Local\"}) SET r.number_of_connects = $number_of_connects1, r.cur_id = $cur_id1";
             parameters = Values.parameters("val1", val1, "cmdb", cmdb, "description1", rel.getDescription(), "val2",
                     val2, "number_of_connects1", number, "cur_id1", rel.getId());
             session.run(updateNode, parameters);
@@ -123,9 +127,9 @@ public class MinorGraph {
                 String key = entry.getKey();
                 key = key.replace(' ', '_');
                 key = key.replace('.', '_');
-                updateNode = "MATCH (a:" + type1 + " {" + key1 + ": $val1})-[r:" + rel_type
-                        + " {source_workspace: $cmdb, description: $description1}]->(b:" + type2 +
-                        " {" + key2 + ": $val2}) SET r." + key + " = $value";
+                updateNode = "MATCH (a:" + type1 + " {" + key1 + ": $val1, graph: \"Local\"})-[r:" + rel_type
+                        + " {source_workspace: $cmdb, graph: \"Local\", description: $description1}]->(b:" + type2 +
+                        " {" + key2 + ": $val2, graph: \"Local\"}) SET r." + key + " = $value";
                 parameters = Values.parameters("val1", val1, "cmdb", cmdb, "description1", rel.getDescription(), "val2",
                         val2, "value", entry.getValue());
                 session.run(updateNode, parameters);
@@ -206,17 +210,18 @@ public class MinorGraph {
         }
 
         // Создание соединения
-        String createRelationshipQuery = "MATCH (a:" + type1 + " {" + key1 + ": $val1}), (b:" + type2 + " {"
-                + key2 + ": $val2}) CREATE (a)-[r:" + rel_type
-                + " {source_workspace: $cmdb, description: $description1}]->(b) RETURN a, b";
+        String createRelationshipQuery = "MATCH (a:" + type1 + " {" + key1 + ": $val1, graph: \"Local\"}), (b:" + type2
+                + " {" + key2 + ": $val2, graph: \"Local\"}) CREATE (a)-[r:" + rel_type
+                + " {source_workspace: $cmdb, graph: \"Local\", description: $description1}]->(b) RETURN a, b";
         Value parameters = Values.parameters("val1", val1, "cmdb", cmdb, "val2", val2, "description1",
                 rel.getDescription());
         session.run(createRelationshipQuery, parameters);
 
         if (rel.getDescription().equals("None")) {
-            String updateNode = "MATCH (a:" + type1 + " {" + key1 + ": $val1})-[r:" + rel_type
-                    + " {source_workspace: $cmdb, description: $description1}]->(b:" + type2 + " {" + key2
-                    + ": $val2}) SET r.number_of_connects = $number_of_connects1, r.cur_id = $cur_id1";
+            String updateNode = "MATCH (a:" + type1 + " {" + key1 + ": $val1, graph: \"Local\"})-[r:" + rel_type
+                    + " {source_workspace: $cmdb, graph: \"Local\", description: $description1}]->(b:" + type2 + " {"
+                    + key2
+                    + ": $val2, graph: \"Local\"}) SET r.number_of_connects = $number_of_connects1, r.cur_id = $cur_id1";
             parameters = Values.parameters("val1", val1, "cmdb", cmdb, "description1", rel.getDescription(), "val2",
                     val2, "number_of_connects1", 1, "cur_id1", rel.getId());
             session.run(updateNode, parameters);
@@ -243,7 +248,7 @@ public class MinorGraph {
         }
 
         // Создание соединения
-        String createRelationshipQuery = "MATCH (a:SoftwareSystem {name: $val2}), (b:DeploymentNode {cmdb: $val1}) CREATE (a)-[r:Deploy {description: $description1, cur_id: $cur_id1, source_workspace: $cmdb, number_of_connects: $number_of_connects1, environment: $environment1, tags: $tags1}]->(b) RETURN a, b";
+        String createRelationshipQuery = "MATCH (a:SoftwareSystem {name: $val2, graph: \"Local\"}), (b:DeploymentNode {cmdb: $val1, graph: \"Local\"}) CREATE (a)-[r:Deploy {description: $description1, graph: \"Local\", cur_id: $cur_id1, source_workspace: $cmdb, number_of_connects: $number_of_connects1, environment: $environment1, tags: $tags1}]->(b) RETURN a, b";
         Value parameters = Values.parameters("description1", "Deploy", "val1", deploymentNode.getName(), "cmdb", cmdb,
                 "val2", cur_cmdb, "cur_id1", softwareSystemInstance.getId(), "number_of_connects1", 1, "environment1",
                 softwareSystemInstance.getEnvironment(), "tags1", softwareSystemInstance.getTags());
@@ -255,7 +260,7 @@ public class MinorGraph {
                 String key = entry.getKey();
                 key = key.replace(' ', '_');
                 key = key.replace('.', '_');
-                createRelationshipQuery = "MATCH (a:SoftwareSystem  {name: $val2})-[r:Deploy {source_workspace: $cmdb}]->(b:DeploymentNode {cmdb: $val1}) SET r."
+                createRelationshipQuery = "MATCH (a:SoftwareSystem  {name: $val2, graph: \"Local\"})-[r:Deploy {source_workspace: $cmdb, graph: \"Local\"}]->(b:DeploymentNode {cmdb: $val1, graph: \"Local\"}) SET r."
                         + key + " = $value";
                 parameters = Values.parameters("val1", deploymentNode.getName(), "cmdb", cmdb, "val2",
                         cur_cmdb, "value", entry.getValue());
@@ -286,7 +291,7 @@ public class MinorGraph {
         }
 
         // Создание соединения
-        String createRelationshipQuery = "MATCH (a:Container {name: $val2}), (b:DeploymentNode  {name: $val1}) CREATE (a)-[r:Deploy {description: $description1, cur_id: $cur_id1, source_workspace: $cmdb, number_of_connects: $number_of_connects1, environment: $environment1, tags: $tags1}]->(b) RETURN a, b";
+        String createRelationshipQuery = "MATCH (a:Container {name: $val2, graph: \"Local\"}), (b:DeploymentNode  {name: $val1, graph: \"Local\"}) CREATE (a)-[r:Deploy {graph: \"Local\", description: $description1, cur_id: $cur_id1, source_workspace: $cmdb, number_of_connects: $number_of_connects1, environment: $environment1, tags: $tags1}]->(b) RETURN a, b";
         Value parameters = Values.parameters("description1", "Deploy", "val1", deploymentNode.getName(), "cmdb", cmdb,
                 "val2", cur_name, "cur_id1", containerInstance.getId(), "number_of_connects1", 1, "environment1",
                 containerInstance.getEnvironment(), "tags1", containerInstance.getTags());
@@ -298,7 +303,7 @@ public class MinorGraph {
                 String key = entry.getKey();
                 key = key.replace(' ', '_');
                 key = key.replace('.', '_');
-                createRelationshipQuery = "MATCH (a:Container {name: $val2})-[r:Deploy {source_workspace: $cmdb}]->(b:DeploymentNode  {name: $val1}) SET r."
+                createRelationshipQuery = "MATCH (a:Container {name: $val2, graph: \"Local\"})-[r:Deploy {source_workspace: $cmdb, graph: \"Local\"}]->(b:DeploymentNode  {name: $val1, graph: \"Local\"}) SET r."
                         + key + " = $value";
                 parameters = Values.parameters("val1", deploymentNode.getName(), "cmdb", cmdb, "val2",
                         cur_name, "value", entry.getValue());
@@ -311,12 +316,12 @@ public class MinorGraph {
         boolean exists = checkIfObjectExists(session, "Environment", "name", deploymentNode.getEnvironment());
 
         if (!exists) {
-            String createNodeQuery = "CREATE (n:Environment {name: $name1}) RETURN n";
+            String createNodeQuery = "CREATE (n:Environment {name: $name1, graph: \"Local\"}) RETURN n";
             Value parameters = Values.parameters("name1", deploymentNode.getEnvironment());
             session.run(createNodeQuery, parameters);
         }
 
-        String createRelationshipQuery = "MATCH (a:Environment {name: $val1}), (b:DeploymentNode {name: $val2}) CREATE (a)-[r:Child {source_workspace: $cmdb, description: $description1}]->(b) RETURN a, b";
+        String createRelationshipQuery = "MATCH (a:Environment {name: $val1, graph: \"Local\"}), (b:DeploymentNode {name: $val2, graph: \"Local\"}) CREATE (a)-[r:Child {graph: \"Local\", source_workspace: $cmdb, description: $description1}]->(b) RETURN a, b";
         Value parameters = Values.parameters("val1", deploymentNode.getEnvironment(), "cmdb", cmdb, "val2",
                 deploymentNode.getName(), "description1", "Child");
         session.run(createRelationshipQuery, parameters);
@@ -328,19 +333,19 @@ public class MinorGraph {
         boolean exists = checkIfObjectExists(session, "Environment", "name", infrastructureNode.getEnvironment());
 
         if (!exists) {
-            String createNodeQuery = "CREATE (n:Environment {name: $name1}) RETURN n";
+            String createNodeQuery = "CREATE (n:Environment {name: $name1, graph: \"Local\"}) RETURN n";
             Value parameters = Values.parameters("name1", infrastructureNode.getEnvironment());
             session.run(createNodeQuery, parameters);
         }
 
-        String createRelationshipQuery = "MATCH (a:Environment {name: $val1}), (b:InfrastructureNode {name: $val2}) CREATE (a)-[r:Child {source_workspace: $cmdb, description: $description1}]->(b) RETURN a, b";
+        String createRelationshipQuery = "MATCH (a:Environment {name: $val1, graph: \"Local\"}), (b:InfrastructureNode {name: $val2, graph: \"Local\"}) CREATE (a)-[r:Child {graph: \"Local\", source_workspace: $cmdb, description: $description1}]->(b) RETURN a, b";
         Value parameters = Values.parameters("val1", infrastructureNode.getEnvironment(), "cmdb", cmdb, "val2",
                 infrastructureNode.getName(), "description1", "Child");
         session.run(createRelationshipQuery, parameters);
     }
 
     public static void createInfrastructureNode(Session session, InfrastructureNode infrastructureNode) {
-        String createNodeQuery = "CREATE (n:InfrastructureNode {name: $name1, description: $description1, technology: $technology1, tags: $tags1, url: $url1}) RETURN n";
+        String createNodeQuery = "CREATE (n:InfrastructureNode {graph: \"Local\", name: $name1, description: $description1, technology: $technology1, tags: $tags1, url: $url1}) RETURN n";
         Value parameters = Values.parameters("name1", infrastructureNode.getName(), "description1",
                 infrastructureNode.getDescription(), "technology1", infrastructureNode.getTechnology(),
                 "tags1", infrastructureNode.getTags(), "url1", infrastructureNode.getUrl());
@@ -352,7 +357,8 @@ public class MinorGraph {
                 String key = entry.getKey();
                 key = key.replace(' ', '_');
                 key = key.replace('.', '_');
-                createNodeQuery = "MATCH (n:InfrastructureNode {name: $name1}) SET n." + key + " = $value RETURN n";
+                createNodeQuery = "MATCH (n:InfrastructureNode {graph: \"Local\", name: $name1}) SET n." + key
+                        + " = $value RETURN n";
                 parameters = Values.parameters("name1", infrastructureNode.getName(), "value", entry.getValue());
                 session.run(createNodeQuery, parameters);
             }
@@ -363,7 +369,7 @@ public class MinorGraph {
             SoftwareSystem softwareSystem, Model model, HashMap<String, Object> cont, HashMap<String, Object> comp,
             HashMap<String, Object> deplNode, HashMap<String, Object> infNode) {
 
-        String createNodeQuery = "CREATE (n:DeploymentNode {name: $name1, description: $description1, technology: $technology1, instances: $instances1, tags: $tags1, url: $url1}) RETURN n";
+        String createNodeQuery = "CREATE (n:DeploymentNode {graph: \"Local\", name: $name1, description: $description1, technology: $technology1, instances: $instances1, tags: $tags1, url: $url1}) RETURN n";
         Value parameters = Values.parameters("name1", deploymentNode.getName(), "description1",
                 deploymentNode.getDescription(), "technology1", deploymentNode.getTechnology(), "instances1",
                 deploymentNode.getInstances(), "tags1", deploymentNode.getTags(), "url1", deploymentNode.getUrl());
@@ -375,7 +381,8 @@ public class MinorGraph {
                 String key = entry.getKey();
                 key = key.replace(' ', '_');
                 key = key.replace('.', '_');
-                createNodeQuery = "MATCH (n:DeploymentNode {name: $name1}) SET n." + key + " = $value RETURN n";
+                createNodeQuery = "MATCH (n:DeploymentNode {graph: \"Local\", name: $name1}) SET n." + key
+                        + " = $value RETURN n";
                 parameters = Values.parameters("name1", deploymentNode.getName(), "value", entry.getValue());
                 session.run(createNodeQuery, parameters);
             }
@@ -505,7 +512,7 @@ public class MinorGraph {
         try (Session session = driver.session()) {
 
             // Очистка графа
-            String createNodeQuery = "MATCH (n) DETACH DELETE n";
+            String createNodeQuery = "MATCH (n) WHERE n.graph = \"Local\" DETACH DELETE n";
             session.run(createNodeQuery);
 
             // Создание/Обновление системы
@@ -630,6 +637,8 @@ public class MinorGraph {
                 }
             }
 
+        } catch (Exception e) {
+            throw e;
         } finally {
             driver.close();
         }
