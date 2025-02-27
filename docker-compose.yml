@@ -3,9 +3,9 @@ version: "3.9"
 services:
   app:
     environment:
-      SPRING_NEO4J_URI: bolt://neo4j:7687
+      SPRING_NEO4J_URI: bolt://host.docker.internal:7687
       SPRING_NEO4J_AUTHENTICATION_USERNAME: neo4j
-      SPRING_NEO4J_AUTHENTICATION_PASSWORD: test1234
+      SPRING_NEO4J_AUTHENTICATION_PASSWORD: test
       SPRING_URL: https://document-service-dev-eafdmmart.apps.yd-m6-kt22.vimpelcom.ru
       JAVA_OPTS: -Xmx512m
     build:
@@ -16,23 +16,6 @@ services:
       - .:/app
     ports:
       - "8080:8080" # Порт для приложения
-    networks:
-      - app-network
-  neo4j:
-    restart: always
-    container_name: ns-cs-neo4j
-    ports:
-      - "7474:7474"
-      - "7687:7687"
-    environment:
-      - NEO4J_AUTH=neo4j/test1234
-    image: neo4j:latest
-    volumes:  
-      - ./export/neo4j/data:/data
-      - ./export/neo4j/var/lib/neo4j/conf:/var/lib/neo4j/conf
-      - ./export/neo4j/logs:/logs
-      - ./export/neo4j/var/lib/neo4j/import:/var/lib/neo4j/import
-      - ./export/neo4j/plugins:/plugins
     networks:
       - app-network
 
