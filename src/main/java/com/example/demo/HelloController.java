@@ -53,7 +53,7 @@ public class HelloController {
         RestTemplate restTemplate = new RestTemplate();
 
         // URL вашего API
-        String url = autorization.getUrl() + Long.toString(id);
+        String url = autorization.getUrl() + "/api/v1/documents/" + Long.toString(id);
 
         // Выполняем GET-запрос без заголовков
         ResponseEntity<byte[]> response = restTemplate.getForEntity(url, byte[].class);

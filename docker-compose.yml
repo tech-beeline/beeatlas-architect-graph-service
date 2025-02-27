@@ -2,6 +2,12 @@ version: "3.9"
 
 services:
   app:
+    environment:
+      SPRING_NEO4J_URI: bolt://neo4j:7687
+      SPRING_NEO4J_AUTHENTICATION_USERNAME: neo4j
+      SPRING_NEO4J_AUTHENTICATION_PASSWORD: test1234
+      SPRING_URL: https://document-service-dev-eafdmmart.apps.yd-m6-kt22.vimpelcom.ru
+      JAVA_OPTS: -Xmx512m
     build:
       context: .
       dockerfile: Dockerfile-local
@@ -10,8 +16,6 @@ services:
       - .:/app
     ports:
       - "8080:8080" # Порт для приложения
-    environment:
-      - JAVA_OPTS=-Xmx512m
     networks:
       - app-network
   neo4j:

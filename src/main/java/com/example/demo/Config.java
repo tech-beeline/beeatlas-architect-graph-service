@@ -19,11 +19,11 @@ public class Config {
     private String url;
 
     public String getUri() {
-        return uri;
+        return uri.strip();
     }
 
     public String getUser() {
-        return user;
+        return user.strip();
     }
 
     public String getPassword() {
@@ -31,6 +31,6 @@ public class Config {
     }
 
     public String getUrl() {
-        return url;
+        return url.strip();
     }
 }
