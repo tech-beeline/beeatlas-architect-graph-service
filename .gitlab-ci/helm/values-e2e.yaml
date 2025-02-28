@@ -2,6 +2,7 @@ env:
   SPRING_NEO4J_URI: "vault:eafdmmart/data/e2e/fdm#spring.neo4j.uri"
   SPRING_NEO4J_AUTHENTICATION_USERNAME: "vault:eafdmmart/data/e2e/fdm#spring.neo4j.authentication.username"
   SPRING_NEO4J_AUTHENTICATION_PASSWORD: "vault:eafdmmart/data/e2e/fdm#spring.neo4j.authentication.password"
+  SPRING_SERVICES_DOCUMENTS_URL: "http://document-service-e2e:8080"
 
 
 ingress:
