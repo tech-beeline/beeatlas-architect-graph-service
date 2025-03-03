@@ -1,6 +1,5 @@
 package com.example.architecting_graph;
 
-import java.io.IOException;
 import org.neo4j.driver.*;
 import java.util.HashMap;
 import java.util.Map;
@@ -494,7 +493,7 @@ public class MinorGraph {
 
     }
 
-    public static void createGraph(Workspace workspace, String uri, String user, String password) throws IOException {
+    public static void createGraph(Workspace workspace, String uri, String user, String password) throws Exception {
 
         // Получение нужной SoftwareSystem
         Model model = workspace.getModel();

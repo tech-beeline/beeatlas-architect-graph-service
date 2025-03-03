@@ -1,7 +1,5 @@
 package com.example.architecting_graph;
 
-import java.io.IOException;
-
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,7 +27,7 @@ public class GraphApi {
         this.autorization = autorization;
     }
 
-    public Object getJson(Long id) throws IOException {
+    public Object getJson(Long id) throws Exception {
 
         // Создаем RestTemplate
         RestTemplate restTemplate = new RestTemplate();
@@ -38,25 +36,41 @@ public class GraphApi {
         String url = autorization.getUrl() + "/api/v1/documents/" + Long.toString(id);
 
         // Выполняем GET-запрос без заголовков
-        ResponseEntity<byte[]> response = restTemplate.getForEntity(url, byte[].class);
+        ResponseEntity<byte[]> response;
+        try {
+            // Выполняем GET-запрос без заголовков
+            response = restTemplate.getForEntity(url, byte[].class);
+        } catch (Exception e) {
+            throw e;
+        }
 
-        // Получаем тело ответа как массив байтов
-        byte[] responseBody = response.getBody();
+        try {
+            // Получаем тело ответа как массив байтов
+            byte[] responseBody = response.getBody();
 
-        // Преобразуем байты в строку (используем UTF-8)
-        String jsonString = new String(responseBody, "UTF-8");
+            // Преобразуем байты в строку (используем UTF-8)
+            String jsonString = new String(responseBody, "UTF-8");
 
-        // Парсим JSON с помощью Jackson
-        ObjectMapper objectMapper = new ObjectMapper();
-        Object jsonObject = objectMapper.readValue(jsonString, Object.class);
+            // Парсим JSON с помощью Jackson
+            ObjectMapper objectMapper = new ObjectMapper();
+            Object jsonObject = objectMapper.readValue(jsonString, Object.class);
 
-        return jsonObject;
+            return jsonObject;
+        } catch (Exception e) {
+            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST);
+        }
     }
 
-    public static Workspace getWorkspace(Object jsonObject) throws IOException {
+    public static Workspace getWorkspace(Object jsonObject) throws Exception {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        return objectMapper.convertValue(jsonObject, Workspace.class);
+        Workspace workspace;
+        try {
+            workspace = objectMapper.convertValue(jsonObject, Workspace.class);
+        } catch (Exception e) {
+            throw e;
+        }
+        return workspace;
     }
 
     @PostMapping("/graph/local/{docId}") // Локальный граф
@@ -66,10 +80,12 @@ public class GraphApi {
         Driver driver = GraphDatabase.driver(autorization.getUri(),
                 AuthTokens.basic(autorization.getUser(), autorization.getPassword()));
         try {
-            driver.session();
+            Session session = driver.session();
+            String query = "MATCH (n) RETURN n";
+            session.run(query);
         } catch (ServiceUnavailableException e) {
             // Возвращаем 400 Bad Request с сообщением
-            return ResponseEntity.badRequest().body("400 нет подключения к БД\n" + e.getMessage());
+            return ResponseEntity.badRequest().body("Нет подключения к БД");
         } finally {
             driver.close();
         }
@@ -83,21 +99,21 @@ public class GraphApi {
             // Обработка ошибок 4xx (клиентские ошибки)
             HttpStatusCode statusCode = e.getStatusCode();
             if (statusCode.value() == 404) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("404 документ не найден\n" + e.getMessage());
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Документ не найден");
             } else if (statusCode.value() == 400) {
-                return ResponseEntity.badRequest().body("400 ошибка при получении документа\n" + e.getMessage());
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body("Ошибка при получении документа\n" + e.getMessage());
+                        .body("Ошибка при получении документа");
             }
         } catch (HttpServerErrorException e) {
             // Обработка ошибок 5xx (серверные ошибки)
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                    .body("503 сервис документов не доступен\n" + e.getMessage());
+                    .body("");
         } catch (Exception e) {
             // Обработка других исключений (например, сетевых ошибок)
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Неизвестная ошибка\n" + e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Неизвестная ошибка" + '\n' + e.getMessage());
         }
 
         Workspace workspace;
@@ -105,18 +121,18 @@ public class GraphApi {
         try {
             // Загрузка workspace
             workspace = getWorkspace(workspaceJson);
-        } catch (IOException e) {
+        } catch (Exception e) {
             // Обработка исключения
-            return ResponseEntity.badRequest().body("400 воркспейс не валиден\n" + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
 
         try {
             // Построение графа
             MinorGraph.createGraph(workspace, autorization.getUri(), autorization.getUser(),
                     autorization.getPassword());
-        } catch (IOException e) {
+        } catch (Exception e) {
             // Обработка исключения
-            return ResponseEntity.badRequest().body("400 граф не построен\n" + e.getMessage());
+            return ResponseEntity.badRequest().body("Граф не построен");
         }
 
         return ResponseEntity.status(HttpStatus.CREATED).body("Граф построен");
@@ -129,10 +145,12 @@ public class GraphApi {
         Driver driver = GraphDatabase.driver(autorization.getUri(),
                 AuthTokens.basic(autorization.getUser(), autorization.getPassword()));
         try {
-            driver.session();
+            Session session = driver.session();
+            String query = "MATCH (n) RETURN n";
+            session.run(query);
         } catch (ServiceUnavailableException e) {
             // Возвращаем 400 Bad Request с сообщением
-            return ResponseEntity.badRequest().body("400 нет подключения к БД\n" + e.getMessage());
+            return ResponseEntity.badRequest().body("Нет подключения к БД");
         } finally {
             driver.close();
         }
@@ -146,21 +164,21 @@ public class GraphApi {
             // Обработка ошибок 4xx (клиентские ошибки)
             HttpStatusCode statusCode = e.getStatusCode();
             if (statusCode.value() == 404) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("404 документ не найден\n" + e.getMessage());
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Документ не найден");
             } else if (statusCode.value() == 400) {
-                return ResponseEntity.badRequest().body("400 ошибка при получении документа\n" + e.getMessage());
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body("Ошибка при получении документа\n" + e.getMessage());
+                        .body("Ошибка при получении документа");
             }
         } catch (HttpServerErrorException e) {
             // Обработка ошибок 5xx (серверные ошибки)
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                    .body("503 сервис документов не доступен\n" + e.getMessage());
+                    .body("");
         } catch (Exception e) {
             // Обработка других исключений (например, сетевых ошибок)
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Неизвестная ошибка\n" + e.getMessage());
+                    .body("Неизвестная ошибка" + '\n' + e.getMessage());
         }
 
         Workspace workspace;
@@ -168,18 +186,18 @@ public class GraphApi {
         try {
             // Загрузка workspace
             workspace = getWorkspace(workspaceJson);
-        } catch (IOException e) {
+        } catch (Exception e) {
             // Обработка исключения
-            return ResponseEntity.badRequest().body("400 воркспейс не валиден\n" + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
 
         try {
             // Построение графа
             MajorGraph.createGraph(workspace, autorization.getUri(), autorization.getUser(),
                     autorization.getPassword());
-        } catch (IOException e) {
+        } catch (Exception e) {
             // Обработка исключения
-            return ResponseEntity.badRequest().body("400 граф не построен\n" + e.getMessage());
+            return ResponseEntity.badRequest().body("Граф не построен");
         }
 
         return ResponseEntity.status(HttpStatus.CREATED).body("Граф построен");

@@ -5,9 +5,10 @@ services:
     environment:
       SPRING_NEO4J_URI: bolt://host.docker.internal:7687
       SPRING_NEO4J_AUTHENTICATION_USERNAME: neo4j
-      SPRING_NEO4J_AUTHENTICATION_PASSWORD: test
       SPRING_SERVICES_DOCUMENTS_URL: https://document-service-dev-eafdmmart.apps.yd-m6-kt22.vimpelcom.ru
       JAVA_OPTS: -Xmx512m
+    env_file:
+      - .env
     build:
       context: .
       dockerfile: Dockerfile-local
