@@ -1,6 +1,7 @@
 package com.example.architecting_graph;
 
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -74,7 +75,7 @@ public class GraphApi {
     }
 
     @PostMapping("/graph/local/{docId}") // Локальный граф
-    public ResponseEntity<String> sayHello1(@PathVariable("docId") Long id) {
+    public ResponseEntity<String> LocalGraph(@PathVariable("docId") Long id) {
 
         // Проверка подключения к БД
         Driver driver = GraphDatabase.driver(autorization.getUri(),
@@ -101,18 +102,18 @@ public class GraphApi {
             if (statusCode.value() == 404) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Документ не найден");
             } else if (statusCode.value() == 400) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Полученный workspace не валиден");
             } else {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body("Ошибка при получении документа");
+                        .body("Доступ запрещен ");
             }
         } catch (HttpServerErrorException e) {
             // Обработка ошибок 5xx (серверные ошибки)
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                    .body("");
+                    .body("Ошибка при загрузке документа");
         } catch (Exception e) {
             // Обработка других исключений (например, сетевых ошибок)
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+            return ResponseEntity.status(520)
                     .body("Неизвестная ошибка" + '\n' + e.getMessage());
         }
 
@@ -123,7 +124,7 @@ public class GraphApi {
             workspace = getWorkspace(workspaceJson);
         } catch (Exception e) {
             // Обработка исключения
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Полученный workspace не валиден");
         }
 
         try {
@@ -139,7 +140,7 @@ public class GraphApi {
     }
 
     @PostMapping("/graph/{docId}") // Глобальный граф
-    public ResponseEntity<String> sayHello2(@PathVariable("docId") Long id) {
+    public ResponseEntity<String> GlobalGraph(@PathVariable("docId") Long id) {
 
         // Проверка подключения к БД
         Driver driver = GraphDatabase.driver(autorization.getUri(),
@@ -166,18 +167,18 @@ public class GraphApi {
             if (statusCode.value() == 404) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Документ не найден");
             } else if (statusCode.value() == 400) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Полученный workspace не валиден");
             } else {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body("Ошибка при получении документа");
+                        .body("Доступ запрещен ");
             }
         } catch (HttpServerErrorException e) {
             // Обработка ошибок 5xx (серверные ошибки)
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                    .body("");
+                    .body("Ошибка при загрузке документа");
         } catch (Exception e) {
             // Обработка других исключений (например, сетевых ошибок)
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            return ResponseEntity.status(520)
                     .body("Неизвестная ошибка" + '\n' + e.getMessage());
         }
 
@@ -188,7 +189,7 @@ public class GraphApi {
             workspace = getWorkspace(workspaceJson);
         } catch (Exception e) {
             // Обработка исключения
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Полученный workspace не валиден");
         }
 
         try {
@@ -201,5 +202,24 @@ public class GraphApi {
         }
 
         return ResponseEntity.status(HttpStatus.CREATED).body("Граф построен");
+    }
+
+    @GetMapping("/context/{softwareSystemMnemonic}/{containerMnemonic}/{componentMnemonic}")
+    public ResponseEntity<String> getComponent(@PathVariable String softwareSystemMnemonic, String containerMnemonic,
+            String componentMnemonic) {
+
+        return ResponseEntity.status(200).body("Компонент");
+    }
+
+    @GetMapping("/context/{softwareSystemMnemonic}/{containerMnemonic}")
+    public ResponseEntity<String> getContainer(@PathVariable String softwareSystemMnemonic, String containerMnemonic) {
+
+        return ResponseEntity.status(200).body("Контейнер");
+    }
+
+    @GetMapping("/context/{softwareSystemMnemonic}")
+    public ResponseEntity<String> getSystem(@PathVariable String softwareSystemMnemonic) {
+
+        return ResponseEntity.status(200).body("Система");
     }
 }
