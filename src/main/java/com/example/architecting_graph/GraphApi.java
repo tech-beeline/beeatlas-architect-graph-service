@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import org.neo4j.driver.exceptions.ServiceUnavailableException;
 import org.neo4j.driver.*;
+import org.neo4j.driver.types.Node;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,10 @@ import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 @RestController // Указывает, что это REST-контроллер
 @RequestMapping("/api/v1") // Базовый путь для всех методов в этом контроллере
@@ -72,6 +77,25 @@ public class GraphApi {
             throw e;
         }
         return workspace;
+    }
+
+    public static SoftwareSystem getSystem(Node node) {
+        SoftwareSystem system = new SoftwareSystem();
+        system.setProperties(new HashMap<>());
+
+        // Получение всех ключей (названий параметров) узла
+        for (String key : node.keys()) {
+            try {
+                Field field = SoftwareSystem.class.getDeclaredField(key);
+                field.setAccessible(true); // Разрешение доступа к приватным полям
+                // Установка значения поля
+                field.set(system, node.get(key).asObject());
+            } catch (Exception e) {
+                system.getProperties().put(key, node.get(key).asObject());
+            }
+        }
+
+        return system;
     }
 
     @PostMapping("/graph/local/{docId}") // Локальный граф
@@ -204,22 +228,76 @@ public class GraphApi {
         return ResponseEntity.status(HttpStatus.CREATED).body("Граф построен");
     }
 
-    @GetMapping("/context/{softwareSystemMnemonic}/{containerMnemonic}/{componentMnemonic}")
-    public ResponseEntity<String> getComponent(@PathVariable String softwareSystemMnemonic, String containerMnemonic,
-            String componentMnemonic) {
-
-        return ResponseEntity.status(200).body("Компонент");
-    }
-
     @GetMapping("/context/{softwareSystemMnemonic}/{containerMnemonic}")
-    public ResponseEntity<String> getContainer(@PathVariable String softwareSystemMnemonic, String containerMnemonic) {
+    public ResponseEntity<String> getObject(@PathVariable String softwareSystemMnemonic,
+            @PathVariable(required = false) String containerMnemonic) {
 
-        return ResponseEntity.status(200).body("Контейнер");
+        // Проверка подключения к БД
+        Driver driver = GraphDatabase.driver(autorization.getUri(),
+                AuthTokens.basic(autorization.getUser(), autorization.getPassword()));
+
+        Session session;
+
+        try {
+            session = driver.session();
+            String query = "MATCH (n) RETURN n";
+            session.run(query);
+        } catch (ServiceUnavailableException e) {
+            // Возвращаем 400 Bad Request с сообщением
+            return ResponseEntity.badRequest().body("Нет подключения к БД");
+        }
+
+        // Возвращаем воркспейс
+        Workspace workspace = new Workspace();
+        workspace.setModel(new Model());
+        workspace.getModel().setSoftwareSystems(new ArrayList<>());
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        // objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+
+        // Проверка на существование системы
+        if (MajorGraph.checkIfObjectExists(session, "SoftwareSystem", "structurizr_dsl_identifier",
+                softwareSystemMnemonic)) {
+
+            if (containerMnemonic != null) {
+
+                // Проверка на существование контейнера
+                String query = "MATCH (a:SoftwareSystem {graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Child]->(b:Container {graph: \"Global\", structurizr_dsl_identifier: $val2}) WHERE r.graph = \"Global\"  RETURN EXISTS((a)-->(b)) AS relationship_exists";
+                Value parameters = Values.parameters("val1", softwareSystemMnemonic, "val2", containerMnemonic);
+                Result result = session.run(query, parameters);
+                if (result.hasNext()) {
+
+                    return ResponseEntity.status(200).body("Контейнер");
+                } else {
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Контейнер не найден");
+                }
+            } // Получение контейнера
+            else {
+
+                String query = "MATCH (n:SoftwareSystem {graph: \"Global\", structurizr_dsl_identifier: $val1}) RETURN n";
+                Value parameters = Values.parameters("val1", softwareSystemMnemonic);
+                Result result = session.run(query, parameters);
+                org.neo4j.driver.Record record = result.next();
+                workspace.getModel().getSoftwareSystems().add(getSystem(record.get("n").asNode()));
+
+                try {
+                    // Преобразуем объект в JSON-строку
+                    String json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(workspace);
+                    return ResponseEntity.status(200).body(json);
+
+                } catch (Exception e) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body("Ошибка при сериализации" + '\n' + e.getMessage());
+                }
+            }
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Система не найдена");
+        }
     }
 
     @GetMapping("/context/{softwareSystemMnemonic}")
     public ResponseEntity<String> getSystem(@PathVariable String softwareSystemMnemonic) {
 
-        return ResponseEntity.status(200).body("Система");
+        return getObject(softwareSystemMnemonic, null);
     }
 }
