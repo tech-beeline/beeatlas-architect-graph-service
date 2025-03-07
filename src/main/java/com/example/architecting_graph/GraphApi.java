@@ -22,24 +22,27 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 @RestController // Указывает, что это REST-контроллер
 @RequestMapping("/api/v1") // Базовый путь для всех методов в этом контроллере
 public class GraphApi {
 
     private final RestConfig autorization;
+    private static Long id_obj;
+    private static Map<String, Long> map_id = new HashMap<>();
 
     public GraphApi(RestConfig autorization) {
         this.autorization = autorization;
     }
 
-    public Object getJson(Long id) throws Exception {
+    public Object getJson(Long id_file) throws Exception {
 
         // Создаем RestTemplate
         RestTemplate restTemplate = new RestTemplate();
 
         // URL вашего API
-        String url = autorization.getUrl() + "/api/v1/documents/" + Long.toString(id);
+        String url = autorization.getUrl() + "/api/v1/documents/" + Long.toString(id_file);
 
         // Выполняем GET-запрос без заголовков
         ResponseEntity<byte[]> response;
@@ -82,8 +85,11 @@ public class GraphApi {
     public static SoftwareSystem getSystem(Node node) {
         SoftwareSystem system = new SoftwareSystem();
         system.setProperties(new HashMap<>());
+        system.setRelationships(new ArrayList<>());
+        system.setContainers(new ArrayList<>());
+        system.setId(String.valueOf(id_obj));
 
-        // Получение всех ключей (названий параметров) узла
+        // Добавление property
         for (String key : node.keys()) {
             try {
                 Field field = SoftwareSystem.class.getDeclaredField(key);
@@ -95,11 +101,274 @@ public class GraphApi {
             }
         }
 
+        map_id.put(system.getProperties().get("structurizr_dsl_identifier").toString(), id_obj);
+        id_obj = id_obj + 1;
         return system;
     }
 
+    public static Container getContainer(Node node) {
+        Container container = new Container();
+        container.setProperties(new HashMap<>());
+        container.setRelationships(new ArrayList<>());
+        container.setComponents(new ArrayList<>());
+        container.setId(String.valueOf(id_obj));
+
+        // Добавление property
+        for (String key : node.keys()) {
+            try {
+                Field field = Container.class.getDeclaredField(key);
+                field.setAccessible(true); // Разрешение доступа к приватным полям
+                // Установка значения поля
+                field.set(container, node.get(key).asObject());
+            } catch (Exception e) {
+                container.getProperties().put(key, node.get(key).asObject());
+            }
+        }
+
+        map_id.put(container.getProperties().get("structurizr_dsl_identifier").toString(), id_obj);
+        id_obj = id_obj + 1;
+        return container;
+    }
+
+    public static Component getComponent(Node node) {
+        Component component = new Component();
+        component.setProperties(new HashMap<>());
+        component.setRelationships(new ArrayList<>());
+        component.setId(String.valueOf(id_obj));
+
+        // Добавление property
+        for (String key : node.keys()) {
+            try {
+                Field field = Component.class.getDeclaredField(key);
+                field.setAccessible(true); // Разрешение доступа к приватным полям
+                // Установка значения поля
+                field.set(component, node.get(key).asObject());
+            } catch (Exception e) {
+                component.getProperties().put(key, node.get(key).asObject());
+            }
+        }
+
+        map_id.put(component.getProperties().get("structurizr_dsl_identifier").toString(), id_obj);
+        id_obj = id_obj + 1;
+        return component;
+    }
+
+    public static Relationship getRelation(org.neo4j.driver.types.Relationship relation, String source,
+            String destination) {
+        Relationship relationship = new Relationship();
+        relationship.setProperties(new HashMap<>());
+        relationship.setId(String.valueOf(id_obj));
+        id_obj = id_obj + 1;
+        relationship.setSourceId(source);
+        relationship.setDestinationId(destination);
+
+        // Добавление property
+        for (Map.Entry<String, Object> entry : relation.asMap().entrySet()) {
+            String key = entry.getKey();
+            Object val = entry.getValue();
+            try {
+                Field field = Relationship.class.getDeclaredField(key);
+                field.setAccessible(true); // Разрешение доступа к приватным полям
+                // Установка значения поля
+                field.set(relationship, val);
+            } catch (Exception e) {
+                relationship.getProperties().put(key, val);
+            }
+        }
+
+        return relationship;
+    }
+
+    public static SoftwareSystemInstance getSoftwareSystemInstance(org.neo4j.driver.types.Relationship relation,
+            String instanceId, String softwareSystemId) {
+        SoftwareSystemInstance softwareSystemInstance = new SoftwareSystemInstance();
+        softwareSystemInstance.setProperties(new HashMap<>());
+        softwareSystemInstance.setId(String.valueOf(id_obj));
+        id_obj = id_obj + 1;
+        softwareSystemInstance.setInstanceId(Integer.parseInt(instanceId));
+        softwareSystemInstance.setSoftwareSystemId(softwareSystemId);
+
+        // Добавление property
+        for (Map.Entry<String, Object> entry : relation.asMap().entrySet()) {
+            String key = entry.getKey();
+            Object val = entry.getValue();
+            try {
+                Field field = SoftwareSystemInstance.class.getDeclaredField(key);
+                field.setAccessible(true); // Разрешение доступа к приватным полям
+                // Установка значения поля
+                field.set(softwareSystemInstance, val);
+            } catch (Exception e) {
+                softwareSystemInstance.getProperties().put(key, val);
+            }
+        }
+
+        map_id.put(softwareSystemInstance.getProperties().get("structurizr_dsl_identifier").toString(), id_obj);
+        id_obj = id_obj + 1;
+        return softwareSystemInstance;
+    }
+
+    public static ContainerInstance getContainerInstance(org.neo4j.driver.types.Relationship relation,
+            String instanceId, String containerId) {
+        ContainerInstance containerInstance = new ContainerInstance();
+        containerInstance.setProperties(new HashMap<>());
+        containerInstance.setId(String.valueOf(id_obj));
+        id_obj = id_obj + 1;
+        containerInstance.setInstanceId(Integer.parseInt(instanceId));
+        containerInstance.setContainerId(containerId);
+
+        // Добавление property
+        for (Map.Entry<String, Object> entry : relation.asMap().entrySet()) {
+            String key = entry.getKey();
+            Object val = entry.getValue();
+            try {
+                Field field = ContainerInstance.class.getDeclaredField(key);
+                field.setAccessible(true); // Разрешение доступа к приватным полям
+                // Установка значения поля
+                field.set(containerInstance, val);
+            } catch (Exception e) {
+                containerInstance.getProperties().put(key, val);
+            }
+        }
+
+        map_id.put(containerInstance.getProperties().get("structurizr_dsl_identifier").toString(), id_obj);
+        id_obj = id_obj + 1;
+        return containerInstance;
+    }
+
+    public static InfrastructureNode getInfrastructureNode(Node node) {
+        InfrastructureNode infrastructureNode = new InfrastructureNode();
+        infrastructureNode.setProperties(new HashMap<>());
+        infrastructureNode.setRelationships(new ArrayList<>());
+        infrastructureNode.setId(String.valueOf(id_obj));
+
+        // Добавление property
+        for (String key : node.keys()) {
+            try {
+                Field field = InfrastructureNode.class.getDeclaredField(key);
+                field.setAccessible(true); // Разрешение доступа к приватным полям
+                // Установка значения поля
+                field.set(infrastructureNode, node.get(key).asObject());
+            } catch (Exception e) {
+                infrastructureNode.getProperties().put(key, node.get(key).asObject());
+            }
+        }
+
+        map_id.put(infrastructureNode.getProperties().get("structurizr_dsl_identifier").toString(), id_obj);
+        id_obj = id_obj + 1;
+        return infrastructureNode;
+    }
+
+    public static DeploymentNode getDeploymentNode(Node node, Session session) {
+        DeploymentNode deploymentNode = new DeploymentNode();
+        deploymentNode.setId(String.valueOf(id_obj));
+
+        deploymentNode.setProperties(new HashMap<>());
+        // Добавление property
+        for (String key : node.keys()) {
+            try {
+                Field field = DeploymentNode.class.getDeclaredField(key);
+                field.setAccessible(true); // Разрешение доступа к приватным полям
+                // Установка значения поля
+                field.set(deploymentNode, node.get(key).asObject());
+            } catch (Exception e) {
+                deploymentNode.getProperties().put(key, node.get(key).asObject());
+            }
+        }
+
+        map_id.put(deploymentNode.getProperties().get("structurizr_dsl_identifier").toString(), id_obj);
+        id_obj = id_obj + 1;
+
+        // Добавление связей
+        deploymentNode.setRelationships(new ArrayList<>());
+
+        String query = "MATCH (n:DeploymentNode {graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Relationship]->(m) RETURN r, m.structurizr_dsl_identifier";
+        Value parameters = Values.parameters("val1", deploymentNode.getProperties().get("structurizr_dsl_identifier"));
+        Result result = session.run(query, parameters);
+
+        while (result.hasNext()) {
+            org.neo4j.driver.Record record = result.next();
+            String second_id = "-1";
+            if (map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString())) {
+                second_id = map_id.get(record.get("m.structurizr_dsl_identifier").asString())
+                        .toString();
+            }
+            deploymentNode.getRelationships()
+                    .add(getRelation(record.get("r").asRelationship(), deploymentNode.getId(), second_id));
+
+        }
+
+        // Добавление Environment
+        query = "MATCH (n:Environment)-[r:Child]->(n:DeploymentNode {graph: \"Global\", structurizr_dsl_identifier: $val1}) RETURN n";
+        result = session.run(query, parameters);
+
+        if (result.hasNext()) {
+            deploymentNode.setEnvironment(result.next().get("name").toString());
+        }
+
+        // Добавление InfrastructureNode
+        deploymentNode.setInfrastructureNodes(new ArrayList<>());
+
+        query = "MATCH (n:DeploymentNode {graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Child]->(m:InfrastructureNode) RETURN m";
+        result = session.run(query, parameters);
+
+        while (result.hasNext()) {
+            org.neo4j.driver.Record record = result.next();
+            deploymentNode.getInfrastructureNodes()
+                    .add(getInfrastructureNode(record.get("m").asNode()));
+        }
+
+        // Добавление SoftwareSystemInstance
+        deploymentNode.setSoftwareSystemInstances(new ArrayList<>());
+
+        query = "MATCH (n:SoftwareSystem)-[r:Deploy]->(m:DeploymentNode {graph: \"Global\", structurizr_dsl_identifier: $val1}) RETURN n.structurizr_dsl_identifier, r";
+        result = session.run(query, parameters);
+
+        while (result.hasNext()) {
+            org.neo4j.driver.Record record = result.next();
+            String second_id = "-1";
+            if (map_id.containsKey(record.get("n.structurizr_dsl_identifier").asString())) {
+                second_id = map_id.get(record.get("n.structurizr_dsl_identifier").asString())
+                        .toString();
+            }
+            deploymentNode.getSoftwareSystemInstances()
+                    .add(getSoftwareSystemInstance(record.get("r").asRelationship(), deploymentNode.getId(),
+                            second_id));
+        }
+
+        // Добавление ContainerInstance
+        deploymentNode.setContainerInstances(new ArrayList<>());
+
+        query = "MATCH (n:Container)-[r:Deploy]->(m:DeploymentNode {graph: \"Global\", structurizr_dsl_identifier: $val1}) RETURN n.structurizr_dsl_identifier, r";
+        result = session.run(query, parameters);
+
+        while (result.hasNext()) {
+            org.neo4j.driver.Record record = result.next();
+            String second_id = "-1";
+            if (map_id.containsKey(record.get("n.structurizr_dsl_identifier").asString())) {
+                second_id = map_id.get(record.get("n.structurizr_dsl_identifier").asString())
+                        .toString();
+            }
+            deploymentNode.getContainerInstances()
+                    .add(getContainerInstance(record.get("r").asRelationship(), deploymentNode.getId(), second_id));
+        }
+
+        // Добавление дочерних DeploymentNode
+        deploymentNode.setChildren(new ArrayList<>());
+
+        query = "MATCH (n:DeploymentNode {graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Child]->(m:DeploymentNode) RETURN m";
+        result = session.run(query, parameters);
+
+        while (result.hasNext()) {
+            org.neo4j.driver.Record record = result.next();
+            deploymentNode.getChildren()
+                    .add(getDeploymentNode(record.get("m").asNode(), session));
+        }
+
+        return deploymentNode;
+    }
+
     @PostMapping("/graph/local/{docId}") // Локальный граф
-    public ResponseEntity<String> LocalGraph(@PathVariable("docId") Long id) {
+    public ResponseEntity<String> LocalGraph(@PathVariable("docId") Long id_file) {
 
         // Проверка подключения к БД
         Driver driver = GraphDatabase.driver(autorization.getUri(),
@@ -119,7 +388,7 @@ public class GraphApi {
 
         try {
             // Получаем файл
-            workspaceJson = getJson(id);
+            workspaceJson = getJson(id_file);
         } catch (HttpClientErrorException e) {
             // Обработка ошибок 4xx (клиентские ошибки)
             HttpStatusCode statusCode = e.getStatusCode();
@@ -164,7 +433,7 @@ public class GraphApi {
     }
 
     @PostMapping("/graph/{docId}") // Глобальный граф
-    public ResponseEntity<String> GlobalGraph(@PathVariable("docId") Long id) {
+    public ResponseEntity<String> GlobalGraph(@PathVariable("docId") Long id_file) {
 
         // Проверка подключения к БД
         Driver driver = GraphDatabase.driver(autorization.getUri(),
@@ -184,7 +453,7 @@ public class GraphApi {
 
         try {
             // Получаем файл
-            workspaceJson = getJson(id);
+            workspaceJson = getJson(id_file);
         } catch (HttpClientErrorException e) {
             // Обработка ошибок 4xx (клиентские ошибки)
             HttpStatusCode statusCode = e.getStatusCode();
@@ -248,9 +517,12 @@ public class GraphApi {
         }
 
         // Возвращаем воркспейс
+        id_obj = 2L;
         Workspace workspace = new Workspace();
-        workspace.setModel(new Model());
-        workspace.getModel().setSoftwareSystems(new ArrayList<>());
+        Model model = new Model();
+        model.setSoftwareSystems(new ArrayList<>());
+        model.setDeploymentNodes(new ArrayList<>());
+        workspace.setId(1L);
 
         ObjectMapper objectMapper = new ObjectMapper();
         // objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
@@ -278,7 +550,90 @@ public class GraphApi {
                 Value parameters = Values.parameters("val1", softwareSystemMnemonic);
                 Result result = session.run(query, parameters);
                 org.neo4j.driver.Record record = result.next();
-                workspace.getModel().getSoftwareSystems().add(getSystem(record.get("n").asNode()));
+
+                // Получение системы
+                SoftwareSystem system = getSystem(record.get("n").asNode());
+
+                // Добавление связей системы
+                query = "MATCH (n:SoftwareSystem {graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Relationship]->(m) RETURN r, m.structurizr_dsl_identifier";
+                result = session.run(query, parameters);
+
+                while (result.hasNext()) {
+                    record = result.next();
+                    String second_id = "-1";
+                    if (map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString())) {
+                        second_id = map_id.get(record.get("m.structurizr_dsl_identifier").asString()).toString();
+                    }
+                    system.getRelationships()
+                            .add(getRelation(record.get("r").asRelationship(), system.getId(), second_id));
+                }
+
+                // Добавление контейнеров
+                query = "MATCH (n:SoftwareSystem {graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Child]->(m:Container) RETURN m";
+                result = session.run(query, parameters);
+
+                while (result.hasNext()) {
+                    record = result.next();
+                    Container container = getContainer(record.get("m").asNode());
+
+                    // Добавление связей контейнеров
+                    query = "MATCH (n:Container {graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Relationship]->(m) RETURN r, m.structurizr_dsl_identifier";
+                    parameters = Values.parameters("val1", container.getProperties().get("structurizr_dsl_identifier"));
+                    Result result1 = session.run(query, parameters);
+
+                    while (result1.hasNext()) {
+                        record = result1.next();
+                        String second_id = "-1";
+                        if (map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString())) {
+                            second_id = map_id.get(record.get("m.structurizr_dsl_identifier").asString()).toString();
+                        }
+                        container.getRelationships()
+                                .add(getRelation(record.get("r").asRelationship(), container.getId(), second_id));
+                    }
+
+                    // Добавление компонентов
+                    query = "MATCH (n:Container {graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Child]->(m) RETURN m";
+                    result1 = session.run(query, parameters);
+
+                    while (result1.hasNext()) {
+                        record = result1.next();
+                        Component component = getComponent(record.get("m").asNode());
+
+                        // Добавление связей компонентов
+                        query = "MATCH (n:Component {graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Relationship]->(m) RETURN r, m.structurizr_dsl_identifier";
+                        parameters = Values.parameters("val1",
+                                component.getProperties().get("structurizr_dsl_identifier"));
+                        Result result2 = session.run(query, parameters);
+
+                        while (result2.hasNext()) {
+                            record = result2.next();
+                            String second_id = "-1";
+                            if (map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString())) {
+                                second_id = map_id.get(record.get("m.structurizr_dsl_identifier").asString())
+                                        .toString();
+                            }
+                            component.getRelationships()
+                                    .add(getRelation(record.get("r").asRelationship(), component.getId(), second_id));
+                        }
+                    }
+
+                    system.getContainers().add(container);
+                }
+
+                // Добавление DeploymentNode
+                query = "MATCH (n:SoftwareSystem {graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Child]->(m:DeploymentNode) RETURN m";
+                parameters = Values.parameters("val1", softwareSystemMnemonic);
+                result = session.run(query, parameters);
+
+                while (result.hasNext()) {
+                    record = result.next();
+                    DeploymentNode deploymentNode = getDeploymentNode(record.get("m").asNode(), session);
+
+                    model.getDeploymentNodes().add(deploymentNode);
+                }
+
+                model.getSoftwareSystems().add(system);
+                workspace.setModel(model);
 
                 try {
                     // Преобразуем объект в JSON-строку
