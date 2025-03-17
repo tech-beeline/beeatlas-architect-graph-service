@@ -17,6 +17,7 @@ import com.example.architecting_graph.AutomaticLayout.RankDirection;
 public class GetObjects {
     private static Long id_obj;
     private static Map<String, Long> map_id;
+    private static Set<String> childs;
     private static Map<String, SoftwareSystem> systems;
     private static Map<String, Container> containers;
     private static Map<String, Component> components;
@@ -378,6 +379,7 @@ public class GetObjects {
         // Начальная инициализация
         id_obj = 2L;
         map_id = new HashMap<>();
+        childs = new HashSet<>();
         systems = new HashMap<>();
         containers = new HashMap<>();
         components = new HashMap<>();
@@ -421,6 +423,7 @@ public class GetObjects {
 
             while (result.hasNext()) {
                 record = result.next();
+                childs.add(id_obj.toString());
                 getComponent(record.get("m").asNode(), session);
             }
 
@@ -457,6 +460,10 @@ public class GetObjects {
 
             while (result.hasNext()) {
                 record = result.next();
+                if (map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString()) && childs
+                        .contains(map_id.get(record.get("m.structurizr_dsl_identifier").asString()).toString())) {
+                    continue;
+                }
                 String label = record.get("m").asNode().labels().toString();
                 label = label.substring(1, label.length() - 1);
                 if (label.equals("SoftwareSystem")) {
@@ -538,6 +545,10 @@ public class GetObjects {
 
                 while (result1.hasNext()) {
                     record = result1.next();
+                    if (map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString()) && childs
+                            .contains(map_id.get(record.get("m.structurizr_dsl_identifier").asString()).toString())) {
+                        continue;
+                    }
                     String label = record.get("m").asNode().labels().toString();
                     label = label.substring(1, label.length() - 1);
                     if (label.equals("SoftwareSystem")) {
@@ -585,6 +596,7 @@ public class GetObjects {
 
             while (result.hasNext()) {
                 record = result.next();
+                childs.add(String.valueOf(id_obj));
                 getContainer(record.get("m").asNode(), session);
 
                 // Добавление компонентов
@@ -594,6 +606,7 @@ public class GetObjects {
 
                 while (result1.hasNext()) {
                     record = result1.next();
+                    childs.add(String.valueOf(id_obj));
                     getComponent(record.get("m").asNode(), session);
                 }
             }
@@ -643,6 +656,10 @@ public class GetObjects {
 
             while (result.hasNext()) {
                 record = result.next();
+                if (map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString()) && childs
+                        .contains(map_id.get(record.get("m.structurizr_dsl_identifier").asString()).toString())) {
+                    continue;
+                }
                 String label = record.get("m").asNode().labels().toString();
                 label = label.substring(1, label.length() - 1);
                 if (label.equals("SoftwareSystem")) {
@@ -716,6 +733,10 @@ public class GetObjects {
 
                 while (result1.hasNext()) {
                     record = result1.next();
+                    if (map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString()) && childs
+                            .contains(map_id.get(record.get("m.structurizr_dsl_identifier").asString()).toString())) {
+                        continue;
+                    }
                     String label = record.get("m").asNode().labels().toString();
                     label = label.substring(1, label.length() - 1);
                     if (label.equals("SoftwareSystem")) {
@@ -797,6 +818,11 @@ public class GetObjects {
 
                     while (result1.hasNext()) {
                         record = result1.next();
+                        if (map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString())
+                                && childs.contains(
+                                        map_id.get(record.get("m.structurizr_dsl_identifier").asString()).toString())) {
+                            continue;
+                        }
                         String label = record.get("m").asNode().labels().toString();
                         label = label.substring(1, label.length() - 1);
                         if (label.equals("SoftwareSystem")) {
@@ -850,55 +876,6 @@ public class GetObjects {
             // deploymentNodes.get(record.get("m.structurizr_dsl_identifier").asString()),
             // session));
             // }
-
-            // Заполнение systemContextViews
-            List<SystemContextView> systemContextViews = new ArrayList<>();
-            SystemContextView systemContextView = new SystemContextView();
-            systemContextView.setElements(new ArrayList<>());
-            systemContextView.setRelationships(new ArrayList<>());
-
-            // Проставление параметров
-            systemContextView.setSoftwareSystemId(system.getId());
-            systemContextView.setEnterpriseBoundaryVisible(true);
-            systemContextView.setKey("context");
-            systemContextView.setOrder(1);
-
-            // Создание automaticLayout
-            AutomaticLayout automaticLayout = new AutomaticLayout();
-            automaticLayout.setApplied(false);
-            automaticLayout.setEdgeSeparation(0);
-            automaticLayout.setImplementation(LayoutImplementation.Graphviz);
-            automaticLayout.setNodeSeparation(300);
-            automaticLayout.setRankDirection(RankDirection.TopBottom);
-            automaticLayout.setRankSeparation(300);
-            automaticLayout.setVertices(false);
-
-            systemContextView.setAutomaticLayout(automaticLayout);
-
-            // Проставление Elements и Relationships
-            Set<String> objects = new HashSet<>();
-            for (Map.Entry<String, SoftwareSystem> entry1 : systems.entrySet()) {
-                SoftwareSystem system1 = entry1.getValue();
-                ElementView sys = new ElementView();
-                sys.setId(system1.getId());
-                sys.setX(0);
-                sys.setY(0);
-                for (Relationship relationship : system1.getRelationships()) {
-                    if (relationship.getSourceId().equals(system.getId())
-                            || relationship.getDestinationId().equals(system.getId())) {
-                        RelationshipView rel = new RelationshipView();
-                        rel.setId(relationship.getId());
-                        systemContextView.getRelationships().add(rel);
-                        if (!objects.contains(system1.getId())) {
-                            systemContextView.getElements().add(sys);
-                            objects.add(system1.getId());
-                        }
-                    }
-                }
-            }
-
-            systemContextViews.add(systemContextView);
-            workspace.getViews().setSystemContextViews(systemContextViews);
         }
 
         // Обновление данных
@@ -931,6 +908,115 @@ public class GetObjects {
         workspace.setModel(model);
 
         if (containerMnemonic == null) {
+            // Заполнение systemContextViews
+            List<SystemContextView> systemContextViews = new ArrayList<>();
+            SystemContextView systemContextView = new SystemContextView();
+            systemContextView.setElements(new ArrayList<>());
+            systemContextView.setRelationships(new ArrayList<>());
+
+            // Проставление параметров
+            systemContextView.setSoftwareSystemId(system.getId());
+            systemContextView.setEnterpriseBoundaryVisible(true);
+            systemContextView.setKey("context");
+            systemContextView.setOrder(1);
+
+            // Создание automaticLayout
+            AutomaticLayout automaticLayout1 = new AutomaticLayout();
+            automaticLayout1.setApplied(false);
+            automaticLayout1.setEdgeSeparation(0);
+            automaticLayout1.setImplementation(LayoutImplementation.Graphviz);
+            automaticLayout1.setNodeSeparation(300);
+            automaticLayout1.setRankDirection(RankDirection.TopBottom);
+            automaticLayout1.setRankSeparation(300);
+            automaticLayout1.setVertices(false);
+
+            systemContextView.setAutomaticLayout(automaticLayout1);
+
+            ElementView sys = new ElementView();
+            sys.setId(system.getId());
+            sys.setX(0);
+            sys.setY(0);
+            systemContextView.getElements().add(sys);
+
+            // Проставление Elements и Relationships
+            Set<String> objects1 = new HashSet<>();
+            for (Relationship relationship : system.getRelationships()) {
+                RelationshipView rel = new RelationshipView();
+                rel.setId(relationship.getId());
+                systemContextView.getRelationships().add(rel);
+                if (!objects1.contains(relationship.getDestinationId())) {
+                    ElementView tmp = new ElementView();
+                    tmp.setId(relationship.getDestinationId());
+                    tmp.setX(0);
+                    tmp.setY(0);
+                    systemContextView.getElements().add(tmp);
+                    objects1.add(relationship.getDestinationId());
+                }
+            }
+
+            for (Map.Entry<String, SoftwareSystem> entry1 : systems.entrySet()) {
+                SoftwareSystem system1 = entry1.getValue();
+
+                if (system1.getId().equals(system.getId())) {
+                    continue;
+                }
+
+                for (Relationship relationship : system1.getRelationships()) {
+                    if (system.getId().equals(relationship.getDestinationId())) {
+                        RelationshipView rel = new RelationshipView();
+                        rel.setId(relationship.getId());
+                        systemContextView.getRelationships().add(rel);
+                        if (!objects1.contains(relationship.getSourceId())) {
+                            ElementView tmp = new ElementView();
+                            tmp.setId(relationship.getSourceId());
+                            tmp.setX(0);
+                            tmp.setY(0);
+                            systemContextView.getElements().add(tmp);
+                            objects1.add(relationship.getSourceId());
+                        }
+                    }
+                }
+
+                for (Container container : system1.getContainers()) {
+                    for (Relationship relationship : container.getRelationships()) {
+                        if (system.getId().equals(relationship.getDestinationId())) {
+                            RelationshipView rel = new RelationshipView();
+                            rel.setId(relationship.getId());
+                            systemContextView.getRelationships().add(rel);
+                            if (!objects1.contains(relationship.getSourceId())) {
+                                ElementView tmp = new ElementView();
+                                tmp.setId(relationship.getSourceId());
+                                tmp.setX(0);
+                                tmp.setY(0);
+                                systemContextView.getElements().add(tmp);
+                                objects1.add(relationship.getSourceId());
+                            }
+                        }
+                    }
+
+                    for (Component component : container.getComponents()) {
+                        for (Relationship relationship : component.getRelationships()) {
+                            if (system.getId().equals(relationship.getDestinationId())) {
+                                RelationshipView rel = new RelationshipView();
+                                rel.setId(relationship.getId());
+                                systemContextView.getRelationships().add(rel);
+                                if (!objects1.contains(relationship.getSourceId())) {
+                                    ElementView tmp = new ElementView();
+                                    tmp.setId(relationship.getSourceId());
+                                    tmp.setX(0);
+                                    tmp.setY(0);
+                                    systemContextView.getElements().add(tmp);
+                                    objects1.add(relationship.getSourceId());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            systemContextViews.add(systemContextView);
+            workspace.getViews().setSystemContextViews(systemContextViews);
+
             // Заполнение containerViews
             List<ContainerView> containerViews = new ArrayList<>();
             ContainerView containerView = new ContainerView();
@@ -972,10 +1058,11 @@ public class GetObjects {
                     rel.setId(relationship.getId());
                     containerView.getRelationships().add(rel);
                     if (!objects.contains(relationship.getDestinationId())) {
-                        cont.setId(relationship.getDestinationId());
-                        cont.setX(0);
-                        cont.setY(0);
-                        containerView.getElements().add(cont);
+                        ElementView tmp = new ElementView();
+                        tmp.setId(relationship.getDestinationId());
+                        tmp.setX(0);
+                        tmp.setY(0);
+                        containerView.getElements().add(tmp);
                         objects.add(relationship.getDestinationId());
                     }
                 }
@@ -994,7 +1081,7 @@ public class GetObjects {
                             cont.setX(0);
                             cont.setY(0);
                             containerView.getElements().add(cont);
-                            objects.add(relationship.getDestinationId());
+                            objects.add(relationship.getSourceId());
                         }
                     }
                 }
@@ -1015,7 +1102,7 @@ public class GetObjects {
                                 cont.setX(0);
                                 cont.setY(0);
                                 containerView.getElements().add(cont);
-                                objects.add(relationship.getDestinationId());
+                                objects.add(relationship.getSourceId());
                             }
                         }
                     }
@@ -1032,7 +1119,7 @@ public class GetObjects {
                                     cont.setX(0);
                                     cont.setY(0);
                                     containerView.getElements().add(cont);
-                                    objects.add(relationship.getDestinationId());
+                                    objects.add(relationship.getSourceId());
                                 }
                             }
                         }
@@ -1043,7 +1130,7 @@ public class GetObjects {
             containerViews.add(containerView);
             workspace.getViews().setContainerViews(containerViews);
         } else {
-            // Заполнение containerViews
+            // Заполнение componentViews
             List<ComponentView> componentViews = new ArrayList<>();
             ComponentView componentView = new ComponentView();
             componentView.setElements(new ArrayList<>());
@@ -1087,10 +1174,11 @@ public class GetObjects {
                     rel.setId(relationship.getId());
                     componentView.getRelationships().add(rel);
                     if (!objects.contains(relationship.getDestinationId())) {
-                        comp.setId(relationship.getDestinationId());
-                        comp.setX(0);
-                        comp.setY(0);
-                        componentView.getElements().add(comp);
+                        ElementView tmp = new ElementView();
+                        tmp.setId(relationship.getDestinationId());
+                        tmp.setX(0);
+                        tmp.setY(0);
+                        componentView.getElements().add(tmp);
                         objects.add(relationship.getDestinationId());
                     }
                 }
@@ -1109,7 +1197,7 @@ public class GetObjects {
                             comp.setX(0);
                             comp.setY(0);
                             componentView.getElements().add(comp);
-                            objects.add(relationship.getDestinationId());
+                            objects.add(relationship.getSourceId());
                         }
                     }
                 }
@@ -1126,7 +1214,7 @@ public class GetObjects {
                                 comp.setX(0);
                                 comp.setY(0);
                                 componentView.getElements().add(comp);
-                                objects.add(relationship.getDestinationId());
+                                objects.add(relationship.getSourceId());
                             }
                         }
                     }
@@ -1147,7 +1235,7 @@ public class GetObjects {
                                     comp.setX(0);
                                     comp.setY(0);
                                     componentView.getElements().add(comp);
-                                    objects.add(relationship.getDestinationId());
+                                    objects.add(relationship.getSourceId());
                                 }
                             }
                         }
