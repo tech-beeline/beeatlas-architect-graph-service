@@ -17,8 +17,9 @@ import com.example.architecting_graph.AutomaticLayout.RankDirection;
 public class GetObjects {
     private static Long id_obj;
     private static Map<String, Long> map_id;
-    private static Map<String, String> identifiers;
+    private static Map<String, String> parents;
     private static Set<String> childs;
+    private static Set<Edge> rels;
     private static Map<String, SoftwareSystem> systems;
     private static Map<String, Container> containers;
     private static Map<String, Component> components;
@@ -45,7 +46,6 @@ public class GetObjects {
         }
 
         map_id.put(system.getProperties().get("structurizr_dsl_identifier").toString(), id_obj);
-        identifiers.put(id_obj.toString(), system.getProperties().get("structurizr_dsl_identifier").toString());
         systems.put(system.getProperties().get("structurizr_dsl_identifier").toString(), system);
         id_obj = id_obj + 1;
 
@@ -72,7 +72,6 @@ public class GetObjects {
         }
 
         map_id.put(container.getProperties().get("structurizr_dsl_identifier").toString(), id_obj);
-        identifiers.put(id_obj.toString(), container.getProperties().get("structurizr_dsl_identifier").toString());
         containers.put(container.getProperties().get("structurizr_dsl_identifier").toString(), container);
         id_obj = id_obj + 1;
 
@@ -89,6 +88,8 @@ public class GetObjects {
         SoftwareSystem system = systems.get(record.get("m.structurizr_dsl_identifier").asString());
         system.getContainers().add(container);
         systems.put(record.get("m.structurizr_dsl_identifier").asString(), system);
+        parents.put(container.getProperties().get("structurizr_dsl_identifier").toString(),
+                record.get("m.structurizr_dsl_identifier").asString());
 
         return container;
     }
@@ -112,7 +113,6 @@ public class GetObjects {
         }
 
         map_id.put(component.getProperties().get("structurizr_dsl_identifier").toString(), id_obj);
-        identifiers.put(id_obj.toString(), component.getProperties().get("structurizr_dsl_identifier").toString());
         components.put(component.getProperties().get("structurizr_dsl_identifier").toString(), component);
         id_obj = id_obj + 1;
 
@@ -129,14 +129,14 @@ public class GetObjects {
         Container container = containers.get(record.get("m.structurizr_dsl_identifier").asString());
         container.getComponents().add(component);
         containers.put(record.get("m.structurizr_dsl_identifier").asString(), container);
+        parents.put(component.getProperties().get("structurizr_dsl_identifier").toString(),
+                record.get("m.structurizr_dsl_identifier").asString());
     }
 
     public static Relationship getRelation(org.neo4j.driver.types.Relationship relation, String source,
             String destination) {
         Relationship relationship = new Relationship();
         relationship.setProperties(new HashMap<>());
-        relationship.setId(String.valueOf(id_obj));
-        id_obj = id_obj + 1;
         relationship.setSourceId(source);
         relationship.setDestinationId(destination);
 
@@ -153,6 +153,16 @@ public class GetObjects {
                 relationship.getProperties().put(key, val);
             }
         }
+
+        Edge edge = new Edge();
+        edge.setParams(source, destination, relationship.getDescription());
+        if (rels.contains(edge)) {
+            return null;
+        }
+        rels.add(edge);
+
+        relationship.setId(String.valueOf(id_obj));
+        id_obj = id_obj + 1;
 
         return relationship;
     }
@@ -176,8 +186,6 @@ public class GetObjects {
         }
 
         map_id.put(infrastructureNode.getProperties().get("structurizr_dsl_identifier").toString(), id_obj);
-        identifiers.put(id_obj.toString(),
-                infrastructureNode.getProperties().get("structurizr_dsl_identifier").toString());
         id_obj = id_obj + 1;
 
         infrastructureNodes.put(infrastructureNode.getProperties().get("structurizr_dsl_identifier").toString(),
@@ -202,7 +210,6 @@ public class GetObjects {
         }
 
         map_id.put(deploymentNode.getProperties().get("structurizr_dsl_identifier").toString(), id_obj);
-        identifiers.put(id_obj.toString(), deploymentNode.getProperties().get("structurizr_dsl_identifier").toString());
         id_obj = id_obj + 1;
 
         // Добавление Environment
@@ -261,8 +268,6 @@ public class GetObjects {
         }
 
         map_id.put(softwareSystemInstance.getProperties().get("structurizr_dsl_identifier").toString(), id_obj);
-        identifiers.put(id_obj.toString(),
-                softwareSystemInstance.getProperties().get("structurizr_dsl_identifier").toString());
         id_obj = id_obj + 1;
         return softwareSystemInstance;
     }
@@ -291,18 +296,18 @@ public class GetObjects {
         }
 
         map_id.put(containerInstance.getProperties().get("structurizr_dsl_identifier").toString(), id_obj);
-        identifiers.put(id_obj.toString(),
-                containerInstance.getProperties().get("structurizr_dsl_identifier").toString());
         id_obj = id_obj + 1;
         return containerInstance;
     }
 
-    public static DeploymentNode getDeploymentNodeRelations(DeploymentNode deploymentNode, Session session) {
+    public static DeploymentNode getDeploymentNodeRelations(DeploymentNode deploymentNode, Session session,
+            String cmdb) {
 
         // Добавление связей
         deploymentNode.setRelationships(new ArrayList<>());
-        String query = "MATCH (n:DeploymentNode {graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Relationship]->(m) RETURN r, m.structurizr_dsl_identifier";
-        Value parameters = Values.parameters("val1", deploymentNode.getProperties().get("structurizr_dsl_identifier"));
+        String query = "MATCH (n:DeploymentNode {graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Relationship {source_workspace: $cmdb}]->(m) RETURN r, m.structurizr_dsl_identifier";
+        Value parameters = Values.parameters("val1", deploymentNode.getProperties().get("structurizr_dsl_identifier"),
+                "cmdb", cmdb);
         Result result = session.run(query, parameters);
 
         while (result.hasNext()) {
@@ -324,9 +329,9 @@ public class GetObjects {
             InfrastructureNode infrastructureNode = infrastructureNodes
                     .get(record.get("m.structurizr_dsl_identifier").asString());
 
-            query = "MATCH (n:InfrastructureNode {graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Relationship]->(m) RETURN r, m.structurizr_dsl_identifier";
+            query = "MATCH (n:InfrastructureNode {graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Relationship {source_workspace: $cmdb}]->(m) RETURN r, m.structurizr_dsl_identifier";
             parameters = Values.parameters("val1",
-                    infrastructureNode.getProperties().get("structurizr_dsl_identifier"));
+                    infrastructureNode.getProperties().get("structurizr_dsl_identifier"), "cmdb", cmdb);
             Result result1 = session.run(query, parameters);
 
             while (result1.hasNext()) {
@@ -378,7 +383,7 @@ public class GetObjects {
             org.neo4j.driver.Record record = result.next();
             deploymentNode.getChildren()
                     .add(getDeploymentNodeRelations(
-                            deploymentNodes.get(record.get("m.structurizr_dsl_identifier").asString()), session));
+                            deploymentNodes.get(record.get("m.structurizr_dsl_identifier").asString()), session, cmdb));
         }
 
         return deploymentNode;
@@ -390,8 +395,9 @@ public class GetObjects {
         // Начальная инициализация
         id_obj = 2L;
         map_id = new HashMap<>();
-        identifiers = new HashMap<>();
+        parents = new HashMap<>();
         childs = new HashSet<>();
+        rels = new HashSet<>();
         systems = new HashMap<>();
         containers = new HashMap<>();
         components = new HashMap<>();
@@ -419,6 +425,7 @@ public class GetObjects {
 
         // Добавление системы
         SoftwareSystem system = getSystem(record.get("n").asNode());
+        String cmdb = system.getProperties().get("cmdb").toString();
 
         if (containerMnemonic != null) {
 
@@ -426,7 +433,6 @@ public class GetObjects {
             query = "MATCH (n:SoftwareSystem {graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Child]->(m:Container {graph: \"Global\", structurizr_dsl_identifier: $val2}) RETURN m";
             parameters = Values.parameters("val1", softwareSystemMnemonic, "val2", containerMnemonic);
             result = session.run(query, parameters);
-            Container container = getContainer(result.next().get("m").asNode(), session);
 
             // Добавление компонентов
             query = "MATCH (n:Container {graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Child]->(m) RETURN m";
@@ -439,79 +445,6 @@ public class GetObjects {
                 getComponent(record.get("m").asNode(), session);
             }
 
-            // Добавление прямых связей
-            query = "MATCH (n:Container{graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Relationship]->(m) RETURN r, m, m.structurizr_dsl_identifier";
-            result = session.run(query, parameters);
-
-            while (result.hasNext()) {
-                record = result.next();
-                String label = record.get("m").asNode().labels().toString();
-                label = label.substring(1, label.length() - 1);
-                if (label.equals("SoftwareSystem")) {
-                    if (!map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString())) {
-                        getSystem(record.get("m").asNode());
-                    }
-                } else if (label.equals("Container")) {
-                    if (!map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString())) {
-                        getContainer(record.get("m").asNode(), session);
-                    }
-                } else if (label.equals("Component")) {
-                    if (!map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString())) {
-                        getComponent(record.get("m").asNode(), session);
-                    }
-                }
-
-                String second_id = map_id.get(record.get("m.structurizr_dsl_identifier").asString()).toString();
-                container.getRelationships()
-                        .add(getRelation(record.get("r").asRelationship(), container.getId(), second_id));
-            }
-
-            // Добавление обратных связей
-            query = "MATCH (m)-[r:Relationship]->(n:Container {graph: \"Global\", structurizr_dsl_identifier: $val1}) RETURN r, m, m.structurizr_dsl_identifier";
-            result = session.run(query, parameters);
-
-            while (result.hasNext()) {
-                record = result.next();
-                if (map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString()) && childs
-                        .contains(map_id.get(record.get("m.structurizr_dsl_identifier").asString()).toString())) {
-                    continue;
-                }
-                String label = record.get("m").asNode().labels().toString();
-                label = label.substring(1, label.length() - 1);
-                if (label.equals("SoftwareSystem")) {
-                    if (!map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString())) {
-                        getSystem(record.get("m").asNode());
-                    }
-                    SoftwareSystem system1 = systems.get(record.get("m.structurizr_dsl_identifier").asString());
-                    system1.getRelationships()
-                            .add(getRelation(record.get("r").asRelationship(), system1.getId(),
-                                    container.getId()));
-                    systems.put(record.get("m.structurizr_dsl_identifier").asString(), system1);
-                } else if (label.equals("Container")) {
-                    if (!map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString())) {
-                        getContainer(record.get("m").asNode(), session);
-                    }
-                    Container container1 = containers
-                            .get(record.get("m.structurizr_dsl_identifier").asString());
-                    container1.getRelationships()
-                            .add(getRelation(record.get("r").asRelationship(), container1.getId(),
-                                    container.getId()));
-                    containers.put(record.get("m.structurizr_dsl_identifier").asString(), container1);
-                } else if (label.equals("Component")) {
-                    if (!map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString())) {
-                        getComponent(record.get("m").asNode(), session);
-                    }
-                    Component component1 = components
-                            .get(record.get("m.structurizr_dsl_identifier").asString());
-                    component1.getRelationships()
-                            .add(getRelation(record.get("r").asRelationship(), component1.getId(),
-                                    container.getId()));
-                    components.put(record.get("m.structurizr_dsl_identifier").asString(), component1);
-                }
-            }
-
-            containers.put(container.getProperties().get("structurizr_dsl_identifier").toString(), container);
-
             // Добавление связей для компонентов
             query = "MATCH (n:Container {graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Child]->(m) RETURN m, m.structurizr_dsl_identifier";
             result = session.run(query, parameters);
@@ -522,37 +455,54 @@ public class GetObjects {
                 Component component = components.get(record.get("m.structurizr_dsl_identifier").asString());
 
                 // Добавление прямых связей
-                query = "MATCH (n:Component{graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Relationship]->(m) RETURN r, m, m.structurizr_dsl_identifier";
+                query = "MATCH (n:Component{graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Relationship {source_workspace: $cmdb}]->(m) RETURN r, m, m.structurizr_dsl_identifier";
                 parameters = Values.parameters("val1",
-                        component.getProperties().get("structurizr_dsl_identifier"));
+                        component.getProperties().get("structurizr_dsl_identifier"), "cmdb", cmdb);
                 Result result1 = session.run(query, parameters);
 
                 while (result1.hasNext()) {
                     record = result1.next();
                     String label = record.get("m").asNode().labels().toString();
                     label = label.substring(1, label.length() - 1);
+                    String second_sys_id = null;
                     if (label.equals("SoftwareSystem")) {
                         if (!map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString())) {
                             getSystem(record.get("m").asNode());
                         }
+                        second_sys_id = systems.get(record.get("m.structurizr_dsl_identifier").asString()).getId();
                     } else if (label.equals("Container")) {
                         if (!map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString())) {
                             getContainer(record.get("m").asNode(), session);
                         }
+                        second_sys_id = systems.get(parents.get(record.get("m.structurizr_dsl_identifier").asString()))
+                                .getId();
                     } else if (label.equals("Component")) {
                         if (!map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString())) {
                             getComponent(record.get("m").asNode(), session);
                         }
+                        second_sys_id = systems.get(parents.get(parents.get(record.get("m.structurizr_dsl_identifier")
+                                .asString()))).getId();
                     }
 
-                    String second_id = map_id.get(record.get("m.structurizr_dsl_identifier").asString())
-                            .toString();
-                    component.getRelationships()
-                            .add(getRelation(record.get("r").asRelationship(), component.getId(), second_id));
+                    if (!second_sys_id.equals(system.getId())) {
+                        Relationship rel = getRelation(record.get("r").asRelationship(), component.getId(),
+                                second_sys_id);
+
+                        if (rel != null) {
+                            component.getRelationships().add(rel);
+                        }
+                    } else {
+                        String second_id = map_id.get(record.get("m.structurizr_dsl_identifier").asString()).toString();
+                        Relationship rel = getRelation(record.get("r").asRelationship(), component.getId(), second_id);
+
+                        if (rel != null) {
+                            component.getRelationships().add(rel);
+                        }
+                    }
                 }
 
                 // Добавление обратных связей
-                query = "MATCH (m)-[r:Relationship]->(n:Component {graph: \"Global\", structurizr_dsl_identifier: $val1}) RETURN r, m, m.structurizr_dsl_identifier";
+                query = "MATCH (m)-[r:Relationship {source_workspace: $cmdb}]->(n:Component {graph: \"Global\", structurizr_dsl_identifier: $val1}) RETURN r, m, m.structurizr_dsl_identifier";
                 result1 = session.run(query, parameters);
 
                 while (result1.hasNext()) {
@@ -563,36 +513,31 @@ public class GetObjects {
                     }
                     String label = record.get("m").asNode().labels().toString();
                     label = label.substring(1, label.length() - 1);
+                    SoftwareSystem system1 = null;
                     if (label.equals("SoftwareSystem")) {
                         if (!map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString())) {
                             getSystem(record.get("m").asNode());
                         }
-                        SoftwareSystem system1 = systems
-                                .get(record.get("m.structurizr_dsl_identifier").asString());
-                        system1.getRelationships()
-                                .add(getRelation(record.get("r").asRelationship(), system1.getId(),
-                                        component.getId()));
-                        systems.put(record.get("m.structurizr_dsl_identifier").asString(), system1);
+                        system1 = systems.get(record.get("m.structurizr_dsl_identifier").asString());
                     } else if (label.equals("Container")) {
                         if (!map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString())) {
                             getContainer(record.get("m").asNode(), session);
                         }
-                        Container container1 = containers
-                                .get(record.get("m.structurizr_dsl_identifier").asString());
-                        container1.getRelationships()
-                                .add(getRelation(record.get("r").asRelationship(), container1.getId(),
-                                        component.getId()));
-                        containers.put(record.get("m.structurizr_dsl_identifier").asString(), container1);
+                        system1 = systems.get(parents.get(record.get("m.structurizr_dsl_identifier").asString()));
                     } else if (label.equals("Component")) {
                         if (!map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString())) {
                             getComponent(record.get("m").asNode(), session);
                         }
-                        Component component1 = components
-                                .get(record.get("m.structurizr_dsl_identifier").asString());
-                        component1.getRelationships()
-                                .add(getRelation(record.get("r").asRelationship(), component1.getId(),
-                                        component.getId()));
-                        components.put(record.get("m.structurizr_dsl_identifier").asString(), component1);
+                        system1 = systems
+                                .get(parents.get(parents.get(record.get("m.structurizr_dsl_identifier").asString())));
+                    }
+
+                    Relationship rel = getRelation(record.get("r").asRelationship(), system1.getId(),
+                            component.getId());
+
+                    if (rel != null) {
+                        system1.getRelationships().add(rel);
+                        systems.put(record.get("m.structurizr_dsl_identifier").asString(), system1);
                     }
                 }
 
@@ -610,6 +555,17 @@ public class GetObjects {
                 record = result.next();
                 childs.add(String.valueOf(id_obj));
                 getContainer(record.get("m").asNode(), session);
+
+                // Добавление компонентов
+                query = "MATCH (n:Container {graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Child]->(m:Component) RETURN m, m.structurizr_dsl_identifier";
+                parameters = Values.parameters("val1", record.get("m.structurizr_dsl_identifier").asString());
+                Result result1 = session.run(query, parameters);
+
+                while (result1.hasNext()) {
+                    record = result1.next();
+                    childs.add(String.valueOf(id_obj));
+                    getComponent(record.get("m").asNode(), session);
+                }
             }
 
             // Добавление DeploymentNode
@@ -624,35 +580,43 @@ public class GetObjects {
             // }
 
             // Добавление прямых связей
-            query = "MATCH (n:SoftwareSystem {graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Relationship]->(m) RETURN r, m, m.structurizr_dsl_identifier";
-            parameters = Values.parameters("val1", softwareSystemMnemonic);
+            query = "MATCH (n:SoftwareSystem {graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Relationship {source_workspace: $cmdb}]->(m) RETURN r, m, m.structurizr_dsl_identifier";
+            parameters = Values.parameters("val1", softwareSystemMnemonic, "cmdb", cmdb);
             result = session.run(query, parameters);
 
             while (result.hasNext()) {
                 record = result.next();
                 String label = record.get("m").asNode().labels().toString();
                 label = label.substring(1, label.length() - 1);
+                String second_id = null;
                 if (label.equals("SoftwareSystem")) {
                     if (!map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString())) {
                         getSystem(record.get("m").asNode());
                     }
+                    second_id = map_id.get(record.get("m.structurizr_dsl_identifier").asString()).toString();
                 } else if (label.equals("Container")) {
                     if (!map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString())) {
                         getContainer(record.get("m").asNode(), session);
                     }
+                    second_id = systems.get(parents.get(record.get("m.structurizr_dsl_identifier").asString())).getId();
                 } else if (label.equals("Component")) {
                     if (!map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString())) {
                         getComponent(record.get("m").asNode(), session);
                     }
+                    second_id = systems
+                            .get(parents.get(parents.get(record.get("m.structurizr_dsl_identifier").asString())))
+                            .getId();
                 }
 
-                String second_id = map_id.get(record.get("m.structurizr_dsl_identifier").asString()).toString();
-                system.getRelationships()
-                        .add(getRelation(record.get("r").asRelationship(), system.getId(), second_id));
+                Relationship rel = getRelation(record.get("r").asRelationship(), system.getId(), second_id);
+
+                if (rel != null) {
+                    system.getRelationships().add(rel);
+                }
             }
 
             // Добавление обратных связей
-            query = "MATCH (m)-[r:Relationship]->(n:SoftwareSystem {graph: \"Global\", structurizr_dsl_identifier: $val1}) RETURN r, m, m.structurizr_dsl_identifier";
+            query = "MATCH (m)-[r:Relationship {source_workspace: $cmdb}]->(n:SoftwareSystem {graph: \"Global\", structurizr_dsl_identifier: $val1}) RETURN r, m, m.structurizr_dsl_identifier";
             result = session.run(query, parameters);
 
             while (result.hasNext()) {
@@ -663,34 +627,33 @@ public class GetObjects {
                 }
                 String label = record.get("m").asNode().labels().toString();
                 label = label.substring(1, label.length() - 1);
+                SoftwareSystem system1 = null;
                 if (label.equals("SoftwareSystem")) {
                     if (!map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString())) {
                         getSystem(record.get("m").asNode());
                     }
-                    SoftwareSystem system1 = systems.get(record.get("m.structurizr_dsl_identifier").asString());
-                    system1.getRelationships()
-                            .add(getRelation(record.get("r").asRelationship(), system1.getId(), system.getId()));
-                    systems.put(record.get("m.structurizr_dsl_identifier").asString(), system1);
+                    system1 = systems.get(record.get("m.structurizr_dsl_identifier").asString());
                 } else if (label.equals("Container")) {
                     if (!map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString())) {
                         getContainer(record.get("m").asNode(), session);
                     }
-                    Container container1 = containers.get(record.get("m.structurizr_dsl_identifier").asString());
-                    container1.getRelationships()
-                            .add(getRelation(record.get("r").asRelationship(), container1.getId(), system.getId()));
-                    containers.put(record.get("m.structurizr_dsl_identifier").asString(), container1);
+                    system1 = systems.get(parents.get(record.get("m.structurizr_dsl_identifier").asString()));
                 } else if (label.equals("Component")) {
                     if (!map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString())) {
                         getComponent(record.get("m").asNode(), session);
                     }
-                    Component component1 = components.get(record.get("m.structurizr_dsl_identifier").asString());
-                    component1.getRelationships()
-                            .add(getRelation(record.get("r").asRelationship(), component1.getId(), system.getId()));
-                    components.put(record.get("m.structurizr_dsl_identifier").asString(), component1);
+                    system1 = systems
+                            .get(parents.get(parents.get(record.get("m.structurizr_dsl_identifier").asString())));
+                }
+
+                Relationship rel = getRelation(record.get("r").asRelationship(), system1.getId(), system.getId());
+
+                if (rel != null) {
+                    system1.getRelationships()
+                            .add(getRelation(record.get("r").asRelationship(), system1.getId(), system.getId()));
+                    systems.put(record.get("m.structurizr_dsl_identifier").asString(), system1);
                 }
             }
-
-            systems.put(system.getProperties().get("structurizr_dsl_identifier").toString(), system);
 
             // Добавление связей для контейнеров
             query = "MATCH (n:SoftwareSystem {graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Child]->(m:Container) RETURN m.structurizr_dsl_identifier";
@@ -701,35 +664,61 @@ public class GetObjects {
                 Container container = containers.get(record.get("m.structurizr_dsl_identifier").asString());
 
                 // Добавление прямых связей
-                query = "MATCH (n:Container{graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Relationship]->(m) RETURN r, m, m.structurizr_dsl_identifier";
-                parameters = Values.parameters("val1", container.getProperties().get("structurizr_dsl_identifier"));
+                query = "MATCH (n:Container{graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Relationship {source_workspace: $cmdb}]->(m) RETURN r, m, m.structurizr_dsl_identifier";
+                parameters = Values.parameters("val1", container.getProperties().get("structurizr_dsl_identifier"),
+                        "cmdb", cmdb);
                 Result result1 = session.run(query, parameters);
 
                 while (result1.hasNext()) {
                     record = result1.next();
                     String label = record.get("m").asNode().labels().toString();
                     label = label.substring(1, label.length() - 1);
+                    String second_sys_id = null;
                     if (label.equals("SoftwareSystem")) {
                         if (!map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString())) {
                             getSystem(record.get("m").asNode());
                         }
+                        second_sys_id = systems.get(record.get("m.structurizr_dsl_identifier").asString()).getId();
                     } else if (label.equals("Container")) {
                         if (!map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString())) {
                             getContainer(record.get("m").asNode(), session);
                         }
+                        second_sys_id = systems.get(parents.get(record.get("m.structurizr_dsl_identifier").asString()))
+                                .getId();
                     } else if (label.equals("Component")) {
                         if (!map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString())) {
                             getComponent(record.get("m").asNode(), session);
                         }
+                        second_sys_id = systems.get(parents.get(parents.get(record.get("m.structurizr_dsl_identifier")
+                                .asString()))).getId();
                     }
 
-                    String second_id = map_id.get(record.get("m.structurizr_dsl_identifier").asString()).toString();
-                    container.getRelationships()
-                            .add(getRelation(record.get("r").asRelationship(), container.getId(), second_id));
+                    if (!second_sys_id.equals(system.getId())) {
+                        Relationship rel = getRelation(record.get("r").asRelationship(), container.getId(),
+                                second_sys_id);
+
+                        if (rel != null) {
+                            container.getRelationships().add(rel);
+                        }
+
+                        rel = getRelation(record.get("r").asRelationship(), system.getId(), second_sys_id);
+
+                        if (rel != null) {
+                            system.getRelationships().add(rel);
+                        }
+
+                    } else {
+                        String second_id = map_id.get(record.get("m.structurizr_dsl_identifier").asString()).toString();
+                        Relationship rel = getRelation(record.get("r").asRelationship(), container.getId(), second_id);
+
+                        if (rel != null) {
+                            container.getRelationships().add(rel);
+                        }
+                    }
                 }
 
                 // Добавление обратных связей
-                query = "MATCH (m)-[r:Relationship]->(n:Container {graph: \"Global\", structurizr_dsl_identifier: $val1}) RETURN r, m, m.structurizr_dsl_identifier";
+                query = "MATCH (m)-[r:Relationship {source_workspace: $cmdb}]->(n:Container {graph: \"Global\", structurizr_dsl_identifier: $val1}) RETURN r, m, m.structurizr_dsl_identifier";
                 result1 = session.run(query, parameters);
 
                 while (result1.hasNext()) {
@@ -740,39 +729,165 @@ public class GetObjects {
                     }
                     String label = record.get("m").asNode().labels().toString();
                     label = label.substring(1, label.length() - 1);
+                    SoftwareSystem system1 = null;
                     if (label.equals("SoftwareSystem")) {
                         if (!map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString())) {
                             getSystem(record.get("m").asNode());
                         }
-                        SoftwareSystem system1 = systems.get(record.get("m.structurizr_dsl_identifier").asString());
-                        system1.getRelationships()
-                                .add(getRelation(record.get("r").asRelationship(), system1.getId(),
-                                        container.getId()));
-                        systems.put(record.get("m.structurizr_dsl_identifier").asString(), system1);
+                        system1 = systems
+                                .get(record.get("m.structurizr_dsl_identifier").asString());
                     } else if (label.equals("Container")) {
                         if (!map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString())) {
                             getContainer(record.get("m").asNode(), session);
                         }
-                        Container container1 = containers
-                                .get(record.get("m.structurizr_dsl_identifier").asString());
-                        container1.getRelationships()
-                                .add(getRelation(record.get("r").asRelationship(), container1.getId(),
-                                        container.getId()));
-                        containers.put(record.get("m.structurizr_dsl_identifier").asString(), container1);
+                        system1 = systems
+                                .get(parents.get(record.get("m.structurizr_dsl_identifier").asString()));
                     } else if (label.equals("Component")) {
                         if (!map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString())) {
                             getComponent(record.get("m").asNode(), session);
                         }
-                        Component component1 = components
-                                .get(record.get("m.structurizr_dsl_identifier").asString());
-                        component1.getRelationships()
-                                .add(getRelation(record.get("r").asRelationship(), component1.getId(),
-                                        container.getId()));
-                        components.put(record.get("m.structurizr_dsl_identifier").asString(), component1);
+                        system1 = systems
+                                .get(parents.get(parents.get(record.get("m.structurizr_dsl_identifier").asString())));
                     }
+
+                    Relationship rel = getRelation(record.get("r").asRelationship(), system1.getId(),
+                            container.getId());
+
+                    if (rel != null) {
+                        system1.getRelationships().add(rel);
+                    }
+
+                    rel = getRelation(record.get("r").asRelationship(), system1.getId(), system.getId());
+
+                    if (rel != null) {
+                        system1.getRelationships().add(rel);
+                    }
+
+                    systems.put(record.get("m.structurizr_dsl_identifier").asString(), system1);
                 }
 
                 containers.put(container.getProperties().get("structurizr_dsl_identifier").toString(), container);
+
+                // Добавление связей для компонентов
+                query = "MATCH (n:Container {graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Child]->(m:Container) RETURN m.structurizr_dsl_identifier";
+                parameters = Values.parameters("val1", container.getProperties().get("structurizr_dsl_identifier"));
+                result1 = session.run(query, parameters);
+
+                while (result1.hasNext()) {
+                    record = result.next();
+                    Component component = components.get(record.get("m.structurizr_dsl_identifier").asString());
+
+                    // Добавление прямых связей
+                    query = "MATCH (n:Component {graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Relationship {source_workspace: $cmdb}]->(m) RETURN r, m, m.structurizr_dsl_identifier";
+                    parameters = Values.parameters("val1", component.getProperties().get("structurizr_dsl_identifier"),
+                            "cmdb", cmdb);
+                    Result result2 = session.run(query, parameters);
+
+                    while (result2.hasNext()) {
+                        record = result2.next();
+                        String label = record.get("m").asNode().labels().toString();
+                        label = label.substring(1, label.length() - 1);
+                        String second_sys_id = null;
+                        if (label.equals("SoftwareSystem")) {
+                            if (!map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString())) {
+                                getSystem(record.get("m").asNode());
+                            }
+                            second_sys_id = systems.get(record.get("m.structurizr_dsl_identifier").asString()).getId();
+                        } else if (label.equals("Container")) {
+                            if (!map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString())) {
+                                getContainer(record.get("m").asNode(), session);
+                            }
+                            second_sys_id = systems
+                                    .get(parents.get(record.get("m.structurizr_dsl_identifier").asString()))
+                                    .getId();
+                        } else if (label.equals("Component")) {
+                            if (!map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString())) {
+                                getComponent(record.get("m").asNode(), session);
+                            }
+                            second_sys_id = systems
+                                    .get(parents
+                                            .get(parents.get(record.get("m.structurizr_dsl_identifier").asString())))
+                                    .getId();
+                        }
+
+                        if (!second_sys_id.equals(system.getId())) {
+                            Relationship rel = getRelation(record.get("r").asRelationship(), component.getId(),
+                                    second_sys_id);
+
+                            if (rel != null) {
+                                component.getRelationships().add(rel);
+                            }
+
+                            rel = getRelation(record.get("r").asRelationship(), system.getId(), second_sys_id);
+
+                            if (rel != null) {
+                                system.getRelationships().add(rel);
+                            }
+                        } else {
+                            String second_id = map_id.get(record.get("m.structurizr_dsl_identifier").asString())
+                                    .toString();
+                            Relationship rel = getRelation(record.get("r").asRelationship(), component.getId(),
+                                    second_id);
+
+                            if (rel != null) {
+                                component.getRelationships().add(rel);
+                            }
+                        }
+                    }
+
+                    // Добавление обратных связей
+                    query = "MATCH (m)-[r:Relationship {source_workspace: $cmdb}]->(n:Component {graph: \"Global\", structurizr_dsl_identifier: $val1}) RETURN r, m, m.structurizr_dsl_identifier";
+                    result2 = session.run(query, parameters);
+
+                    while (result2.hasNext()) {
+                        record = result2.next();
+                        if (map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString()) && childs
+                                .contains(
+                                        map_id.get(record.get("m.structurizr_dsl_identifier").asString()).toString())) {
+                            continue;
+                        }
+                        String label = record.get("m").asNode().labels().toString();
+                        label = label.substring(1, label.length() - 1);
+                        SoftwareSystem system1 = null;
+                        if (label.equals("SoftwareSystem")) {
+                            if (!map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString())) {
+                                getSystem(record.get("m").asNode());
+                            }
+                            system1 = systems
+                                    .get(record.get("m.structurizr_dsl_identifier").asString());
+                        } else if (label.equals("Container")) {
+                            if (!map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString())) {
+                                getContainer(record.get("m").asNode(), session);
+                            }
+                            system1 = systems
+                                    .get(parents.get(record.get("m.structurizr_dsl_identifier").asString()));
+                        } else if (label.equals("Component")) {
+                            if (!map_id.containsKey(record.get("m.structurizr_dsl_identifier").asString())) {
+                                getComponent(record.get("m").asNode(), session);
+                            }
+                            system1 = systems
+                                    .get(parents
+                                            .get(parents.get(record.get("m.structurizr_dsl_identifier").asString())));
+                        }
+
+                        Relationship rel = getRelation(record.get("r").asRelationship(), system1.getId(),
+                                component.getId());
+
+                        if (rel != null) {
+                            system1.getRelationships().add(rel);
+                        }
+
+                        rel = getRelation(record.get("r").asRelationship(), system1.getId(), system.getId());
+
+                        if (rel != null) {
+                            system1.getRelationships().add(rel);
+                        }
+
+                        systems.put(record.get("m.structurizr_dsl_identifier").asString(), system1);
+                    }
+
+                    components.put(component.getProperties().get("structurizr_dsl_identifier").toString(), component);
+                }
             }
 
             // Добавление связей DeploymentNode
@@ -789,6 +904,8 @@ public class GetObjects {
             // session));
             // }
         }
+
+        systems.put(system.getProperties().get("structurizr_dsl_identifier").toString(), system);
 
         // Обновление данных
         for (Map.Entry<String, SoftwareSystem> entry1 : systems.entrySet()) {
@@ -864,55 +981,6 @@ public class GetObjects {
                     tmp.setY(0);
                     systemContextView.getElements().add(tmp);
                     objects1.add(relationship.getDestinationId());
-                    if (!systems.containsKey(identifiers.get(relationship.getDestinationId()))) {
-                        if (!containers.containsKey(identifiers.get(relationship.getDestinationId()))) {
-                            query = "MATCH (m:Container)-[r:Child]->(n:Component {graph: \"Global\", structurizr_dsl_identifier: $val1}) RETURN m.structurizr_dsl_identifier";
-                            parameters = Values.parameters("val1", identifiers.get(relationship.getDestinationId()));
-                            Result result1 = session.run(query, parameters);
-                            record = result1.next();
-                            String cont_id = String
-                                    .valueOf(map_id.get(record.get("m.structurizr_dsl_identifier").asString()));
-                            if (!objects1.contains(cont_id)) {
-                                ElementView tmp1 = new ElementView();
-                                tmp1.setId(cont_id);
-                                tmp1.setX(0);
-                                tmp1.setY(0);
-                                systemContextView.getElements().add(tmp1);
-                                objects1.add(cont_id);
-                            }
-
-                            query = "MATCH (m:SoftwareSystem)-[r:Child]->(n:Container {graph: \"Global\", structurizr_dsl_identifier: $val1}) RETURN m.structurizr_dsl_identifier";
-                            parameters = Values.parameters("val1", identifiers.get(cont_id));
-                            result1 = session.run(query, parameters);
-                            record = result1.next();
-                            String sys_id = String
-                                    .valueOf(map_id.get(record.get("m.structurizr_dsl_identifier").asString()));
-                            if (!objects1.contains(sys_id)) {
-                                ElementView tmp1 = new ElementView();
-                                tmp1.setId(sys_id);
-                                tmp1.setX(0);
-                                tmp1.setY(0);
-                                systemContextView.getElements().add(tmp1);
-                                objects1.add(sys_id);
-                            }
-
-                        } else {
-                            query = "MATCH (m:SoftwareSystem)-[r:Child]->(n:Container {graph: \"Global\", structurizr_dsl_identifier: $val1}) RETURN m.structurizr_dsl_identifier";
-                            parameters = Values.parameters("val1", identifiers.get(relationship.getDestinationId()));
-                            Result result1 = session.run(query, parameters);
-                            record = result1.next();
-                            String sys_id = String
-                                    .valueOf(map_id.get(record.get("m.structurizr_dsl_identifier").asString()));
-                            if (!objects1.contains(sys_id)) {
-                                ElementView tmp1 = new ElementView();
-                                tmp1.setId(sys_id);
-                                tmp1.setX(0);
-                                tmp1.setY(0);
-                                systemContextView.getElements().add(tmp1);
-                                objects1.add(sys_id);
-                            }
-                        }
-                    }
                 }
             }
 
@@ -935,66 +1003,6 @@ public class GetObjects {
                             tmp.setY(0);
                             systemContextView.getElements().add(tmp);
                             objects1.add(relationship.getSourceId());
-                        }
-                    }
-                }
-
-                for (Container container : system1.getContainers()) {
-                    for (Relationship relationship : container.getRelationships()) {
-                        if (system.getId().equals(relationship.getDestinationId())) {
-                            RelationshipView rel = new RelationshipView();
-                            rel.setId(relationship.getId());
-                            systemContextView.getRelationships().add(rel);
-                            if (!objects1.contains(relationship.getSourceId())) {
-                                ElementView tmp = new ElementView();
-                                tmp.setId(relationship.getSourceId());
-                                tmp.setX(0);
-                                tmp.setY(0);
-                                systemContextView.getElements().add(tmp);
-                                objects1.add(relationship.getSourceId());
-                                if (!objects1.contains(system1.getId())) {
-                                    ElementView tmp1 = new ElementView();
-                                    tmp1.setId(system1.getId());
-                                    tmp1.setX(0);
-                                    tmp1.setY(0);
-                                    systemContextView.getElements().add(tmp1);
-                                    objects1.add(system1.getId());
-                                }
-                            }
-                        }
-                    }
-
-                    for (Component component : container.getComponents()) {
-                        for (Relationship relationship : component.getRelationships()) {
-                            if (system.getId().equals(relationship.getDestinationId())) {
-                                RelationshipView rel = new RelationshipView();
-                                rel.setId(relationship.getId());
-                                systemContextView.getRelationships().add(rel);
-                                if (!objects1.contains(relationship.getSourceId())) {
-                                    ElementView tmp = new ElementView();
-                                    tmp.setId(relationship.getSourceId());
-                                    tmp.setX(0);
-                                    tmp.setY(0);
-                                    systemContextView.getElements().add(tmp);
-                                    objects1.add(relationship.getSourceId());
-                                    if (!objects1.contains(system1.getId())) {
-                                        ElementView tmp1 = new ElementView();
-                                        tmp1.setId(system1.getId());
-                                        tmp1.setX(0);
-                                        tmp1.setY(0);
-                                        systemContextView.getElements().add(tmp1);
-                                        objects1.add(system1.getId());
-                                    }
-                                    if (!objects1.contains(container.getId())) {
-                                        ElementView tmp1 = new ElementView();
-                                        tmp1.setId(container.getId());
-                                        tmp1.setX(0);
-                                        tmp1.setY(0);
-                                        systemContextView.getElements().add(tmp1);
-                                        objects1.add(container.getId());
-                                    }
-                                }
-                            }
                         }
                     }
                 }
@@ -1051,57 +1059,6 @@ public class GetObjects {
                         tmp.setY(0);
                         containerView.getElements().add(tmp);
                         objects.add(relationship.getDestinationId());
-                        if (!systems.containsKey(identifiers.get(relationship.getDestinationId()))) {
-                            if (!containers.containsKey(identifiers.get(relationship.getDestinationId()))) {
-                                query = "MATCH (m:Container)-[r:Child]->(n:Component {graph: \"Global\", structurizr_dsl_identifier: $val1}) RETURN m.structurizr_dsl_identifier";
-                                parameters = Values.parameters("val1",
-                                        identifiers.get(relationship.getDestinationId()));
-                                Result result1 = session.run(query, parameters);
-                                record = result1.next();
-                                String cont_id = String
-                                        .valueOf(map_id.get(record.get("m.structurizr_dsl_identifier").asString()));
-                                if (!objects1.contains(cont_id)) {
-                                    ElementView tmp1 = new ElementView();
-                                    tmp1.setId(cont_id);
-                                    tmp1.setX(0);
-                                    tmp1.setY(0);
-                                    containerView.getElements().add(tmp1);
-                                    objects1.add(cont_id);
-                                }
-
-                                query = "MATCH (m:SoftwareSystem)-[r:Child]->(n:Container {graph: \"Global\", structurizr_dsl_identifier: $val1}) RETURN m.structurizr_dsl_identifier";
-                                parameters = Values.parameters("val1", identifiers.get(cont_id));
-                                result1 = session.run(query, parameters);
-                                record = result1.next();
-                                String sys_id = String
-                                        .valueOf(map_id.get(record.get("m.structurizr_dsl_identifier").asString()));
-                                if (!objects1.contains(sys_id)) {
-                                    ElementView tmp1 = new ElementView();
-                                    tmp1.setId(sys_id);
-                                    tmp1.setX(0);
-                                    tmp1.setY(0);
-                                    containerView.getElements().add(tmp1);
-                                    objects1.add(sys_id);
-                                }
-
-                            } else {
-                                query = "MATCH (m:SoftwareSystem)-[r:Child]->(n:Container {graph: \"Global\", structurizr_dsl_identifier: $val1}) RETURN m.structurizr_dsl_identifier";
-                                parameters = Values.parameters("val1",
-                                        identifiers.get(relationship.getDestinationId()));
-                                Result result1 = session.run(query, parameters);
-                                record = result1.next();
-                                String sys_id = String
-                                        .valueOf(map_id.get(record.get("m.structurizr_dsl_identifier").asString()));
-                                if (!objects1.contains(sys_id)) {
-                                    ElementView tmp1 = new ElementView();
-                                    tmp1.setId(sys_id);
-                                    tmp1.setX(0);
-                                    tmp1.setY(0);
-                                    containerView.getElements().add(tmp1);
-                                    objects1.add(sys_id);
-                                }
-                            }
-                        }
                     }
                 }
             }
@@ -1120,70 +1077,6 @@ public class GetObjects {
                             cont.setY(0);
                             containerView.getElements().add(cont);
                             objects.add(relationship.getSourceId());
-                        }
-                    }
-                }
-
-                if (system1.getId().equals(system.getId())) {
-                    continue;
-                }
-
-                for (Container container : system1.getContainers()) {
-                    for (Relationship relationship : container.getRelationships()) {
-                        if (conts.contains(relationship.getDestinationId())) {
-                            RelationshipView rel = new RelationshipView();
-                            rel.setId(relationship.getId());
-                            containerView.getRelationships().add(rel);
-                            if (!objects.contains(relationship.getSourceId())) {
-                                ElementView cont = new ElementView();
-                                cont.setId(relationship.getSourceId());
-                                cont.setX(0);
-                                cont.setY(0);
-                                containerView.getElements().add(cont);
-                                objects.add(relationship.getSourceId());
-                                if (!objects1.contains(system1.getId())) {
-                                    ElementView tmp1 = new ElementView();
-                                    tmp1.setId(system1.getId());
-                                    tmp1.setX(0);
-                                    tmp1.setY(0);
-                                    containerView.getElements().add(tmp1);
-                                    objects1.add(system1.getId());
-                                }
-                            }
-                        }
-                    }
-
-                    for (Component component : container.getComponents()) {
-                        for (Relationship relationship : component.getRelationships()) {
-                            if (conts.contains(relationship.getDestinationId())) {
-                                RelationshipView rel = new RelationshipView();
-                                rel.setId(relationship.getId());
-                                containerView.getRelationships().add(rel);
-                                if (!objects.contains(relationship.getSourceId())) {
-                                    ElementView cont = new ElementView();
-                                    cont.setId(relationship.getSourceId());
-                                    cont.setX(0);
-                                    cont.setY(0);
-                                    containerView.getElements().add(cont);
-                                    objects.add(relationship.getSourceId());
-                                    if (!objects1.contains(system1.getId())) {
-                                        ElementView tmp1 = new ElementView();
-                                        tmp1.setId(system1.getId());
-                                        tmp1.setX(0);
-                                        tmp1.setY(0);
-                                        containerView.getElements().add(tmp1);
-                                        objects1.add(system1.getId());
-                                    }
-                                    if (!objects1.contains(container.getId())) {
-                                        ElementView tmp1 = new ElementView();
-                                        tmp1.setId(container.getId());
-                                        tmp1.setX(0);
-                                        tmp1.setY(0);
-                                        containerView.getElements().add(tmp1);
-                                        objects1.add(container.getId());
-                                    }
-                                }
-                            }
                         }
                     }
                 }
@@ -1243,57 +1136,6 @@ public class GetObjects {
                         tmp.setY(0);
                         componentView.getElements().add(tmp);
                         objects.add(relationship.getDestinationId());
-                        if (!systems.containsKey(identifiers.get(relationship.getDestinationId()))) {
-                            if (!containers.containsKey(identifiers.get(relationship.getDestinationId()))) {
-                                query = "MATCH (m:Container)-[r:Child]->(n:Component {graph: \"Global\", structurizr_dsl_identifier: $val1}) RETURN m.structurizr_dsl_identifier";
-                                parameters = Values.parameters("val1",
-                                        identifiers.get(relationship.getDestinationId()));
-                                Result result1 = session.run(query, parameters);
-                                record = result1.next();
-                                String cont_id = String
-                                        .valueOf(map_id.get(record.get("m.structurizr_dsl_identifier").asString()));
-                                if (!objects.contains(cont_id)) {
-                                    ElementView tmp1 = new ElementView();
-                                    tmp1.setId(cont_id);
-                                    tmp1.setX(0);
-                                    tmp1.setY(0);
-                                    componentView.getElements().add(tmp1);
-                                    objects.add(cont_id);
-                                }
-
-                                query = "MATCH (m:SoftwareSystem)-[r:Child]->(n:Container {graph: \"Global\", structurizr_dsl_identifier: $val1}) RETURN m.structurizr_dsl_identifier";
-                                parameters = Values.parameters("val1", identifiers.get(cont_id));
-                                result1 = session.run(query, parameters);
-                                record = result1.next();
-                                String sys_id = String
-                                        .valueOf(map_id.get(record.get("m.structurizr_dsl_identifier").asString()));
-                                if (!objects.contains(sys_id)) {
-                                    ElementView tmp1 = new ElementView();
-                                    tmp1.setId(sys_id);
-                                    tmp1.setX(0);
-                                    tmp1.setY(0);
-                                    componentView.getElements().add(tmp1);
-                                    objects.add(sys_id);
-                                }
-
-                            } else {
-                                query = "MATCH (m:SoftwareSystem)-[r:Child]->(n:Container {graph: \"Global\", structurizr_dsl_identifier: $val1}) RETURN m.structurizr_dsl_identifier";
-                                parameters = Values.parameters("val1",
-                                        identifiers.get(relationship.getDestinationId()));
-                                Result result1 = session.run(query, parameters);
-                                record = result1.next();
-                                String sys_id = String
-                                        .valueOf(map_id.get(record.get("m.structurizr_dsl_identifier").asString()));
-                                if (!objects.contains(sys_id)) {
-                                    ElementView tmp1 = new ElementView();
-                                    tmp1.setId(sys_id);
-                                    tmp1.setX(0);
-                                    tmp1.setY(0);
-                                    componentView.getElements().add(tmp1);
-                                    objects.add(sys_id);
-                                }
-                            }
-                        }
                     }
                 }
             }
@@ -1312,70 +1154,6 @@ public class GetObjects {
                             comp.setY(0);
                             componentView.getElements().add(comp);
                             objects.add(relationship.getSourceId());
-                        }
-                    }
-                }
-
-                for (Container container1 : system1.getContainers()) {
-                    for (Relationship relationship : container1.getRelationships()) {
-                        if (comps.contains(relationship.getDestinationId())) {
-                            RelationshipView rel = new RelationshipView();
-                            rel.setId(relationship.getId());
-                            componentView.getRelationships().add(rel);
-                            if (!objects.contains(relationship.getSourceId())) {
-                                ElementView comp = new ElementView();
-                                comp.setId(relationship.getSourceId());
-                                comp.setX(0);
-                                comp.setY(0);
-                                componentView.getElements().add(comp);
-                                objects.add(relationship.getSourceId());
-                                if (!objects.contains(system1.getId())) {
-                                    ElementView tmp1 = new ElementView();
-                                    tmp1.setId(system1.getId());
-                                    tmp1.setX(0);
-                                    tmp1.setY(0);
-                                    componentView.getElements().add(tmp1);
-                                    objects.add(system1.getId());
-                                }
-                            }
-                        }
-                    }
-
-                    if (container1.getId().equals(container.getId())) {
-                        continue;
-                    }
-
-                    for (Component component : container1.getComponents()) {
-                        for (Relationship relationship : component.getRelationships()) {
-                            if (comps.contains(relationship.getDestinationId())) {
-                                RelationshipView rel = new RelationshipView();
-                                rel.setId(relationship.getId());
-                                componentView.getRelationships().add(rel);
-                                if (!objects.contains(relationship.getSourceId())) {
-                                    ElementView comp = new ElementView();
-                                    comp.setId(relationship.getSourceId());
-                                    comp.setX(0);
-                                    comp.setY(0);
-                                    componentView.getElements().add(comp);
-                                    objects.add(relationship.getSourceId());
-                                    if (!objects.contains(system1.getId())) {
-                                        ElementView tmp1 = new ElementView();
-                                        tmp1.setId(system1.getId());
-                                        tmp1.setX(0);
-                                        tmp1.setY(0);
-                                        componentView.getElements().add(tmp1);
-                                        objects.add(system1.getId());
-                                    }
-                                    if (!objects.contains(container1.getId())) {
-                                        ElementView tmp1 = new ElementView();
-                                        tmp1.setId(container1.getId());
-                                        tmp1.setX(0);
-                                        tmp1.setY(0);
-                                        componentView.getElements().add(tmp1);
-                                        objects.add(container1.getId());
-                                    }
-                                }
-                            }
                         }
                     }
                 }
