@@ -433,6 +433,9 @@ public class GetObjects {
             query = "MATCH (n:SoftwareSystem {graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Child]->(m:Container {graph: \"Global\", structurizr_dsl_identifier: $val2}) RETURN m";
             parameters = Values.parameters("val1", softwareSystemMnemonic, "val2", containerMnemonic);
             result = session.run(query, parameters);
+            record = result.next();
+
+            getContainer(record.get("m").asNode(), session);
 
             // Добавление компонентов
             query = "MATCH (n:Container {graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Child]->(m) RETURN m";
@@ -649,8 +652,7 @@ public class GetObjects {
                 Relationship rel = getRelation(record.get("r").asRelationship(), system1.getId(), system.getId());
 
                 if (rel != null) {
-                    system1.getRelationships()
-                            .add(getRelation(record.get("r").asRelationship(), system1.getId(), system.getId()));
+                    system1.getRelationships().add(rel);
                     systems.put(record.get("m.structurizr_dsl_identifier").asString(), system1);
                 }
             }
@@ -774,6 +776,7 @@ public class GetObjects {
                 result1 = session.run(query, parameters);
 
                 while (result1.hasNext()) {
+
                     record = result.next();
                     Component component = components.get(record.get("m.structurizr_dsl_identifier").asString());
 
@@ -937,6 +940,7 @@ public class GetObjects {
         workspace.setModel(model);
 
         if (containerMnemonic == null) {
+
             // Заполнение systemContextViews
             List<SystemContextView> systemContextViews = new ArrayList<>();
             SystemContextView systemContextView = new SystemContextView();

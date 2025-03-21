@@ -603,6 +603,14 @@ public class MajorGraph {
                                 session.run(createNodeQuery, parameters);
                             }
                         }
+
+                        // Проверка на существование системы
+                        findObject(session, model, system.getId());
+
+                        String createRelationshipQuery = "MATCH (a:SoftwareSystem {graph: \"Global\", cmdb: $val1}), (b:Container {graph: \"Global\", name: $val2}) CREATE (a)-[r:Child {graph: \"Global\", source_workspace: $cmdb, description: $description1}]->(b) RETURN a, b";
+                        parameters = Values.parameters("val1", cmdb, "cmdb", cmdb, "val2", cont.getName(),
+                                "description1", "Child");
+                        session.run(createRelationshipQuery, parameters);
                     } else {
 
                         // Сохранение параметров объекта, имеющего label = landscape или имеющего больше
@@ -715,6 +723,14 @@ public class MajorGraph {
                                     session.run(createNodeQuery, parameters);
                                 }
                             }
+
+                            // Проверка на существование контейнера
+                            findObject(session, model, cont.getId());
+
+                            String createRelationshipQuery = "MATCH (a:Container {graph: \"Global\", name: $val1}), (b:Component {graph: \"Global\", name: $val2}) CREATE (a)-[r:Child {graph: \"Global\", source_workspace: $cmdb, description: $description1}]->(b) RETURN a, b";
+                            parameters = Values.parameters("val1", cont.getName(), "cmdb", cmdb, "val2", comp.getName(),
+                                    "description1", "Child");
+                            session.run(createRelationshipQuery, parameters);
                         } else {
 
                             // Сохранение параметров объекта, имеющего label = landscape или имеющего больше
