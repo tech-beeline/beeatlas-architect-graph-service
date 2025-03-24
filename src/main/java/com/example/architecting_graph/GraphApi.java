@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.http.MediaType;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -250,7 +251,7 @@ public class GraphApi {
                 String json = objectMapper.writerWithDefaultPrettyPrinter()
                         .writeValueAsString(GetObjects.GetWorkspace(softwareSystemMnemonic, containerMnemonic,
                                 autorization.getUri(), autorization.getUser(), autorization.getPassword()));
-                return ResponseEntity.status(200).body(json);
+                return ResponseEntity.status(200).contentType(MediaType.APPLICATION_JSON).body(json);
             } catch (Exception e) {
                 driver.close();
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
