@@ -412,7 +412,7 @@ public class GetObjects {
         Workspace workspace = new Workspace();
         Model model = new Model();
         model.setSoftwareSystems(new ArrayList<>());
-        model.setDeploymentNodes(new ArrayList<>());
+        // model.setDeploymentNodes(new ArrayList<>());
         workspace.setId(1L);
 
         // Создание views
