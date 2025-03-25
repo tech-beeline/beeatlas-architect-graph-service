@@ -7,6 +7,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import org.neo4j.driver.exceptions.ServiceUnavailableException;
+
+import java.util.Set;
+
 import org.neo4j.driver.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -266,5 +269,126 @@ public class GraphApi {
     public ResponseEntity<String> getSystem(@PathVariable String softwareSystemMnemonic) {
 
         return getObject(softwareSystemMnemonic, null);
+    }
+
+    @GetMapping("/diff/{cmdb_code}/{v1}/{v2}")
+    public ResponseEntity<String> compareVersion(@PathVariable String cmdb_code, @PathVariable Integer v1,
+            @PathVariable(required = false) Integer v2) {
+
+        // Проверка подключения к БД
+        Driver driver = GraphDatabase.driver(autorization.getUri(),
+                AuthTokens.basic(autorization.getUser(), autorization.getPassword()));
+
+        Session session;
+
+        try {
+            session = driver.session();
+            String query = "MATCH (n) RETURN n";
+            session.run(query);
+        } catch (ServiceUnavailableException e) {
+            // Возвращаем 400 Bad Request с сообщением
+            return ResponseEntity.badRequest().body("Нет подключения к БД");
+        }
+
+        // Проверка на наличие системы
+        if (!MajorGraph.checkIfObjectExists(session, "SoftwareSystem", "cmdb", cmdb_code)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Система не найдена");
+        }
+
+        // Вычисление текущей версии
+        String findVersion = "MATCH (n:SoftwareSystem {graph: \"Global\", cmdb: $cmdb1}) RETURN n.version AS version";
+        Value parameters = Values.parameters("cmdb1", cmdb_code);
+        Result result = session.run(findVersion, parameters);
+
+        Integer cur_version = result.next().get("version").asInt();
+
+        if (v1 == v2) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Версии не могут быть равны");
+        } else if (Math.min(v1, v2) < 1 || Math.max(v1, v2) > cur_version) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Неверное значение версий");
+        }
+
+        if (v1 > v2) {
+            v1 = v1 + v2;
+            v2 = v1 - v2;
+            v1 = v1 - v2;
+        }
+
+        Set<Pair> ans2 = FindChanges.EarlierChanges(v1, v2, cmdb_code, session);
+        Set<Pair> ans1 = FindChanges.LaterChanges(v1, v2, cmdb_code, session);
+
+        String out = "{\n\t\"addElements\": [\n";
+
+        Integer cnt = 0;
+        for (Pair el : ans1) {
+            if (cnt != ans1.size() - 1) {
+                out = out + "\t\t{\n" + "\t\t\t\"name\": \"" + el.getFirst() + "\",\n\t\t\t\"type\": \""
+                        + el.getSecond()
+                        + "\"\n\t\t},\n";
+            } else {
+                out = out + "\t\t{\n" + "\t\t\t\"name\": \"" + el.getFirst() + "\",\n\t\t\t\"type\": \""
+                        + el.getSecond()
+                        + "\"\n\t\t}\n";
+            }
+            cnt = cnt + 1;
+        }
+
+        out = out + "\t],\n\t\"removeElements\": [\n";
+
+        cnt = 0;
+        for (Pair el : ans2) {
+            if (cnt != ans2.size() - 1) {
+                out = out + "\t\t{\n" + "\t\t\t\"name\": \"" + el.getFirst() + "\",\n\t\t\t\"type\": \""
+                        + el.getSecond()
+                        + "\"\n\t\t},\n";
+            } else {
+                out = out + "\t\t{\n" + "\t\t\t\"name\": \"" + el.getFirst() + "\",\n\t\t\t\"type\": \""
+                        + el.getSecond()
+                        + "\"\n\t\t}\n";
+            }
+            cnt = cnt + 1;
+        }
+
+        out = out + "\t]\n}";
+
+        return ResponseEntity.status(200).body(out);
+    }
+
+    @GetMapping("/diff/{cmdb_code}/{v1}")
+    public ResponseEntity<String> compareWithCur(@PathVariable String cmdb_code, @PathVariable Integer v1) {
+
+        // Проверка подключения к БД
+        Driver driver = GraphDatabase.driver(autorization.getUri(),
+                AuthTokens.basic(autorization.getUser(), autorization.getPassword()));
+
+        Session session;
+
+        try {
+            session = driver.session();
+            String query = "MATCH (n) RETURN n";
+            session.run(query);
+        } catch (ServiceUnavailableException e) {
+            // Возвращаем 400 Bad Request с сообщением
+            return ResponseEntity.badRequest().body("Нет подключения к БД");
+        }
+
+        // Проверка на наличие системы
+        if (!MajorGraph.checkIfObjectExists(session, "SoftwareSystem", "cmdb", cmdb_code)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Система не найдена");
+        }
+
+        // Вычисление текущей версии
+        String findVersion = "MATCH (n:SoftwareSystem {graph: \"Global\", cmdb: $cmdb1}) RETURN n.version AS version";
+        Value parameters = Values.parameters("cmdb1", cmdb_code);
+        Result result = session.run(findVersion, parameters);
+
+        Integer v2 = result.next().get("version").asInt();
+
+        if (v2 <= v1 || v1 < 1) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Неверное значение версии");
+        }
+
+        driver.close();
+        return compareVersion(cmdb_code, v1, v2);
     }
 }
