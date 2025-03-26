@@ -272,7 +272,7 @@ public class GraphApi {
     }
 
     @GetMapping("/diff/{cmdb_code}/{v1}/{v2}")
-    public ResponseEntity<String> compareVersion(@PathVariable String cmdb_code, @PathVariable Integer v1,
+    public ResponseEntity<String> compareVersions(@PathVariable String cmdb_code, @PathVariable Integer v1,
             @PathVariable(required = false) Integer v2) {
 
         // Проверка подключения к БД
@@ -314,21 +314,25 @@ public class GraphApi {
             v1 = v1 - v2;
         }
 
-        Set<Pair> ans2 = FindChanges.EarlierChanges(v1, v2, cmdb_code, session);
-        Set<Pair> ans1 = FindChanges.LaterChanges(v1, v2, cmdb_code, session);
+        Set<Pair> ans2 = FindChanges.EarlierChanges(v1, v2, cur_version, cmdb_code, session);
+        Set<Pair> ans1 = FindChanges.LaterChanges(v1, v2, cur_version, cmdb_code, session);
 
         String out = "{\n\t\"addElements\": [\n";
 
         Integer cnt = 0;
         for (Pair el : ans1) {
+            String part = "\t\t{\n" + "\t\t\t\"name\": \"";
+            if (el.getSecond().equals("Relationship") || el.getSecond().equals("ContainerInctance")
+                    || el.getSecond().equals("SoftwareSystemInctance")) {
+                part = "\t\t{\n" + "\t\t\t\"connection\": \"";
+            }
+
             if (cnt != ans1.size() - 1) {
-                out = out + "\t\t{\n" + "\t\t\t\"name\": \"" + el.getFirst() + "\",\n\t\t\t\"type\": \""
-                        + el.getSecond()
-                        + "\"\n\t\t},\n";
+                out = out + part + el.getFirst() + "\",\n\t\t\t\"type\": \""
+                        + el.getSecond() + "\"\n\t\t},\n";
             } else {
-                out = out + "\t\t{\n" + "\t\t\t\"name\": \"" + el.getFirst() + "\",\n\t\t\t\"type\": \""
-                        + el.getSecond()
-                        + "\"\n\t\t}\n";
+                out = out + part + el.getFirst() + "\",\n\t\t\t\"type\": \""
+                        + el.getSecond() + "\"\n\t\t}\n";
             }
             cnt = cnt + 1;
         }
@@ -337,14 +341,18 @@ public class GraphApi {
 
         cnt = 0;
         for (Pair el : ans2) {
+            String part = "\t\t{\n" + "\t\t\t\"name\": \"";
+            if (el.getSecond().equals("Relationship") || el.getSecond().equals("ContainerInctance")
+                    || el.getSecond().equals("SoftwareSystemInctance")) {
+                part = "\t\t{\n" + "\t\t\t\"connection\": \"";
+            }
+
             if (cnt != ans2.size() - 1) {
-                out = out + "\t\t{\n" + "\t\t\t\"name\": \"" + el.getFirst() + "\",\n\t\t\t\"type\": \""
-                        + el.getSecond()
-                        + "\"\n\t\t},\n";
+                out = out + part + el.getFirst() + "\",\n\t\t\t\"type\": \""
+                        + el.getSecond() + "\"\n\t\t},\n";
             } else {
-                out = out + "\t\t{\n" + "\t\t\t\"name\": \"" + el.getFirst() + "\",\n\t\t\t\"type\": \""
-                        + el.getSecond()
-                        + "\"\n\t\t}\n";
+                out = out + "\t\t{\n" + part + el.getFirst() + "\",\n\t\t\t\"type\": \""
+                        + el.getSecond() + "\"\n\t\t}\n";
             }
             cnt = cnt + 1;
         }
@@ -389,6 +397,6 @@ public class GraphApi {
         }
 
         driver.close();
-        return compareVersion(cmdb_code, v1, v2);
+        return compareVersions(cmdb_code, v1, v2);
     }
 }
