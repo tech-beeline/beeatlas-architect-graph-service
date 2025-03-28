@@ -1,6 +1,5 @@
 package com.example.architecting_graph;
 
-import java.io.IOException;
 import org.neo4j.driver.*;
 import java.util.HashMap;
 import java.util.Map;
@@ -604,6 +603,14 @@ public class MajorGraph {
                                 session.run(createNodeQuery, parameters);
                             }
                         }
+
+                        // Проверка на существование системы
+                        findObject(session, model, system.getId());
+
+                        String createRelationshipQuery = "MATCH (a:SoftwareSystem {graph: \"Global\", cmdb: $val1}), (b:Container {graph: \"Global\", name: $val2}) CREATE (a)-[r:Child {graph: \"Global\", source_workspace: $cmdb, description: $description1}]->(b) RETURN a, b";
+                        parameters = Values.parameters("val1", cmdb, "cmdb", cmdb, "val2", cont.getName(),
+                                "description1", "Child");
+                        session.run(createRelationshipQuery, parameters);
                     } else {
 
                         // Сохранение параметров объекта, имеющего label = landscape или имеющего больше
@@ -716,6 +723,14 @@ public class MajorGraph {
                                     session.run(createNodeQuery, parameters);
                                 }
                             }
+
+                            // Проверка на существование контейнера
+                            findObject(session, model, cont.getId());
+
+                            String createRelationshipQuery = "MATCH (a:Container {graph: \"Global\", name: $val1}), (b:Component {graph: \"Global\", name: $val2}) CREATE (a)-[r:Child {graph: \"Global\", source_workspace: $cmdb, description: $description1}]->(b) RETURN a, b";
+                            parameters = Values.parameters("val1", cont.getName(), "cmdb", cmdb, "val2", comp.getName(),
+                                    "description1", "Child");
+                            session.run(createRelationshipQuery, parameters);
                         } else {
 
                             // Сохранение параметров объекта, имеющего label = landscape или имеющего больше
@@ -1520,7 +1535,7 @@ public class MajorGraph {
         puttingEndVersionRelations(session, curVersion, cmdb);
     }
 
-    public static void createGraph(Workspace workspace, String uri, String user, String password) throws IOException {
+    public static void createGraph(Workspace workspace, String uri, String user, String password) throws Exception {
 
         // Получение нужной SoftwareSystem
         Model model = workspace.getModel();

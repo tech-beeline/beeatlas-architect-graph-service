@@ -8,6 +8,7 @@ public class AutomaticLayout {
     private Integer nodeSeparation;
     private Integer edgeSeparation;
     private Boolean vertices;
+    private Boolean applied;
 
     // Getters and Setters
 
@@ -57,6 +58,14 @@ public class AutomaticLayout {
 
     public void setVertices(Boolean vertices) {
         this.vertices = vertices;
+    }
+
+    public Boolean getApplied() {
+        return applied;
+    }
+
+    public void setApplied(Boolean applied) {
+        this.applied = applied;
     }
 
     // Enums
