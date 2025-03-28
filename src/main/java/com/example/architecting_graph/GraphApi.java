@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.neo4j.driver.exceptions.ServiceUnavailableException;
 
 import java.util.Set;
+import java.io.File;
 
 import org.neo4j.driver.*;
 import org.springframework.http.HttpStatus;
@@ -31,6 +32,15 @@ public class GraphApi {
 
     public GraphApi(RestConfig autorization) {
         this.autorization = autorization;
+    }
+
+    public static Workspace getWorkspaceFileForTest(Object jsonObject) throws Exception {
+        String FilePath = "workspace_RNC.json";
+        File file = new File(FilePath);
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        Workspace workspace = objectMapper.readValue(file, Workspace.class);
+        return workspace;
     }
 
     public Object getJson(Long id_file) throws Exception {
@@ -192,6 +202,7 @@ public class GraphApi {
         try {
             // Загрузка workspace
             workspace = getWorkspace(workspaceJson);
+            // workspace = getWorkspaceFileForTest(workspaceJson);
         } catch (Exception e) {
             // Обработка исключения
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Полученный workspace не валиден");
@@ -300,7 +311,13 @@ public class GraphApi {
         Value parameters = Values.parameters("cmdb1", cmdb_code);
         Result result = session.run(findVersion, parameters);
 
-        Integer cur_version = result.next().get("version").asInt();
+        Integer cur_version = -1;
+
+        try {
+            cur_version = result.next().get("version").asInt();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("У данной системы отсутствует версионность");
+        }
 
         if (v1 == v2) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Версии не могут быть равны");
@@ -321,18 +338,22 @@ public class GraphApi {
 
         Integer cnt = 0;
         for (Pair el : ans1) {
-            String part = "\t\t{\n" + "\t\t\t\"name\": \"";
-            if (el.getSecond().equals("Relationship") || el.getSecond().equals("ContainerInctance")
-                    || el.getSecond().equals("SoftwareSystemInctance")) {
-                part = "\t\t{\n" + "\t\t\t\"connection\": \"";
-            }
-
             if (cnt != ans1.size() - 1) {
-                out = out + part + el.getFirst() + "\",\n\t\t\t\"type\": \""
-                        + el.getSecond() + "\"\n\t\t},\n";
+                if (el.getSecond().equals("Relationship") || el.getSecond().equals("ContainerInstance")
+                        || el.getSecond().equals("SoftwareSystemInstance")) {
+                    out = out + el.getFirst() + ",\n";
+                } else {
+                    out = out + "\t\t{\n" + "\t\t\t\"name\": \"" + el.getFirst() + "\",\n\t\t\t\"type\": \""
+                            + el.getSecond() + "\"\n\t\t},\n";
+                }
             } else {
-                out = out + part + el.getFirst() + "\",\n\t\t\t\"type\": \""
-                        + el.getSecond() + "\"\n\t\t}\n";
+                if (el.getSecond().equals("Relationship") || el.getSecond().equals("ContainerInstance")
+                        || el.getSecond().equals("SoftwareSystemInstance")) {
+                    out = out + el.getFirst() + "\n";
+                } else {
+                    out = out + "\t\t{\n" + "\t\t\t\"name\": \"" + el.getFirst() + "\",\n\t\t\t\"type\": \""
+                            + el.getSecond() + "\"\n\t\t}\n";
+                }
             }
             cnt = cnt + 1;
         }
@@ -341,18 +362,22 @@ public class GraphApi {
 
         cnt = 0;
         for (Pair el : ans2) {
-            String part = "\t\t{\n" + "\t\t\t\"name\": \"";
-            if (el.getSecond().equals("Relationship") || el.getSecond().equals("ContainerInctance")
-                    || el.getSecond().equals("SoftwareSystemInctance")) {
-                part = "\t\t{\n" + "\t\t\t\"connection\": \"";
-            }
-
             if (cnt != ans2.size() - 1) {
-                out = out + part + el.getFirst() + "\",\n\t\t\t\"type\": \""
-                        + el.getSecond() + "\"\n\t\t},\n";
+                if (el.getSecond().equals("Relationship") || el.getSecond().equals("ContainerInstance")
+                        || el.getSecond().equals("SoftwareSystemInstance")) {
+                    out = out + el.getFirst() + ",\n";
+                } else {
+                    out = out + "\t\t{\n" + "\t\t\t\"name\": \"" + el.getFirst() + "\",\n\t\t\t\"type\": \""
+                            + el.getSecond() + "\"\n\t\t},\n";
+                }
             } else {
-                out = out + "\t\t{\n" + part + el.getFirst() + "\",\n\t\t\t\"type\": \""
-                        + el.getSecond() + "\"\n\t\t}\n";
+                if (el.getSecond().equals("Relationship") || el.getSecond().equals("ContainerInstance")
+                        || el.getSecond().equals("SoftwareSystemInstance")) {
+                    out = out + el.getFirst() + "\n";
+                } else {
+                    out = out + "\t\t{\n" + "\t\t\t\"name\": \"" + el.getFirst() + "\",\n\t\t\t\"type\": \""
+                            + el.getSecond() + "\"\n\t\t}\n";
+                }
             }
             cnt = cnt + 1;
         }
@@ -390,7 +415,13 @@ public class GraphApi {
         Value parameters = Values.parameters("cmdb1", cmdb_code);
         Result result = session.run(findVersion, parameters);
 
-        Integer v2 = result.next().get("version").asInt();
+        Integer v2 = -1;
+
+        try {
+            v2 = result.next().get("version").asInt();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("У данной системы отсутствует версионность");
+        }
 
         if (v2 <= v1 || v1 < 1) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Неверное значение версии");
