@@ -384,7 +384,7 @@ public class GraphApi {
 
         out = out + "\t]\n}";
 
-        return ResponseEntity.status(200).body(out);
+        return ResponseEntity.status(200).contentType(MediaType.APPLICATION_JSON).body(out);
     }
 
     @GetMapping("/diff/{cmdb_code}/{v1}")
