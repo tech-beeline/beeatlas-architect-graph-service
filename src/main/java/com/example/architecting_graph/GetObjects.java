@@ -25,6 +25,7 @@ public class GetObjects {
     private static Map<String, Component> components;
     private static Map<String, DeploymentNode> deploymentNodes;
     private static Map<String, InfrastructureNode> infrastructureNodes;
+    private static Map<String, ContainerInstance> containerInstances;
 
     public static SoftwareSystem getSystem(Node node) {
         SoftwareSystem system = new SoftwareSystem();
@@ -167,7 +168,7 @@ public class GetObjects {
         return relationship;
     }
 
-    public static void getInfrastructureNode(Node node) {
+    public static void getInfrastructureNode(Node node, Session session, String environment) {
         InfrastructureNode infrastructureNode = new InfrastructureNode();
         infrastructureNode.setProperties(new HashMap<>());
         infrastructureNode.setRelationships(new ArrayList<>());
@@ -185,6 +186,17 @@ public class GetObjects {
             }
         }
 
+        // Добавление Environment
+        String query = "MATCH (n:Environment)-[r:Child]->(m:InfrastructureNode {graph: \"Global\", structurizr_dsl_identifier: $val1}) RETURN n.name";
+        Value parameters = Values.parameters("val1",
+                infrastructureNode.getProperties().get("structurizr_dsl_identifier"));
+        Result result = session.run(query, parameters);
+        infrastructureNode.setEnvironment(result.next().get("n.name").toString());
+
+        if (!infrastructureNode.getEnvironment().equals(environment)) {
+            return;
+        }
+
         map_id.put(infrastructureNode.getProperties().get("structurizr_dsl_identifier").toString(), id_obj);
         id_obj = id_obj + 1;
 
@@ -192,7 +204,49 @@ public class GetObjects {
                 infrastructureNode);
     }
 
-    public static void getDeploymentNode(Node node, Session session) {
+    public static void getContainerInstance(Node node, Session session, String environment) {
+        ContainerInstance containerInstance = new ContainerInstance();
+        containerInstance.setProperties(new HashMap<>());
+        containerInstance.setRelationships(new ArrayList<>());
+        containerInstance.setId(String.valueOf(id_obj));
+
+        // Добавление property
+        for (String key : node.keys()) {
+            try {
+                Field field = ContainerInstance.class.getDeclaredField(key);
+                field.setAccessible(true); // Разрешение доступа к приватным полям
+                // Установка значения поля
+                field.set(containerInstance, node.get(key).asObject());
+            } catch (Exception e) {
+                containerInstance.getProperties().put(key, node.get(key).asObject());
+            }
+        }
+
+        // Добавление Environment
+        String query = "MATCH (n:Environment)-[r:Child]->(m:ContainerInstance {graph: \"Global\", structurizr_dsl_identifier: $val1}) RETURN n.name";
+        Value parameters = Values.parameters("val1",
+                containerInstance.getProperties().get("structurizr_dsl_identifier"));
+        Result result = session.run(query, parameters);
+        containerInstance.setEnvironment(result.next().get("n.name").toString());
+
+        if (!containerInstance.getEnvironment().equals(environment)) {
+            return;
+        }
+
+        // Добавление id контейнера
+        query = "MATCH (n:Container)-[r:Deploy]->(m:ContainerInstance {graph: \"Global\", structurizr_dsl_identifier: $val1}) RETURN n.structurizr_dsl_identifier";
+        result = session.run(query, parameters);
+        containerInstance
+                .setContainerId(map_id.get(result.next().get("n.structurizr_dsl_identifier").toString()).toString());
+
+        map_id.put(containerInstance.getProperties().get("structurizr_dsl_identifier").toString(), id_obj);
+        id_obj = id_obj + 1;
+
+        containerInstances.put(containerInstance.getProperties().get("structurizr_dsl_identifier").toString(),
+                containerInstance);
+    }
+
+    public static void getDeploymentNode(Node node, Session session, String environment) {
         DeploymentNode deploymentNode = new DeploymentNode();
         deploymentNode.setId(String.valueOf(id_obj));
 
@@ -209,17 +263,18 @@ public class GetObjects {
             }
         }
 
-        map_id.put(deploymentNode.getProperties().get("structurizr_dsl_identifier").toString(), id_obj);
-        id_obj = id_obj + 1;
-
         // Добавление Environment
         String query = "MATCH (n:Environment)-[r:Child]->(n:DeploymentNode {graph: \"Global\", structurizr_dsl_identifier: $val1}) RETURN n.name";
         Value parameters = Values.parameters("val1", deploymentNode.getProperties().get("structurizr_dsl_identifier"));
         Result result = session.run(query, parameters);
+        deploymentNode.setEnvironment(result.next().get("n.name").toString());
 
-        if (result.hasNext()) {
-            deploymentNode.setEnvironment(result.next().get("n.name").toString());
+        if (!deploymentNode.getEnvironment().equals(environment)) {
+            return;
         }
+
+        map_id.put(deploymentNode.getProperties().get("structurizr_dsl_identifier").toString(), id_obj);
+        id_obj = id_obj + 1;
 
         // Добавление InfrastructureNode
         query = "MATCH (n:DeploymentNode {graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Child]->(m:InfrastructureNode) RETURN m";
@@ -227,77 +282,29 @@ public class GetObjects {
 
         while (result.hasNext()) {
             org.neo4j.driver.Record record = result.next();
-            getInfrastructureNode(record.get("m").asNode());
+            getInfrastructureNode(record.get("m").asNode(), session, environment);
+        }
+
+        // Добавление ContainerInstance
+        query = "MATCH (n:DeploymentNode {graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Child]->(m:ContainerInstance) RETURN m";
+        result = session.run(query, parameters);
+
+        while (result.hasNext()) {
+            org.neo4j.driver.Record record = result.next();
+            getContainerInstance(record.get("m").asNode(), session, environment);
         }
 
         // Добавление дочерних DeploymentNode
-
         query = "MATCH (n:DeploymentNode {graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Child]->(m:DeploymentNode) RETURN m";
         result = session.run(query, parameters);
 
         while (result.hasNext()) {
             org.neo4j.driver.Record record = result.next();
-            getDeploymentNode(record.get("m").asNode(), session);
+            getDeploymentNode(record.get("m").asNode(), session, environment);
         }
 
         deploymentNodes.put(deploymentNode.getProperties().get("structurizr_dsl_identifier").toString(),
                 deploymentNode);
-    }
-
-    public static SoftwareSystemInstance getSoftwareSystemInstance(org.neo4j.driver.types.Relationship relation,
-            String instanceId, String softwareSystemId) {
-        SoftwareSystemInstance softwareSystemInstance = new SoftwareSystemInstance();
-        softwareSystemInstance.setProperties(new HashMap<>());
-        softwareSystemInstance.setId(String.valueOf(id_obj));
-        id_obj = id_obj + 1;
-        softwareSystemInstance.setInstanceId(Integer.parseInt(instanceId));
-        softwareSystemInstance.setSoftwareSystemId(softwareSystemId);
-
-        // Добавление property
-        for (Map.Entry<String, Object> entry : relation.asMap().entrySet()) {
-            String key = entry.getKey();
-            Object val = entry.getValue();
-            try {
-                Field field = SoftwareSystemInstance.class.getDeclaredField(key);
-                field.setAccessible(true); // Разрешение доступа к приватным полям
-                // Установка значения поля
-                field.set(softwareSystemInstance, val);
-            } catch (Exception e) {
-                softwareSystemInstance.getProperties().put(key, val);
-            }
-        }
-
-        map_id.put(softwareSystemInstance.getProperties().get("structurizr_dsl_identifier").toString(), id_obj);
-        id_obj = id_obj + 1;
-        return softwareSystemInstance;
-    }
-
-    public static ContainerInstance getContainerInstance(org.neo4j.driver.types.Relationship relation,
-            String instanceId, String containerId) {
-        ContainerInstance containerInstance = new ContainerInstance();
-        containerInstance.setProperties(new HashMap<>());
-        containerInstance.setId(String.valueOf(id_obj));
-        id_obj = id_obj + 1;
-        containerInstance.setInstanceId(Integer.parseInt(instanceId));
-        containerInstance.setContainerId(containerId);
-
-        // Добавление property
-        for (Map.Entry<String, Object> entry : relation.asMap().entrySet()) {
-            String key = entry.getKey();
-            Object val = entry.getValue();
-            try {
-                Field field = ContainerInstance.class.getDeclaredField(key);
-                field.setAccessible(true); // Разрешение доступа к приватным полям
-                // Установка значения поля
-                field.set(containerInstance, val);
-            } catch (Exception e) {
-                containerInstance.getProperties().put(key, val);
-            }
-        }
-
-        map_id.put(containerInstance.getProperties().get("structurizr_dsl_identifier").toString(), id_obj);
-        id_obj = id_obj + 1;
-        return containerInstance;
     }
 
     public static DeploymentNode getDeploymentNodeRelations(DeploymentNode deploymentNode, Session session,
@@ -345,32 +352,31 @@ public class GetObjects {
             deploymentNode.getInfrastructureNodes().add(infrastructureNode);
         }
 
-        // Добавление SoftwareSystemInstance
-        deploymentNode.setSoftwareSystemInstances(new ArrayList<>());
-
-        query = "MATCH (n:SoftwareSystem)-[r:Deploy]->(m:DeploymentNode {graph: \"Global\", structurizr_dsl_identifier: $val1}) RETURN n.structurizr_dsl_identifier, r";
-        parameters = Values.parameters("val1", deploymentNode.getProperties().get("structurizr_dsl_identifier"));
-        result = session.run(query, parameters);
-
-        while (result.hasNext()) {
-            org.neo4j.driver.Record record = result.next();
-            String second_id = map_id.get(record.get("n.structurizr_dsl_identifier").asString()).toString();
-            deploymentNode.getSoftwareSystemInstances()
-                    .add(getSoftwareSystemInstance(record.get("r").asRelationship(), deploymentNode.getId(),
-                            second_id));
-        }
-
         // Добавление ContainerInstance
-        deploymentNode.setContainerInstances(new ArrayList<>());
+        deploymentNode.setInfrastructureNodes(new ArrayList<>());
 
-        query = "MATCH (n:Container)-[r:Deploy]->(m:DeploymentNode {graph: \"Global\", structurizr_dsl_identifier: $val1}) RETURN n.structurizr_dsl_identifier, r";
+        query = "MATCH (n:DeploymentNode {graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Child]->(m:ContainerInstance) RETURN m.structurizr_dsl_identifier";
         result = session.run(query, parameters);
 
         while (result.hasNext()) {
             org.neo4j.driver.Record record = result.next();
-            String second_id = map_id.get(record.get("n.structurizr_dsl_identifier").asString()).toString();
-            deploymentNode.getContainerInstances()
-                    .add(getContainerInstance(record.get("r").asRelationship(), deploymentNode.getId(), second_id));
+            ContainerInstance containerInstance = containerInstances
+                    .get(record.get("m.structurizr_dsl_identifier").asString());
+
+            query = "MATCH (n:ContainerInstance {graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Relationship {source_workspace: $cmdb}]->(m) RETURN r, m.structurizr_dsl_identifier";
+            parameters = Values.parameters("val1", containerInstance.getProperties().get("structurizr_dsl_identifier"),
+                    "cmdb", cmdb);
+            Result result1 = session.run(query, parameters);
+
+            while (result1.hasNext()) {
+                record = result1.next();
+
+                String second_id = map_id.get(record.get("m.structurizr_dsl_identifier").asString()).toString();
+                containerInstance.getRelationships()
+                        .add(getRelation(record.get("r").asRelationship(), containerInstance.getId(), second_id));
+            }
+
+            deploymentNode.getContainerInstances().add(containerInstance);
         }
 
         // Добавление дочерних DeploymentNode
@@ -389,7 +395,115 @@ public class GetObjects {
         return deploymentNode;
     }
 
-    public static Workspace GetWorkspace(String softwareSystemMnemonic, String containerMnemonic, String uri,
+    public static void getDeploymentElements(DeploymentNode deploymentNode, DeploymentView deploymentView,
+            Set<String> objects) {
+
+        // Добавление текущего элемента
+        if (!objects.contains(deploymentNode.getId())) {
+            ElementView depl = new ElementView();
+            depl.setId(deploymentNode.getId());
+            depl.setX(0);
+            depl.setY(0);
+            deploymentView.getElements().add(depl);
+            objects.add(deploymentNode.getId());
+        }
+
+        // Проход по всем связям
+        for (Relationship relationship : deploymentNode.getRelationships()) {
+            if (!objects.contains(relationship.getId())) {
+                RelationshipView rel = new RelationshipView();
+                rel.setId(relationship.getId());
+                deploymentView.getRelationships().add(rel);
+                objects.add(relationship.getId());
+            }
+            if (!objects.contains(relationship.getDestinationId())) {
+                ElementView el = new ElementView();
+                el.setId(relationship.getDestinationId());
+                el.setX(0);
+                el.setY(0);
+                deploymentView.getElements().add(el);
+                objects.add(relationship.getDestinationId());
+            }
+        }
+
+        // Проход по всем InfrastructureNodes
+        for (InfrastructureNode infrastructureNode : deploymentNode.getInfrastructureNodes()) {
+            if (!objects.contains(infrastructureNode.getId())) {
+                ElementView el = new ElementView();
+                el.setId(infrastructureNode.getId());
+                el.setX(0);
+                el.setY(0);
+                deploymentView.getElements().add(el);
+                objects.add(infrastructureNode.getId());
+            }
+
+            // Проход по всем связям
+            for (Relationship relationship : infrastructureNode.getRelationships()) {
+                if (!objects.contains(relationship.getId())) {
+                    RelationshipView rel = new RelationshipView();
+                    rel.setId(relationship.getId());
+                    deploymentView.getRelationships().add(rel);
+                    objects.add(relationship.getId());
+                }
+                if (!objects.contains(relationship.getDestinationId())) {
+                    ElementView el = new ElementView();
+                    el.setId(relationship.getDestinationId());
+                    el.setX(0);
+                    el.setY(0);
+                    deploymentView.getElements().add(el);
+                    objects.add(relationship.getDestinationId());
+                }
+            }
+        }
+
+        // Проход по всем ContainerInstances
+        for (ContainerInstance containerInstance : deploymentNode.getContainerInstances()) {
+            if (!objects.contains(containerInstance.getId())) {
+                ElementView el = new ElementView();
+                el.setId(containerInstance.getId());
+                el.setX(0);
+                el.setY(0);
+                deploymentView.getElements().add(el);
+                objects.add(containerInstance.getId());
+            }
+
+            // Добавление контейнера
+            if (!objects.contains(containerInstance.getContainerId())) {
+                ElementView el = new ElementView();
+                el.setId(containerInstance.getContainerId());
+                el.setX(0);
+                el.setY(0);
+                deploymentView.getElements().add(el);
+                objects.add(containerInstance.getContainerId());
+            }
+
+            // Проход по всем связям
+            for (Relationship relationship : containerInstance.getRelationships()) {
+                if (!objects.contains(relationship.getId())) {
+                    RelationshipView rel = new RelationshipView();
+                    rel.setId(relationship.getId());
+                    deploymentView.getRelationships().add(rel);
+                    objects.add(relationship.getId());
+                }
+                if (!objects.contains(relationship.getDestinationId())) {
+                    ElementView el = new ElementView();
+                    el.setId(relationship.getDestinationId());
+                    el.setX(0);
+                    el.setY(0);
+                    deploymentView.getElements().add(el);
+                    objects.add(relationship.getDestinationId());
+                }
+            }
+        }
+
+        // Проход по всем дочерним DeploymentNodes
+        for (DeploymentNode childDeploymentNode : deploymentNode.getChildren()) {
+            getDeploymentElements(childDeploymentNode, deploymentView, objects);
+        }
+    }
+
+    public static Workspace GetWorkspace(String softwareSystemMnemonic, String containerMnemonic, String environment,
+            String uri,
             String user, String password) {
 
         // Начальная инициализация
@@ -548,7 +662,7 @@ public class GetObjects {
                         component);
             }
 
-        } else {
+        } else if (environment == null) {
 
             // Добавление контейнеров
             query = "MATCH (n:SoftwareSystem {graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Child]->(m:Container) RETURN m, m.structurizr_dsl_identifier";
@@ -570,17 +684,6 @@ public class GetObjects {
                     getComponent(record.get("m").asNode(), session);
                 }
             }
-
-            // Добавление DeploymentNode
-            // query = "MATCH (n:SoftwareSystem {graph: \"Global\",
-            // structurizr_dsl_identifier: $val1})-[r:Child]->(m:DeploymentNode) RETURN m";
-            // parameters = Values.parameters("val1", softwareSystemMnemonic);
-            // result = session.run(query, parameters);
-
-            // while (result.hasNext()) {
-            // record = result.next();
-            // getDeploymentNode(record.get("m").asNode(), session);
-            // }
 
             // Добавление прямых связей
             query = "MATCH (n:SoftwareSystem {graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Relationship {source_workspace: $cmdb}]->(m) RETURN r, m, m.structurizr_dsl_identifier";
@@ -892,20 +995,39 @@ public class GetObjects {
                     components.put(component.getProperties().get("structurizr_dsl_identifier").toString(), component);
                 }
             }
+        } else {
+
+            // Добавление контейнеров
+            query = "MATCH (n:SoftwareSystem {graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Child]->(m:Container) RETURN m, m.structurizr_dsl_identifier";
+            result = session.run(query, parameters);
+
+            while (result.hasNext()) {
+                record = result.next();
+                childs.add(String.valueOf(id_obj));
+                getContainer(record.get("m").asNode(), session);
+
+            }
+
+            // Добавление DeploymentNode
+            query = "MATCH (n:SoftwareSystem {graph: \"Global\", tructurizr_dsl_identifier: $val1})-[r:Child]->(m:DeploymentNode) RETURN m";
+            parameters = Values.parameters("val1", softwareSystemMnemonic);
+            result = session.run(query, parameters);
+
+            while (result.hasNext()) {
+                record = result.next();
+                getDeploymentNode(record.get("m").asNode(), session, environment);
+            }
 
             // Добавление связей DeploymentNode
-            // query = "MATCH (n:SoftwareSystem {graph: \"Global\",
-            // structurizr_dsl_identifier: $val1})-[r:Child]->(m:DeploymentNode) RETURN
-            // m.structurizr_dsl_identifier";
-            // parameters = Values.parameters("val1", softwareSystemMnemonic);
-            // result = session.run(query, parameters);
+            query = "MATCH (n:SoftwareSystem {graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Child]->(m:DeploymentNode) RETURN m.structurizr_dsl_identifier";
+            parameters = Values.parameters("val1", softwareSystemMnemonic);
+            result = session.run(query, parameters);
 
-            // while (result.hasNext()) {
-            // record = result.next();
-            // model.getDeploymentNodes().add(getDeploymentNodeRelations(
-            // deploymentNodes.get(record.get("m.structurizr_dsl_identifier").asString()),
-            // session));
-            // }
+            while (result.hasNext()) {
+                record = result.next();
+                model.getDeploymentNodes().add(getDeploymentNodeRelations(
+                        deploymentNodes.get(record.get("m.structurizr_dsl_identifier").asString()), session, cmdb));
+            }
         }
 
         systems.put(system.getProperties().get("structurizr_dsl_identifier").toString(), system);
@@ -939,7 +1061,7 @@ public class GetObjects {
 
         workspace.setModel(model);
 
-        if (containerMnemonic == null) {
+        if (containerMnemonic == null && environment == null) {
 
             // Заполнение systemContextViews
             List<SystemContextView> systemContextViews = new ArrayList<>();
@@ -1088,7 +1210,7 @@ public class GetObjects {
 
             containerViews.add(containerView);
             workspace.getViews().setContainerViews(containerViews);
-        } else {
+        } else if (environment == null) {
             // Заполнение componentViews
             List<ComponentView> componentViews = new ArrayList<>();
             ComponentView componentView = new ComponentView();
@@ -1107,7 +1229,7 @@ public class GetObjects {
             AutomaticLayout automaticLayout = new AutomaticLayout();
             automaticLayout.setApplied(false);
             automaticLayout.setImplementation(LayoutImplementation.Graphviz);
-            automaticLayout.setNodeSeparation(0);
+            automaticLayout.setEdgeSeparation(0);
             automaticLayout.setNodeSeparation(300);
             automaticLayout.setRankDirection(RankDirection.TopBottom);
             automaticLayout.setRankSeparation(300);
@@ -1165,9 +1287,42 @@ public class GetObjects {
 
             componentViews.add(componentView);
             workspace.getViews().setComponentViews(componentViews);
+        } else {
+            // Заполнение deploymentViews
+            List<DeploymentView> deploymentViews = new ArrayList<>();
+            DeploymentView deploymentView = new DeploymentView();
+            deploymentView.setElements(new ArrayList<>());
+            deploymentView.setRelationships(new ArrayList<>());
+
+            // Проставление параметров
+            deploymentView.setSoftwareSystemId(system.getId());
+            deploymentView.setTitle("Диаграмма развёртывания");
+            deploymentView.setEnvironment(environment);
+            deploymentView.setKey(environment + "-01");
+            deploymentView.setOrder(4);
+
+            // Создание automaticLayout
+            AutomaticLayout automaticLayout = new AutomaticLayout();
+            automaticLayout.setApplied(false);
+            automaticLayout.setEdgeSeparation(0);
+            automaticLayout.setImplementation(LayoutImplementation.Graphviz);
+            automaticLayout.setNodeSeparation(300);
+            automaticLayout.setRankDirection(RankDirection.TopBottom);
+            automaticLayout.setRankSeparation(300);
+            automaticLayout.setVertices(false);
+
+            deploymentView.setAutomaticLayout(automaticLayout);
+
+            // Проставление Elements и Relationships
+            Set<String> objects = new HashSet<>();
+            for (DeploymentNode deploymentNode : model.getDeploymentNodes()) {
+                getDeploymentElements(deploymentNode, deploymentView, objects);
+            }
+
+            deploymentViews.add(deploymentView);
+            workspace.getViews().setDeploymentViews(deploymentViews);
         }
 
         return workspace;
     }
-
 }

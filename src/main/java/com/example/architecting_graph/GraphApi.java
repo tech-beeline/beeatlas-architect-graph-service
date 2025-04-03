@@ -263,7 +263,7 @@ public class GraphApi {
 
                 // Преобразуем объект в JSON-строку
                 String json = objectMapper.writerWithDefaultPrettyPrinter()
-                        .writeValueAsString(GetObjects.GetWorkspace(softwareSystemMnemonic, containerMnemonic,
+                        .writeValueAsString(GetObjects.GetWorkspace(softwareSystemMnemonic, containerMnemonic, null,
                                 autorization.getUri(), autorization.getUser(), autorization.getPassword()));
                 return ResponseEntity.status(200).contentType(MediaType.APPLICATION_JSON).body(json);
             } catch (Exception e) {
@@ -280,6 +280,57 @@ public class GraphApi {
     public ResponseEntity<String> getSystem(@PathVariable String softwareSystemMnemonic) {
 
         return getObject(softwareSystemMnemonic, null);
+    }
+
+    @GetMapping("/deployment/{environment}/{softwareSystemMnemonic}")
+    public ResponseEntity<String> getDeployment(@PathVariable String environment,
+            @PathVariable String softwareSystemMnemonic) {
+
+        // Проверка подключения к БД
+        Driver driver = GraphDatabase.driver(autorization.getUri(),
+                AuthTokens.basic(autorization.getUser(), autorization.getPassword()));
+        Session session;
+
+        try {
+            session = driver.session();
+            String query = "MATCH (n) RETURN n";
+            session.run(query);
+        } catch (ServiceUnavailableException e) {
+            // Возвращаем 400 Bad Request с сообщением
+            return ResponseEntity.badRequest().body("Нет подключения к БД");
+        }
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+
+        // Проверка на существование системы
+        if (MajorGraph.checkIfObjectExists(session, "SoftwareSystem", "structurizr_dsl_identifier",
+                softwareSystemMnemonic)) {
+
+            // Проверка на существование окружения
+            String query = "MATCH (a:Environment {name: $val1}) RETURN n";
+            Value parameters = Values.parameters("val1", environment);
+            Result result = session.run(query, parameters);
+            if (!result.hasNext()) {
+                driver.close();
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Окружение не найдено");
+            }
+
+            driver.close();
+            try {
+                // Преобразуем объект в JSON-строку
+                String json = objectMapper.writerWithDefaultPrettyPrinter()
+                        .writeValueAsString(GetObjects.GetWorkspace(softwareSystemMnemonic, null, environment,
+                                autorization.getUri(), autorization.getUser(), autorization.getPassword()));
+                return ResponseEntity.status(200).contentType(MediaType.APPLICATION_JSON).body(json);
+            } catch (Exception e) {
+                driver.close();
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("Ошибка при сериализации" + '\n' + e.getMessage());
+            }
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Система не найдена");
+        }
     }
 
     @GetMapping("/diff/{cmdb_code}/{v1}/{v2}")

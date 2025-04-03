@@ -6,6 +6,14 @@ import java.util.Map;
 
 public class MajorGraph {
 
+    private static HashMap<String, Object> cont = new HashMap<>();
+    private static HashMap<String, Object> comp = new HashMap<>();
+    private static HashMap<String, Object> deplNode = new HashMap<>();
+    private static HashMap<String, Object> infNode = new HashMap<>();
+    private static HashMap<String, Object> contIns = new HashMap<>();
+    private static HashMap<String, Object> env_id = new HashMap<>();
+    private static HashMap<String, String> env_name = new HashMap<>();
+
     public static boolean checkIfObjectExists(Session session, String label, String propertyKey, Object propertyValue) {
         String query = "MATCH (n:" + label + " {" + propertyKey + ": $value, graph: \"Global\"}) RETURN n";
         Result result = session.run(query, Values.parameters("value", propertyValue));
@@ -800,10 +808,9 @@ public class MajorGraph {
         return answer;
     }
 
-    public static void createRelation(Session session, Relationship rel, HashMap<String, Object> cont,
-            HashMap<String, Object> comp, HashMap<String, Object> deplNode, HashMap<String, Object> infNode,
-            SoftwareSystem softwareSystem, Integer curVersion, String rel_type, Object cmdb, Model model,
-            String level) {
+    public static void createRelation(Session session, Relationship rel, SoftwareSystem softwareSystem,
+            Integer curVersion, String rel_type,
+            Object cmdb, Model model, String level) {
 
         String type1;
         String key1;
@@ -838,6 +845,14 @@ public class MajorGraph {
             type1 = "InfrastructureNode";
             key1 = "name";
             val1 = infNode.get(source);
+        } else if (contIns.containsKey(source)) {
+            type1 = "ContainerInstance";
+            key1 = "name";
+            val1 = contIns.get(source);
+        } else if (env_id.containsKey(source)) {
+            type1 = "Environment";
+            key1 = "name";
+            val1 = env_id.get(source);
         } else {
             String[] answer = findObject(session, model, source);
             type1 = answer[0];
@@ -871,6 +886,14 @@ public class MajorGraph {
             type2 = "InfrastructureNode";
             key2 = "name";
             val2 = infNode.get(destination);
+        } else if (contIns.containsKey(destination)) {
+            type2 = "ContainerInstance";
+            key2 = "name";
+            val2 = contIns.get(destination);
+        } else if (env_id.containsKey(destination)) {
+            type2 = "Environment";
+            key2 = "name";
+            val2 = env_id.get(destination);
         } else {
             String[] answer = findObject(session, model, destination);
             type2 = answer[0];
@@ -916,133 +939,12 @@ public class MajorGraph {
         updateRelation(session, rel, rel_type, type1, key1, val1, type2, key2, val2, level, cmdb);
     }
 
-    public static void updateDeployRelationSystem(Session session, Model model, DeploymentNode deploymentNode,
-            SoftwareSystemInstance softwareSystemInstance, Object cmdb, Object cur_cmdb) {
+    public static void updateContainerInstance(Session session, ContainerInstance containerInstance, Object cur_name) {
 
-        Integer number = 0;
-
-        // Вычисление текущего количества связей
-        String updateNode = "MATCH (a:SoftwareSystem {graph: \"Global\", name: $val2})-[r:Deploy {graph: \"Global\", source_workspace: $cmdb}]->(b:DeploymentNode {graph: \"Global\", cmdb: $val1}) RETURN r";
-        Value parameters = Values.parameters("val1", deploymentNode.getName(), "cmdb", cmdb,
-                "val2", cur_cmdb);
-        Result result = session.run(updateNode, parameters);
-
-        org.neo4j.driver.types.Relationship relation = result.next().get("r").asRelationship();
-        String version_connect = relation.get("end_version").toString();
-
-        if (!version_connect.equals("NULL")) {
-            number = 1;
-        } else {
-            String cur_id = relation.get("cur_id").toString();
-            number = relation.get("number_of_connects").asInt();
-
-            if (!cur_id.equals(softwareSystemInstance.getId())) {
-                number = number + 1;
-            }
-        }
-
-        // Обновление характеристик
-        updateNode = "MATCH (a:SoftwareSystem {graph: \"Global\", name: $val2})-[r:Deploy {graph: \"Global\", source_workspace: $cmdb}]->(b:DeploymentNode {graph: \"Global\", cmdb: $val1}) SET r.cur_id = $cur_id1, r.environment = $environment1, r.tags = $tags1,  r.end_version = $end_version1, r.number_of_connects: $number RETURN r";
-        parameters = Values.parameters("val1", deploymentNode.getName(), "cmdb", cmdb,
-                "val2", cur_cmdb, "cur_id1", softwareSystemInstance.getId(), "environment1",
-                softwareSystemInstance.getEnvironment(), "tags1", softwareSystemInstance.getTags(), "end_version1",
-                null, "number", number);
-        session.run(updateNode, parameters);
-
-        // Обновление property
-        if (softwareSystemInstance.getProperties() != null) {
-            for (Map.Entry<String, Object> entry : softwareSystemInstance.getProperties().entrySet()) {
-                String key = entry.getKey();
-                key = key.replace(' ', '_');
-                key = key.replace('.', '_');
-                updateNode = "MATCH (a:SoftwareSystem {graph: \"Global\", name: $val2})-[r:Deploy {graph: \"Global\", source_workspace: $cmdb}]->(b:DeploymentNode {graph: \"Global\", cmdb: $val1}) SET r."
-                        + key + " = $value";
-                parameters = Values.parameters("val1", deploymentNode.getName(), "cmdb", cmdb, "val2",
-                        cur_cmdb, "value", entry.getValue());
-                session.run(updateNode, parameters);
-            }
-        }
-
-    }
-
-    public static void createDeployRelationSystem(Session session, Model model, DeploymentNode deploymentNode,
-            SoftwareSystemInstance softwareSystemInstance, Object cmdb, Integer curVersion) {
-
-        Object cur_cmdb = null;
-
-        for (SoftwareSystem cur : model.getSoftwareSystems()) {
-            if (cur.getId().equals(softwareSystemInstance.getSoftwareSystemId())) {
-                cmdb = cur.getProperties().get("cmdb");
-                break;
-            }
-        }
-
-        if (cur_cmdb == null) {
-            return;
-        }
-
-        // Проверка на существование
-        String createRelationshipQuery = "MATCH (a:SoftwareSystem {graph: \"Global\", name: $val2})-[r:Deploy]->(b:DeploymentNode {graph: \"Global\", cmdb: $val1}) WHERE r.source_workspace = $cmdb AND r.graph = \"Global\"  RETURN EXISTS((a)-->(b)) AS relationship_exists";
-        Value parameters = Values.parameters("val1", deploymentNode.getName(), "val2", cur_cmdb, "cmdb", cmdb);
-        Result result = session.run(createRelationshipQuery, parameters);
-        if (result.hasNext()) {
-            updateDeployRelationSystem(session, model, deploymentNode, softwareSystemInstance, cmdb, cur_cmdb);
-        } else {
-            // Создание соединения
-            createRelationshipQuery = "MATCH (a:SoftwareSystem {graph: \"Global\", name: $val2}), (b:DeploymentNode {graph: \"Global\", cmdb: $val1}) CREATE (a)-[r:Deploy {graph: \"Global\", description: $description1, cur_id: $cur_id1, source_workspace: $cmdb, start_version: $start_version1, number_of_connects: $number_of_connects1, environment: $environment1, tags: $tags1}]->(b) RETURN a, b";
-            parameters = Values.parameters("description1", "Deploy", "val1", deploymentNode.getName(), "cmdb", cmdb,
-                    "val2", cur_cmdb, "cur_id1", softwareSystemInstance.getId(), "start_version1", curVersion,
-                    "number_of_connects1", 1, "environment1", softwareSystemInstance.getEnvironment(), "tags1",
-                    softwareSystemInstance.getTags());
-            session.run(createRelationshipQuery, parameters);
-
-            // Обновление property
-            if (softwareSystemInstance.getProperties() != null) {
-                for (Map.Entry<String, Object> entry : softwareSystemInstance.getProperties().entrySet()) {
-                    String key = entry.getKey();
-                    key = key.replace(' ', '_');
-                    key = key.replace('.', '_');
-                    createRelationshipQuery = "MATCH (a:SoftwareSystem {graph: \"Global\", name: $val2})-[r:Deploy {graph: \"Global\", source_workspace: $cmdb}]->(b:DeploymentNode {graph: \"Global\", cmdb: $val1}) SET r."
-                            + key + " = $value";
-                    parameters = Values.parameters("val1", deploymentNode.getName(), "cmdb", cmdb, "val2",
-                            cur_cmdb, "value", entry.getValue());
-                    session.run(createRelationshipQuery, parameters);
-                }
-            }
-        }
-    }
-
-    public static void updateDeployRelationContainer(Session session, Model model, DeploymentNode deploymentNode,
-            ContainerInstance containerInstance, Object cmdb, Object cur_name) {
-
-        Integer number = 0;
-
-        // Вычисление текущего количества связей
-        String updateNode = "MATCH (a:Container {graph: \"Global\", name: $val2})-[r:Deploy {graph: \"Global\", source_workspace: $cmdb}]->(b:DeploymentNode {graph: \"Global\", name: $val1}) RETURN r";
-        Value parameters = Values.parameters("val1", deploymentNode.getName(), "cmdb", cmdb,
-                "val2", cur_name);
-        Result result = session.run(updateNode, parameters);
-
-        org.neo4j.driver.types.Relationship relation = result.next().get("r").asRelationship();
-        String version_connect = relation.get("end_version").toString();
-
-        if (!version_connect.equals("NULL")) {
-            number = 1;
-        } else {
-            String cur_id = relation.get("cur_id").toString();
-            number = relation.get("number_of_connects").asInt();
-
-            if (!cur_id.equals(containerInstance.getId())) {
-                number = number + 1;
-            }
-        }
-
-        // Обновление характеристик
-        updateNode = "MATCH (a:Container {graph: \"Global\", name: $val2})-[r:Deploy {graph: \"Global\", source_workspace: $cmdb}]->(b:DeploymentNode {graph: \"Global\", name: $val1}) SET r.cur_id = $cur_id1, r.environment = $environment1, r.tags = $tags1, r.end_version = $end_version1, r.number_of_connects = $number RETURN r";
-        parameters = Values.parameters("val1", deploymentNode.getName(), "cmdb", cmdb,
-                "val2", cur_name, "cur_id1", containerInstance.getId(), "environment1",
-                containerInstance.getEnvironment(), "tags1", containerInstance.getTags(), "end_version1", null,
-                "number", number);
+        // Обновление компонентов
+        String updateNode = "MATCH (n:ContainerInstance {graph: \"Global\", name: $val1}) SET n.instanceId = $instanceId1, n.tags = $tags1, n.end_version: $end_version1 RETURN n";
+        Value parameters = Values.parameters("val1", cur_name, "instanceId1", containerInstance.getInstanceId(),
+                "tags1", containerInstance.getTags(), "end_version1", null);
         session.run(updateNode, parameters);
 
         // Обновление property
@@ -1051,20 +953,18 @@ public class MajorGraph {
                 String key = entry.getKey();
                 key = key.replace(' ', '_');
                 key = key.replace('.', '_');
-                updateNode = "MATCH (a:Container {graph: \"Global\", name: $val2})-[r:Deploy {graph: \"Global\", source_workspace: $cmdb}]->(b:DeploymentNode {graph: \"Global\", name: $val1}) SET r."
-                        + key + " = $value";
-                parameters = Values.parameters("val1", deploymentNode.getName(), "cmdb", cmdb, "val2",
-                        cur_name, "value", entry.getValue());
+                updateNode = "MATCH (n:ContainerInstance {graph: \"Global\", name: $val1}) SET n." + key
+                        + " = $value RETURN n";
+                parameters = Values.parameters("val1", cur_name, "value", entry.getValue());
                 session.run(updateNode, parameters);
             }
         }
-
     }
 
-    public static void createDeployRelationContainer(Session session, Model model, DeploymentNode deploymentNode,
-            ContainerInstance containerInstance, Object cmdb, Integer curVersion) {
+    public static void createContainerInstance(Session session, Model model, ContainerInstance containerInstance,
+            Integer curVersion) {
 
-        Object cur_name = null;
+        String cur_name = null;
 
         for (SoftwareSystem system : model.getSoftwareSystems()) {
             if (system.getContainers() == null) {
@@ -1072,7 +972,7 @@ public class MajorGraph {
             }
             for (Container cur : system.getContainers()) {
                 if (cur.getId().equals(containerInstance.getContainerId())) {
-                    cur_name = cur.getName();
+                    cur_name = cur.getName().toString();
                     break;
                 }
             }
@@ -1082,98 +982,47 @@ public class MajorGraph {
             return;
         }
 
-        // Проверка на существование
-        String createRelationshipQuery = "MATCH (a:Container {graph: \"Global\", name: $val2})-[r:Deploy]->(b:DeploymentNode {graph: \"Global\", name: $val1}) WHERE r.source_workspace = $cmdb AND r.graph = \"Global\"  RETURN EXISTS((a)-->(b)) AS relationship_exists";
-        Value parameters = Values.parameters("val1", deploymentNode.getName(), "val2", cur_name, "cmdb", cmdb);
-        Result result = session.run(createRelationshipQuery, parameters);
-        if (result.hasNext()) {
-            updateDeployRelationContainer(session, model, deploymentNode, containerInstance, cmdb, cur_name);
-        } else {
-            // Создание соединения
-            createRelationshipQuery = "MATCH (a:Container {graph: \"Global\", name: $val2}), (b:DeploymentNode {graph: \"Global\", name: $val1}) CREATE (a)-[r:Deploy {graph: \"Global\", description: $description1, cur_id: $cur_id1, source_workspace: $cmdb, start_version: $start_version1, number_of_connects: $number_of_connects1, environment: $environment1, tags: $tags1}]->(b) RETURN a, b";
-            parameters = Values.parameters("description1", "Deploy", "val1", deploymentNode.getName(), "cmdb", cmdb,
-                    "val2", cur_name, "cur_id1", containerInstance.getId(), "start_version1", curVersion,
-                    "number_of_connects1", 1, "environment1", containerInstance.getEnvironment(), "tags1",
-                    containerInstance.getTags());
-            session.run(createRelationshipQuery, parameters);
+        cur_name = "ContainerInstance." + cur_name;
 
-            // Обновление property
+        // Проверка на существование
+        if (checkIfObjectExists(session, "ContainerInstance", "name", cur_name)) {
+            updateContainerInstance(session, containerInstance, cur_name);
+        } else {
+            // Создание ContainerInstance
+            String createNodeQuery = "CREATE (n:ContainerInstance {graph: \"Global\", name: $name1, instanceId: $instanceId1, tags: $tags1, start_version: $start_version1, end_version: $end_version1}) RETURN n";
+            Value parameters = Values.parameters("name1", cur_name, "instanceId1", containerInstance.getInstanceId(),
+                    "tags1", containerInstance.getTags(), "start_version1", curVersion, "end_version1", null);
+            session.run(createNodeQuery, parameters);
+
+            // Добавление property
             if (containerInstance.getProperties() != null) {
                 for (Map.Entry<String, Object> entry : containerInstance.getProperties().entrySet()) {
                     String key = entry.getKey();
                     key = key.replace(' ', '_');
                     key = key.replace('.', '_');
-                    createRelationshipQuery = "MATCH (a:Container {graph: \"Global\", name: $val2})-[r:Deploy {graph: \"Global\", source_workspace: $cmdb}]->(b:DeploymentNode {graph: \"Global\", name: $val1}) SET r."
-                            + key + " = $value";
-                    parameters = Values.parameters("val1", deploymentNode.getName(), "cmdb", cmdb, "val2",
-                            cur_name, "value", entry.getValue());
-                    session.run(createRelationshipQuery, parameters);
+                    createNodeQuery = "MATCH (n:ContainerInstance {graph: \"Global\", name: $val1}) SET n." + key
+                            + " = $value RETURN n";
+                    parameters = Values.parameters("val1", cur_name, "value", entry.getValue());
+                    session.run(createNodeQuery, parameters);
                 }
             }
+
+            contIns.put(containerInstance.getId(), cur_name);
         }
     }
 
-    public static void createEnvironmentDeployment(Session session, DeploymentNode deploymentNode, Integer curVersion,
-            Object cmdb) {
-        boolean exists = checkIfObjectExists(session, "Environment", "name", deploymentNode.getEnvironment());
+    public static void createEnvironment(Session session, String environment) {
 
-        if (!exists) {
+        // Проверка на существование
+        if (!checkIfObjectExists(session, "Environment", "name", environment)) {
+            // Создание Environment
             String createNodeQuery = "CREATE (n:Environment {graph: \"Global\", name: $name1}) RETURN n";
-            Value parameters = Values.parameters("name1", deploymentNode.getEnvironment());
+            Value parameters = Values.parameters("name1", environment);
             session.run(createNodeQuery, parameters);
+            String id = String.valueOf(90000 + env_id.size());
+            env_id.put(id, environment);
+            env_name.put(environment, id);
         }
-
-        // Проверка на существование связи
-        String createRelationshipQuery = "MATCH (a:Environment {graph: \"Global\", name: $val1})-[r:Child]->(b:DeploymentNode {graph: \"Global\", name: $val2}) WHERE r.source_workspace = $cmdb AND r.description = $description1 AND r.graph = \"Global\" RETURN EXISTS((a)-->(b)) AS relationship_exists";
-        Value parameters = Values.parameters("val1", deploymentNode.getEnvironment(), "val2", deploymentNode.getName(),
-                "cmdb", cmdb, "description1", "Child");
-        Result result = session.run(createRelationshipQuery, parameters);
-
-        if (result.hasNext()) {
-            String updateNode = "MATCH (a:Environment {graph: \"Global\", name: $val1})-[r:Child]->(b:DeploymentNode {graph: \"Global\", name: $val2}) WHERE r.source_workspace = $cmdb AND r.graph = \"Global\" SET r.end_version = $end_version1 RETURN r";
-            parameters = Values.parameters("val1", deploymentNode.getEnvironment(), "cmdb", cmdb,
-                    "val2", deploymentNode.getName(), "end_version1", null);
-            session.run(updateNode, parameters);
-            return;
-        }
-
-        // Создание соединения
-        createRelationshipQuery = "MATCH (a:Environment {graph: \"Global\", name: $val1}), (b:DeploymentNode {graph: \"Global\", name: $val2}) CREATE (a)-[r:Child {graph: \"Global\", source_workspace: $cmdb, start_version: $start_version1, description: $description1}]->(b) RETURN a, b";
-        parameters = Values.parameters("val1", deploymentNode.getEnvironment(), "cmdb", cmdb, "val2",
-                deploymentNode.getName(), "start_version1", curVersion, "description1", "Child");
-        session.run(createRelationshipQuery, parameters);
-    }
-
-    public static void createEnvironmentInfrastructure(Session session, InfrastructureNode infrastructureNode,
-            Integer curVersion, Object cmdb) {
-
-        boolean exists = checkIfObjectExists(session, "Environment", "name", infrastructureNode.getEnvironment());
-
-        if (!exists) {
-            String createNodeQuery = "CREATE (n:Environment {graph: \"Global\", name: $name1}) RETURN n";
-            Value parameters = Values.parameters("name1", infrastructureNode.getEnvironment());
-            session.run(createNodeQuery, parameters);
-        }
-
-        // Проверка на существование связи
-        String createRelationshipQuery = "MATCH (a:Environment {graph: \"Global\", name: $val1})-[r:Child]->(b:InfrastructureNode {graph: \"Global\", name: $val2}) WHERE r.source_workspace = $cmdb AND r.description = $description1 AND r.graph = \"Global\" RETURN EXISTS((a)-->(b)) AS relationship_exists";
-        Value parameters = Values.parameters("val1", infrastructureNode.getEnvironment(), "val2",
-                infrastructureNode.getName(), "cmdb", cmdb, "description1", "Child");
-        Result result = session.run(createRelationshipQuery, parameters);
-
-        if (result.hasNext()) {
-            String updateNode = "MATCH (a:Environment {graph: \"Global\", name: $val1})-[r:Child]->(b:InfrastructureNode {graph: \"Global\", name: $val2}) WHERE r.graph = \"Global\" AND r.source_workspace = $cmdb SET r.end_version = $end_version1 RETURN r";
-            parameters = Values.parameters("val1", infrastructureNode.getEnvironment(), "cmdb", cmdb,
-                    "val2", infrastructureNode.getName(), "end_version1", null);
-            session.run(updateNode, parameters);
-            return;
-        }
-
-        // Создание соединения
-        createRelationshipQuery = "MATCH (a:Environment {graph: \"Global\", name: $val1}), (b:InfrastructureNode {graph: \"Global\", name: $val2}) CREATE (a)-[r:Child {graph: \"Global\", source_workspace: $cmdb, start_version: $start_version1, description: $description1}]->(b) RETURN a, b";
-        parameters = Values.parameters("val1", infrastructureNode.getEnvironment(), "cmdb", cmdb, "val2",
-                infrastructureNode.getName(), "start_version1", curVersion, "description1", "Child");
-        session.run(createRelationshipQuery, parameters);
     }
 
     public static void updateInfrastructureNode(Session session, InfrastructureNode infrastructureNode) {
@@ -1250,8 +1099,7 @@ public class MajorGraph {
     }
 
     public static void createDeploymentNode(Session session, DeploymentNode deploymentNode, Integer curVersion,
-            Object cmdb, SoftwareSystem softwareSystem, Model model, HashMap<String, Object> cont,
-            HashMap<String, Object> comp, HashMap<String, Object> deplNode, HashMap<String, Object> infNode) {
+            Object cmdb, SoftwareSystem softwareSystem, Model model) {
 
         boolean exists = checkIfObjectExists(session, "DeploymentNode", "name", deploymentNode.getName());
         if (exists) {
@@ -1280,7 +1128,12 @@ public class MajorGraph {
 
         // Создание окружения и связи с ним
         if (deploymentNode.getEnvironment() != null) {
-            createEnvironmentDeployment(session, deploymentNode, curVersion, cmdb);
+            createEnvironment(session, deploymentNode.getEnvironment());
+            Relationship rel = new Relationship();
+            rel.setSourceId(env_name.get(deploymentNode.getEnvironment()));
+            rel.setDestinationId(deploymentNode.getId());
+            rel.setDescription("Child");
+            createRelation(session, rel, softwareSystem, curVersion, "Child", cmdb, model, "");
         }
 
         // Проход по всем InfrastructureNodes
@@ -1294,12 +1147,47 @@ public class MajorGraph {
                 rel.setSourceId(deploymentNode.getId());
                 rel.setDestinationId(infrastructureNode.getId());
                 rel.setDescription("Child");
-                createRelation(session, rel, cont, comp, deplNode, infNode, softwareSystem, curVersion, "Child", cmdb,
-                        model, "");
+                createRelation(session, rel, softwareSystem, curVersion, "Child", cmdb, model, "");
 
                 // Создание окружения и связи с ним
                 if (infrastructureNode.getEnvironment() != null) {
-                    createEnvironmentInfrastructure(session, infrastructureNode, curVersion, cmdb);
+                    createEnvironment(session, infrastructureNode.getEnvironment());
+                    rel = new Relationship();
+                    rel.setSourceId(env_name.get(deploymentNode.getEnvironment()));
+                    rel.setDestinationId(infrastructureNode.getId());
+                    rel.setDescription("Child");
+                    createRelation(session, rel, softwareSystem, curVersion, "Child", cmdb, model, "");
+                }
+            }
+        }
+
+        // Проход по всем ContainerInstances
+        if (deploymentNode.getContainerInstances() != null) {
+            for (ContainerInstance containerInstance : deploymentNode.getContainerInstances()) {
+                // Добавление в map происходит внутри функции
+                createContainerInstance(session, model, containerInstance, curVersion);
+
+                // Deploy связь с контейнером
+                Relationship rel = new Relationship();
+                rel.setSourceId(containerInstance.getContainerId());
+                rel.setDestinationId(containerInstance.getId());
+                rel.setDescription("Deploy");
+                createRelation(session, rel, softwareSystem, curVersion, "Deploy", cmdb, model, "");
+
+                rel = new Relationship();
+                rel.setSourceId(deploymentNode.getId());
+                rel.setDestinationId(containerInstance.getId());
+                rel.setDescription("Child");
+                createRelation(session, rel, softwareSystem, curVersion, "Child", cmdb, model, "");
+
+                // Создание окружения и связи с ним
+                if (containerInstance.getEnvironment() != null) {
+                    createEnvironment(session, containerInstance.getEnvironment());
+                    rel = new Relationship();
+                    rel.setSourceId(env_name.get(deploymentNode.getEnvironment()));
+                    rel.setDestinationId(containerInstance.getId());
+                    rel.setDescription("Child");
+                    createRelation(session, rel, softwareSystem, curVersion, "Child", cmdb, model, "");
                 }
             }
         }
@@ -1309,22 +1197,19 @@ public class MajorGraph {
             for (DeploymentNode deploymentNodeChild : deploymentNode.getChildren()) {
                 deploymentNodeChild.setName(deploymentNodeChild.getName() + "." + deploymentNode.getName().toString());
                 deplNode.put(deploymentNodeChild.getId(), deploymentNodeChild.getName());
-                createDeploymentNode(session, deploymentNodeChild, curVersion, cmdb, softwareSystem, model, cont, comp,
-                        deplNode, infNode);
+                createDeploymentNode(session, deploymentNodeChild, curVersion, cmdb, softwareSystem, model);
 
                 Relationship rel = new Relationship();
                 rel.setSourceId(deploymentNode.getId());
                 rel.setDestinationId(deploymentNodeChild.getId());
                 rel.setDescription("Child");
-                createRelation(session, rel, cont, comp, deplNode, infNode, softwareSystem, curVersion, "Child", cmdb,
-                        model, "");
+                createRelation(session, rel, softwareSystem, curVersion, "Child", cmdb, model, "");
             }
         }
     }
 
     public static void createDeploymentNodeRelations(Session session, DeploymentNode deploymentNode, Integer curVersion,
-            Object cmdb, SoftwareSystem softwareSystem, Model model, HashMap<String, Object> cont,
-            HashMap<String, Object> comp, HashMap<String, Object> deplNode, HashMap<String, Object> infNode) {
+            Object cmdb, SoftwareSystem softwareSystem, Model model) {
 
         // Проход по всем Relationship
         if (deploymentNode.getRelationships() != null) {
@@ -1337,8 +1222,7 @@ public class MajorGraph {
                     rel.setDescription("None");
                 }
 
-                createRelation(session, rel, cont, comp, deplNode, infNode, softwareSystem, curVersion,
-                        "Relationship", cmdb, model, "C");
+                createRelation(session, rel, softwareSystem, curVersion, "Relationship", cmdb, model, "C");
             }
         }
 
@@ -1354,31 +1238,29 @@ public class MajorGraph {
                         rel.setDescription("None");
                     }
 
-                    createRelation(session, rel, cont, comp, deplNode, infNode, softwareSystem, curVersion,
-                            "Relationship", cmdb, model, "C");
+                    createRelation(session, rel, softwareSystem, curVersion, "Relationship", cmdb, model, "C");
                 }
-            }
-        }
-
-        // Проход по всем SoftwareSystemInstance
-        if (deploymentNode.getSoftwareSystemInstances() != null) {
-            for (SoftwareSystemInstance softwareSystemInstance : deploymentNode.getSoftwareSystemInstances()) {
-                createDeployRelationSystem(session, model, deploymentNode, softwareSystemInstance, cmdb, curVersion);
             }
         }
 
         // Проход по всем ContainerInstance
         if (deploymentNode.getContainerInstances() != null) {
             for (ContainerInstance containerInstance : deploymentNode.getContainerInstances()) {
-                createDeployRelationContainer(session, model, deploymentNode, containerInstance, cmdb, curVersion);
+                for (Relationship rel : containerInstance.getRelationships()) {
+
+                    if (rel.getDescription() == null) {
+                        rel.setDescription("None");
+                    }
+
+                    createRelation(session, rel, softwareSystem, curVersion, "Relationship", cmdb, model, "C");
+                }
             }
         }
 
         // Проход по всем дочерним элементам
         if (deploymentNode.getChildren() != null) {
             for (DeploymentNode deploymentNodeChild : deploymentNode.getChildren()) {
-                createDeploymentNodeRelations(session, deploymentNodeChild, curVersion, cmdb, softwareSystem, model,
-                        cont, comp, deplNode, infNode);
+                createDeploymentNodeRelations(session, deploymentNodeChild, curVersion, cmdb, softwareSystem, model);
             }
         }
 
@@ -1464,6 +1346,25 @@ public class MajorGraph {
 
             // Проставление end_version для вершины
             updateNode = "MATCH (n:InfrastructureNode {graph: \"Global\", name: $name1}) SET n.end_version = $end_version1 RETURN n";
+            parameters = Values.parameters("name1", childName1, "end_version1", curVersion);
+            session.run(updateNode, parameters);
+
+        }
+
+        // Проставление end_version для ContainerInstance
+        query = "MATCH (n:DeploymentNode)-[r:Child]->(m:ContainerInstance) WHERE n.name = $name1 AND n.graph = \"Global\" AND m.end_version IS NULL RETURN m";
+        parameters = Values.parameters("name1", name1);
+        result1 = session.run(query, parameters);
+
+        while (result1.hasNext()) {
+            org.neo4j.driver.Record record = result1.next();
+            Value childNodeValue = record.get("m");
+
+            // Получение name текущего элемента
+            Object childName1 = childNodeValue.asNode().asMap().get("name");
+
+            // Проставление end_version для вершины
+            updateNode = "MATCH (n:ContainerInstance {graph: \"Global\", name: $name1}) SET n.end_version = $end_version1 RETURN n";
             parameters = Values.parameters("name1", childName1, "end_version1", curVersion);
             session.run(updateNode, parameters);
 
@@ -1555,10 +1456,13 @@ public class MajorGraph {
             // Создание/Обновление системы
             Integer curVersion = createSoftware(session, softwareSystem, cmdb);
 
-            HashMap<String, Object> cont = new HashMap<>();
-            HashMap<String, Object> comp = new HashMap<>();
-            HashMap<String, Object> deplNode = new HashMap<>();
-            HashMap<String, Object> infNode = new HashMap<>();
+            cont = new HashMap<>();
+            comp = new HashMap<>();
+            deplNode = new HashMap<>();
+            infNode = new HashMap<>();
+            contIns = new HashMap<>();
+            env_id = new HashMap<>();
+            env_name = new HashMap<>();
 
             // Проставление всем элементам end_version = curVersion - 1;
             puttingEndVersion(session, softwareSystem, cmdb, curVersion - 1);
@@ -1586,8 +1490,7 @@ public class MajorGraph {
                     rel.setSourceId(softwareSystem.getId());
                     rel.setDestinationId(container.getId());
                     rel.setDescription("Child");
-                    createRelation(session, rel, cont, comp, deplNode, infNode, softwareSystem, curVersion, "Child",
-                            cmdb, model, "");
+                    createRelation(session, rel, softwareSystem, curVersion, "Child", cmdb, model, "");
 
                     // Создание/Обновление компонентов конейнера
                     if (container.getComponents() == null) {
@@ -1616,8 +1519,7 @@ public class MajorGraph {
                         rel.setSourceId(container.getId());
                         rel.setDestinationId(component.getId());
                         rel.setDescription("Child");
-                        createRelation(session, rel, cont, comp, deplNode, infNode, softwareSystem, curVersion, "Child",
-                                cmdb, model, "");
+                        createRelation(session, rel, softwareSystem, curVersion, "Child", cmdb, model, "");
                     }
                 }
             }
@@ -1658,8 +1560,7 @@ public class MajorGraph {
                     if (rel_sys.getDescription() == null) {
                         rel_sys.setDescription("None");
                     }
-                    createRelation(session, rel_sys, cont, comp, deplNode, infNode, softwareSystem, curVersion,
-                            "Relationship", cmdb, model, "C1");
+                    createRelation(session, rel_sys, softwareSystem, curVersion, "Relationship", cmdb, model, "C1");
                 }
 
                 // Создание/Обновление Relationships у контейнеров
@@ -1682,8 +1583,8 @@ public class MajorGraph {
                         if (rel_cont.getDescription() == null) {
                             rel_cont.setDescription("None");
                         }
-                        createRelation(session, rel_cont, cont, comp, deplNode, infNode, softwareSystem, curVersion,
-                                "Relationship", cmdb, model, "C2");
+                        createRelation(session, rel_cont, softwareSystem, curVersion, "Relationship", cmdb, model,
+                                "C2");
                     }
 
                     // Создание/Обновление Relationships у компонентов контейнера
@@ -1706,8 +1607,8 @@ public class MajorGraph {
                             if (rel_comp.getDescription() == null) {
                                 rel_comp.setDescription("None");
                             }
-                            createRelation(session, rel_comp, cont, comp, deplNode, infNode, softwareSystem, curVersion,
-                                    "Relationship", cmdb, model, "C3");
+                            createRelation(session, rel_comp, softwareSystem, curVersion, "Relationship", cmdb, model,
+                                    "C3");
                         }
                     }
                 }
@@ -1718,23 +1619,20 @@ public class MajorGraph {
                 for (DeploymentNode deploymentNode : model.getDeploymentNodes()) {
                     deploymentNode.setName(deploymentNode.getName() + "." + cmdb.toString());
                     deplNode.put(deploymentNode.getId(), deploymentNode.getName());
-                    createDeploymentNode(session, deploymentNode, curVersion, cmdb, softwareSystem, model, cont, comp,
-                            deplNode, infNode);
+                    createDeploymentNode(session, deploymentNode, curVersion, cmdb, softwareSystem, model);
 
                     Relationship rel = new Relationship();
                     rel.setSourceId(softwareSystem.getId());
                     rel.setDestinationId(deploymentNode.getId());
                     rel.setDescription("Child");
-                    createRelation(session, rel, cont, comp, deplNode, infNode, softwareSystem, curVersion, "Child",
-                            cmdb, model, "");
+                    createRelation(session, rel, softwareSystem, curVersion, "Child", cmdb, model, "");
                 }
             }
 
             // Создание Relationship для DeploymentNodes
             if (model.getDeploymentNodes() != null) {
                 for (DeploymentNode deploymentNode : model.getDeploymentNodes()) {
-                    createDeploymentNodeRelations(session, deploymentNode, curVersion, cmdb, softwareSystem, model,
-                            cont, comp, deplNode, infNode);
+                    createDeploymentNodeRelations(session, deploymentNode, curVersion, cmdb, softwareSystem, model);
                 }
             }
 
