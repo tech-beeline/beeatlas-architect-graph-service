@@ -191,7 +191,7 @@ public class GetObjects {
         Value parameters = Values.parameters("val1",
                 infrastructureNode.getProperties().get("structurizr_dsl_identifier"));
         Result result = session.run(query, parameters);
-        infrastructureNode.setEnvironment(result.next().get("n.name").toString());
+        infrastructureNode.setEnvironment(result.next().get("n.name").asString());
 
         if (!infrastructureNode.getEnvironment().equals(environment)) {
             return;
@@ -227,7 +227,7 @@ public class GetObjects {
         Value parameters = Values.parameters("val1",
                 containerInstance.getProperties().get("structurizr_dsl_identifier"));
         Result result = session.run(query, parameters);
-        containerInstance.setEnvironment(result.next().get("n.name").toString());
+        containerInstance.setEnvironment(result.next().get("n.name").asString());
 
         if (!containerInstance.getEnvironment().equals(environment)) {
             return;
@@ -236,8 +236,8 @@ public class GetObjects {
         // Добавление id контейнера
         query = "MATCH (n:Container)-[r:Deploy]->(m:ContainerInstance {graph: \"Global\", structurizr_dsl_identifier: $val1}) RETURN n.structurizr_dsl_identifier";
         result = session.run(query, parameters);
-        containerInstance
-                .setContainerId(map_id.get(result.next().get("n.structurizr_dsl_identifier").toString()).toString());
+        String contIdentifier = result.next().get("n.structurizr_dsl_identifier").asString();
+        containerInstance.setContainerId(map_id.get(contIdentifier).toString());
 
         map_id.put(containerInstance.getProperties().get("structurizr_dsl_identifier").toString(), id_obj);
         id_obj = id_obj + 1;
@@ -264,10 +264,10 @@ public class GetObjects {
         }
 
         // Добавление Environment
-        String query = "MATCH (n:Environment)-[r:Child]->(n:DeploymentNode {graph: \"Global\", structurizr_dsl_identifier: $val1}) RETURN n.name";
+        String query = "MATCH (n:Environment)-[r:Child]->(m:DeploymentNode {graph: \"Global\", structurizr_dsl_identifier: $val1}) RETURN n.name";
         Value parameters = Values.parameters("val1", deploymentNode.getProperties().get("structurizr_dsl_identifier"));
         Result result = session.run(query, parameters);
-        deploymentNode.setEnvironment(result.next().get("n.name").toString());
+        deploymentNode.setEnvironment(result.next().get("n.name").asString());
 
         if (!deploymentNode.getEnvironment().equals(environment)) {
             return;
@@ -329,6 +329,7 @@ public class GetObjects {
         deploymentNode.setInfrastructureNodes(new ArrayList<>());
 
         query = "MATCH (n:DeploymentNode {graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Child]->(m:InfrastructureNode) RETURN m.structurizr_dsl_identifier";
+        parameters = Values.parameters("val1", deploymentNode.getProperties().get("structurizr_dsl_identifier"));
         result = session.run(query, parameters);
 
         while (result.hasNext()) {
@@ -353,9 +354,10 @@ public class GetObjects {
         }
 
         // Добавление ContainerInstance
-        deploymentNode.setInfrastructureNodes(new ArrayList<>());
+        deploymentNode.setContainerInstances(new ArrayList<>());
 
         query = "MATCH (n:DeploymentNode {graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Child]->(m:ContainerInstance) RETURN m.structurizr_dsl_identifier";
+        parameters = Values.parameters("val1", deploymentNode.getProperties().get("structurizr_dsl_identifier"));
         result = session.run(query, parameters);
 
         while (result.hasNext()) {
@@ -383,6 +385,7 @@ public class GetObjects {
         deploymentNode.setChildren(new ArrayList<>());
 
         query = "MATCH (n:DeploymentNode {graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Child]->(m:DeploymentNode) RETURN m.structurizr_dsl_identifier";
+        parameters = Values.parameters("val1", deploymentNode.getProperties().get("structurizr_dsl_identifier"));
         result = session.run(query, parameters);
 
         while (result.hasNext()) {
@@ -517,6 +520,7 @@ public class GetObjects {
         components = new HashMap<>();
         deploymentNodes = new HashMap<>();
         infrastructureNodes = new HashMap<>();
+        containerInstances = new HashMap<>();
 
         // Подключение к БД
         Driver driver = GraphDatabase.driver(uri, AuthTokens.basic(user, password));
@@ -526,7 +530,7 @@ public class GetObjects {
         Workspace workspace = new Workspace();
         Model model = new Model();
         model.setSoftwareSystems(new ArrayList<>());
-        // model.setDeploymentNodes(new ArrayList<>());
+        model.setDeploymentNodes(new ArrayList<>());
         workspace.setId(1L);
 
         // Создание views
@@ -998,18 +1002,16 @@ public class GetObjects {
         } else {
 
             // Добавление контейнеров
-            query = "MATCH (n:SoftwareSystem {graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Child]->(m:Container) RETURN m, m.structurizr_dsl_identifier";
+            query = "MATCH (n:SoftwareSystem {graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Child]->(m:Container) RETURN m";
             result = session.run(query, parameters);
 
             while (result.hasNext()) {
                 record = result.next();
-                childs.add(String.valueOf(id_obj));
                 getContainer(record.get("m").asNode(), session);
-
             }
 
             // Добавление DeploymentNode
-            query = "MATCH (n:SoftwareSystem {graph: \"Global\", tructurizr_dsl_identifier: $val1})-[r:Child]->(m:DeploymentNode) RETURN m";
+            query = "MATCH (n:SoftwareSystem {graph: \"Global\", structurizr_dsl_identifier: $val1})-[r:Child]->(m:DeploymentNode) RETURN m";
             parameters = Values.parameters("val1", softwareSystemMnemonic);
             result = session.run(query, parameters);
 
@@ -1025,6 +1027,7 @@ public class GetObjects {
 
             while (result.hasNext()) {
                 record = result.next();
+                System.out.println(record.get("m.structurizr_dsl_identifier").asString());
                 model.getDeploymentNodes().add(getDeploymentNodeRelations(
                         deploymentNodes.get(record.get("m.structurizr_dsl_identifier").asString()), session, cmdb));
             }

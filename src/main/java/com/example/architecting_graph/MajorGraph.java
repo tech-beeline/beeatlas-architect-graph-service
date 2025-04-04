@@ -809,8 +809,7 @@ public class MajorGraph {
     }
 
     public static void createRelation(Session session, Relationship rel, SoftwareSystem softwareSystem,
-            Integer curVersion, String rel_type,
-            Object cmdb, Model model, String level) {
+            Integer curVersion, String rel_type, Object cmdb, Model model, String level) {
 
         String type1;
         String key1;
@@ -942,7 +941,7 @@ public class MajorGraph {
     public static void updateContainerInstance(Session session, ContainerInstance containerInstance, Object cur_name) {
 
         // Обновление компонентов
-        String updateNode = "MATCH (n:ContainerInstance {graph: \"Global\", name: $val1}) SET n.instanceId = $instanceId1, n.tags = $tags1, n.end_version: $end_version1 RETURN n";
+        String updateNode = "MATCH (n:ContainerInstance {graph: \"Global\", name: $val1}) SET n.instanceId = $instanceId1, n.tags = $tags1, n.end_version = $end_version1 RETURN n";
         Value parameters = Values.parameters("val1", cur_name, "instanceId1", containerInstance.getInstanceId(),
                 "tags1", containerInstance.getTags(), "end_version1", null);
         session.run(updateNode, parameters);
@@ -1019,6 +1018,9 @@ public class MajorGraph {
             String createNodeQuery = "CREATE (n:Environment {graph: \"Global\", name: $name1}) RETURN n";
             Value parameters = Values.parameters("name1", environment);
             session.run(createNodeQuery, parameters);
+        }
+
+        if (!env_name.containsKey(environment)) {
             String id = String.valueOf(90000 + env_id.size());
             env_id.put(id, environment);
             env_name.put(environment, id);
@@ -1229,6 +1231,9 @@ public class MajorGraph {
         // Проход по всем InfrastructureNode
         if (deploymentNode.getInfrastructureNodes() != null) {
             for (InfrastructureNode infrastructureNode : deploymentNode.getInfrastructureNodes()) {
+                if (infrastructureNode.getRelationships() == null) {
+                    continue;
+                }
                 for (Relationship rel : infrastructureNode.getRelationships()) {
 
                     if (rel.getLinkedRelationshipId() != null) {
@@ -1246,6 +1251,9 @@ public class MajorGraph {
         // Проход по всем ContainerInstance
         if (deploymentNode.getContainerInstances() != null) {
             for (ContainerInstance containerInstance : deploymentNode.getContainerInstances()) {
+                if (containerInstance.getRelationships() == null) {
+                    continue;
+                }
                 for (Relationship rel : containerInstance.getRelationships()) {
 
                     if (rel.getDescription() == null) {

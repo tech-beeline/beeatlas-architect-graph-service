@@ -214,7 +214,7 @@ public class GraphApi {
                     autorization.getPassword());
         } catch (Exception e) {
             // Обработка исключения
-            return ResponseEntity.badRequest().body("Граф не построен");
+            return ResponseEntity.badRequest().body("Граф не построен" + '\n' + e);
         }
 
         return ResponseEntity.status(HttpStatus.CREATED).body("Граф построен");
@@ -308,7 +308,7 @@ public class GraphApi {
                 softwareSystemMnemonic)) {
 
             // Проверка на существование окружения
-            String query = "MATCH (a:Environment {name: $val1}) RETURN n";
+            String query = "MATCH (n:Environment {name: $val1}) RETURN n";
             Value parameters = Values.parameters("val1", environment);
             Result result = session.run(query, parameters);
             if (!result.hasNext()) {
