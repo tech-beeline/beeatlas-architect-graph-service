@@ -162,6 +162,64 @@ public class FindChanges {
                 }
             }
         }
+
+        // Проход по ContainerInstances
+        query = "MATCH (n:DeploymentNode {graph: \"Global\", name: $val1})-[r:Child]->(m:ContainerInstance) RETURN n, m, m.name, m.start_version, m.end_version";
+        result = session.run(query, parameters);
+
+        while (result.hasNext()) {
+            org.neo4j.driver.Record record = result.next();
+            Integer start_version = record.get("m.start_version").asInt();
+            Integer end_version = cur_version;
+            try {
+                end_version = record.get("m.end_version").asInt();
+            } catch (Exception e) {
+                end_version = cur_version;
+            }
+            String cont_ins_name = record.get("m.name").asString();
+
+            if (flag) {
+                if (start_version <= v1 && v1 <= end_version && end_version < v2) {
+                    out.add(new Pair(cont_ins_name, "ContainerInstance"));
+                    out.add(new Pair(descriptionRelation(record.get("n"), record.get("m"), "Child", "Child"),
+                            "Relationship"));
+                }
+            } else {
+                if (v1 < start_version && start_version <= v2 && v2 <= end_version) {
+                    out.add(new Pair(cont_ins_name, "ContainerInstance"));
+                    out.add(new Pair(descriptionRelation(record.get("n"), record.get("m"), "Child", "Child"),
+                            "Relationship"));
+                }
+            }
+
+            // Проход по прямым связям
+            query = "MATCH (n:ContainerInstance {graph: \"Global\", name: $val1})-[r:Relationship {source_workspace: $cmdb}]->(m) RETURN n, m, r.start_version, r.end_version, r.description";
+            parameters = Values.parameters("cmdb", cmdb, "val1", cont_ins_name);
+            Result result1 = session.run(query, parameters);
+
+            while (result1.hasNext()) {
+                record = result1.next();
+                start_version = record.get("r.start_version").asInt();
+                end_version = cur_version;
+                try {
+                    end_version = record.get("r.end_version").asInt();
+                } catch (Exception e) {
+                    end_version = cur_version;
+                }
+
+                if (flag) {
+                    if (start_version <= v1 && v1 <= end_version && end_version < v2) {
+                        out.add(new Pair(descriptionRelation(record.get("n"), record.get("m"), "Relationship",
+                                record.get("r.description").asString()), "Relationship"));
+                    }
+                } else {
+                    if (v1 < start_version && start_version <= v2 && v2 <= end_version) {
+                        out.add(new Pair(descriptionRelation(record.get("n"), record.get("m"), "Relationship",
+                                record.get("r.description").asString()), "Relationship"));
+                    }
+                }
+            }
+        }
     }
 
     public static Set<Pair> EarlierChanges(Integer v1, Integer v2, Integer cur_version, String cmdb, Session session) {
@@ -268,27 +326,6 @@ public class FindChanges {
                 if (start_version <= v1 && v1 <= end_version && end_version < v2) {
                     out.add(new Pair(descriptionRelation(record.get("m"), record.get("n"), "Relationship",
                             record.get("r.description").asString()), "Relationship"));
-                }
-            }
-
-            // Проход по ContainerInstances
-            query = "MATCH (n:Container {graph: \"Global\", name: $val1})-[r:Deploy {source_workspace: $cmdb}]->(m) RETURN n, m, r.start_version, r.end_version";
-            parameters = Values.parameters("val1", cont_name, "cmdb", cmdb);
-            result1 = session.run(query, parameters);
-
-            while (result1.hasNext()) {
-                record = result1.next();
-                start_version = record.get("r.start_version").asInt();
-                end_version = cur_version;
-                try {
-                    end_version = record.get("r.end_version").asInt();
-                } catch (Exception e) {
-                    end_version = cur_version;
-                }
-
-                if (start_version <= v1 && v1 <= end_version && end_version < v2) {
-                    out.add(new Pair(descriptionRelation(record.get("n"), record.get("m"), "ContainerInstance",
-                            "Deploy"), "ContainerInstance"));
                 }
             }
 
@@ -510,27 +547,6 @@ public class FindChanges {
                 if (v1 < start_version && start_version <= v2 && v2 <= end_version) {
                     out.add(new Pair(descriptionRelation(record.get("m"), record.get("n"), "Relationship",
                             record.get("r.description").asString()), "Relationship"));
-                }
-            }
-
-            // Проход по ContainerInstances
-            query = "MATCH (n:Container {graph: \"Global\", name: $val1})-[r:Deploy {source_workspace: $cmdb}]->(m) RETURN n, m, r.start_version, r.end_version";
-            parameters = Values.parameters("val1", cont_name, "cmdb", cmdb);
-            result1 = session.run(query, parameters);
-
-            while (result1.hasNext()) {
-                record = result1.next();
-                start_version = record.get("r.start_version").asInt();
-                end_version = cur_version;
-                try {
-                    end_version = record.get("r.end_version").asInt();
-                } catch (Exception e) {
-                    end_version = cur_version;
-                }
-
-                if (v1 < start_version && start_version <= v2 && v2 <= end_version) {
-                    out.add(new Pair(descriptionRelation(record.get("n"), record.get("m"), "ContainerInstance",
-                            "Deploy"), "ContainerInstance"));
                 }
             }
 
