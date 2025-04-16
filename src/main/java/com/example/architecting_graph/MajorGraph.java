@@ -469,11 +469,10 @@ public class MajorGraph {
         }
 
         updateNode = updateNode +
-                ", r.tags = $tags1,  r.url = $url1, r.technology = $technology1,  r.interactionStyle = $interactionStyle1,  r.linkedRelationshipId = $linkedRelationshipId1, r.level = $level1 RETURN r";
+                ", r.tags = $tags1,  r.url = $url1, r.technology = $technology1,  r.interactionStyle = $interactionStyle1, r.level = $level1 RETURN r";
         Value parameters = Values.parameters("val1", val1, "cmdb", cmdb, "description1", rel.getDescription(), "val2",
                 val2, "end_version1", null, "tags1", rel.getTags(), "url1", rel.getUrl(), "technology1",
-                rel.getTechnology(), "interactionStyle1", rel.getInteractionStyle(), "linkedRelationshipId1",
-                rel.getLinkedRelationshipId(), "level1", level);
+                rel.getTechnology(), "interactionStyle1", rel.getInteractionStyle(), "level1", level);
         session.run(updateNode, parameters);
 
         if (rel.getDescription().equals("None")) {

@@ -12,8 +12,11 @@ import java.util.Set;
 import java.io.File;
 
 import org.neo4j.driver.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
@@ -49,7 +52,7 @@ public class GraphApi {
         RestTemplate restTemplate = new RestTemplate();
 
         // URL вашего API
-        String url = autorization.getUrl() + "/api/v1/documents/" + Long.toString(id_file);
+        String url = autorization.getDocUrl() + "/api/v1/documents/" + Long.toString(id_file);
 
         // Выполняем GET-запрос без заголовков
         ResponseEntity<byte[]> response;
@@ -74,6 +77,27 @@ public class GraphApi {
             return jsonObject;
         } catch (Exception e) {
             throw new HttpClientErrorException(HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    public String changeJson(String file) throws Exception {
+        String url = autorization.getGraphvizUrl();
+        RestTemplate restTemplate = new RestTemplate();
+
+        // Явно создаем HttpEntity с телом и заголовками
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<String> requestEntity = new HttpEntity<>(file, headers);
+
+        try {
+            ResponseEntity<String> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.POST,
+                    requestEntity,
+                    String.class);
+            return response.getBody();
+        } catch (Exception e) {
+            throw new Exception("Failed to call Graphviz API: " + e.getMessage(), e);
         }
     }
 
@@ -265,6 +289,9 @@ public class GraphApi {
                 String json = objectMapper.writerWithDefaultPrettyPrinter()
                         .writeValueAsString(GetObjects.GetWorkspace(softwareSystemMnemonic, containerMnemonic, null,
                                 autorization.getUri(), autorization.getUser(), autorization.getPassword()));
+
+                json = changeJson(json);
+
                 return ResponseEntity.status(200).contentType(MediaType.APPLICATION_JSON).body(json);
             } catch (Exception e) {
                 driver.close();
@@ -322,6 +349,8 @@ public class GraphApi {
                 String json = objectMapper.writerWithDefaultPrettyPrinter()
                         .writeValueAsString(GetObjects.GetWorkspace(softwareSystemMnemonic, null, environment,
                                 autorization.getUri(), autorization.getUser(), autorization.getPassword()));
+
+                json = changeJson(json);
                 return ResponseEntity.status(200).contentType(MediaType.APPLICATION_JSON).body(json);
             } catch (Exception e) {
                 driver.close();

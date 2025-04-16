@@ -94,11 +94,10 @@ public class MinorGraph {
         String updateNode = "MATCH (a:" + type1 + " {graph: \"Local\", " + key1 + ": $val1})-[r:"
                 + rel_type + " {graph: \"Local\", source_workspace: $cmdb, description: $description1}]->(b:" + type2
                 + " {graph: \"Local\", " + key2
-                + ": $val2}) SET r.tags = $tags1,  r.url = $url1, r.technology = $technology1,  r.interactionStyle = $interactionStyle1,  r.linkedRelationshipId = $linkedRelationshipId1, r.level = $level1 RETURN r";
+                + ": $val2}) SET r.tags = $tags1,  r.url = $url1, r.technology = $technology1,  r.interactionStyle = $interactionStyle1, r.level = $level1 RETURN r";
         Value parameters = Values.parameters("val1", val1, "cmdb", cmdb, "description1", rel.getDescription(), "val2",
                 val2, "tags1", rel.getTags(), "url1", rel.getUrl(), "technology1",
-                rel.getTechnology(), "interactionStyle1", rel.getInteractionStyle(), "linkedRelationshipId1",
-                rel.getLinkedRelationshipId(), "level1", level);
+                rel.getTechnology(), "interactionStyle1", rel.getInteractionStyle(), "level1", level);
         session.run(updateNode, parameters);
 
         if (rel.getDescription().equals("None")) {

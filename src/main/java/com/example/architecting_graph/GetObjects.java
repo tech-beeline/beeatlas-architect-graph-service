@@ -399,14 +399,14 @@ public class GetObjects {
     }
 
     public static void getDeploymentElements(DeploymentNode deploymentNode, DeploymentView deploymentView,
-            Set<String> objects, Integer x, Integer y) {
+            Set<String> objects) {
 
         // Добавление текущего элемента
         if (!objects.contains(deploymentNode.getId())) {
             ElementView depl = new ElementView();
             depl.setId(deploymentNode.getId());
-            depl.setX(x);
-            depl.setY(y);
+            depl.setX(0);
+            depl.setY(0);
             deploymentView.getElements().add(depl);
             objects.add(deploymentNode.getId());
         }
@@ -422,10 +422,8 @@ public class GetObjects {
             if (!objects.contains(relationship.getDestinationId())) {
                 ElementView el = new ElementView();
                 el.setId(relationship.getDestinationId());
-                el.setX(x + 150);
-                el.setY(y + 150);
-                x = x + 150;
-                y = y + 150;
+                el.setX(0);
+                el.setY(0);
                 deploymentView.getElements().add(el);
                 objects.add(relationship.getDestinationId());
             }
@@ -436,10 +434,8 @@ public class GetObjects {
             if (!objects.contains(infrastructureNode.getId())) {
                 ElementView el = new ElementView();
                 el.setId(infrastructureNode.getId());
-                el.setX(x + 150);
-                el.setY(x + 150);
-                x = x + 150;
-                y = y + 150;
+                el.setX(0);
+                el.setY(0);
                 deploymentView.getElements().add(el);
                 objects.add(infrastructureNode.getId());
             }
@@ -455,10 +451,8 @@ public class GetObjects {
                 if (!objects.contains(relationship.getDestinationId())) {
                     ElementView el = new ElementView();
                     el.setId(relationship.getDestinationId());
-                    el.setX(x + 150);
-                    el.setY(x + 150);
-                    x = x + 150;
-                    y = y + 150;
+                    el.setX(0);
+                    el.setY(0);
                     deploymentView.getElements().add(el);
                     objects.add(relationship.getDestinationId());
                 }
@@ -470,10 +464,8 @@ public class GetObjects {
             if (!objects.contains(containerInstance.getId())) {
                 ElementView el = new ElementView();
                 el.setId(containerInstance.getId());
-                el.setX(x + 150);
-                el.setY(x + 150);
-                x = x + 150;
-                y = y + 150;
+                el.setX(0);
+                el.setY(0);
                 deploymentView.getElements().add(el);
                 objects.add(containerInstance.getId());
             }
@@ -489,10 +481,8 @@ public class GetObjects {
                 if (!objects.contains(relationship.getDestinationId())) {
                     ElementView el = new ElementView();
                     el.setId(relationship.getDestinationId());
-                    el.setX(x + 150);
-                    el.setY(x + 150);
-                    x = x + 150;
-                    y = y + 150;
+                    el.setX(0);
+                    el.setY(0);
                     deploymentView.getElements().add(el);
                     objects.add(relationship.getDestinationId());
                 }
@@ -501,9 +491,7 @@ public class GetObjects {
 
         // Проход по всем дочерним DeploymentNodes
         for (DeploymentNode childDeploymentNode : deploymentNode.getChildren()) {
-            getDeploymentElements(childDeploymentNode, deploymentView, objects, x + 150, y + 150);
-            x = x + 150;
-            y = y + 150;
+            getDeploymentElements(childDeploymentNode, deploymentView, objects);
         }
     }
 
@@ -1308,8 +1296,8 @@ public class GetObjects {
 
             // Создание automaticLayout
             AutomaticLayout automaticLayout = new AutomaticLayout();
-            automaticLayout.setApplied(true);
-            automaticLayout.setEdgeSeparation(100);
+            automaticLayout.setApplied(false);
+            automaticLayout.setEdgeSeparation(0);
             automaticLayout.setImplementation(LayoutImplementation.Graphviz);
             automaticLayout.setNodeSeparation(300);
             automaticLayout.setRankDirection(RankDirection.TopBottom);
@@ -1319,12 +1307,8 @@ public class GetObjects {
 
             // Проставление Elements и Relationships
             Set<String> objects = new HashSet<>();
-            Integer x = 0;
-            Integer y = 0;
             for (DeploymentNode deploymentNode : model.getDeploymentNodes()) {
-                getDeploymentElements(deploymentNode, deploymentView, objects, x, y);
-                x = x + 150;
-                y = y + 150;
+                getDeploymentElements(deploymentNode, deploymentView, objects);
             }
 
             deploymentViews.add(deploymentView);

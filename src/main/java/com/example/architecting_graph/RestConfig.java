@@ -16,7 +16,10 @@ public class RestConfig {
     private String password;
 
     @Value("${spring.services.documents.url}")
-    private String url;
+    private String docUrl;
+
+    @Value("${spring.services.graphviz.url}")
+    private String graphvizUrl;
 
     public String getUri() {
         return uri.strip();
@@ -30,7 +33,11 @@ public class RestConfig {
         return password;
     }
 
-    public String getUrl() {
-        return url.strip();
+    public String getDocUrl() {
+        return docUrl.strip();
+    }
+
+    public String getGraphvizUrl() {
+        return graphvizUrl.strip();
     }
 }
