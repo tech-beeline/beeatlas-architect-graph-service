@@ -225,8 +225,8 @@ public class GraphApi {
 
         try {
             // Загрузка workspace
-            workspace = getWorkspace(workspaceJson);
-            // workspace = getWorkspaceFileForTest(workspaceJson);
+            // workspace = getWorkspace(workspaceJson);
+            workspace = getWorkspaceFileForTest(workspaceJson);
         } catch (Exception e) {
             // Обработка исключения
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Полученный workspace не валиден");
@@ -419,16 +419,14 @@ public class GraphApi {
         Integer cnt = 0;
         for (Pair el : ans1) {
             if (cnt != ans1.size() - 1) {
-                if (el.getSecond().equals("Relationship") || el.getSecond().equals("ContainerInstance")
-                        || el.getSecond().equals("SoftwareSystemInstance")) {
+                if (el.getSecond().equals("Relationship")) {
                     out = out + el.getFirst() + ",\n";
                 } else {
                     out = out + "\t\t{\n" + "\t\t\t\"name\": \"" + el.getFirst() + "\",\n\t\t\t\"type\": \""
                             + el.getSecond() + "\"\n\t\t},\n";
                 }
             } else {
-                if (el.getSecond().equals("Relationship") || el.getSecond().equals("ContainerInstance")
-                        || el.getSecond().equals("SoftwareSystemInstance")) {
+                if (el.getSecond().equals("Relationship")) {
                     out = out + el.getFirst() + "\n";
                 } else {
                     out = out + "\t\t{\n" + "\t\t\t\"name\": \"" + el.getFirst() + "\",\n\t\t\t\"type\": \""
@@ -443,16 +441,14 @@ public class GraphApi {
         cnt = 0;
         for (Pair el : ans2) {
             if (cnt != ans2.size() - 1) {
-                if (el.getSecond().equals("Relationship") || el.getSecond().equals("ContainerInstance")
-                        || el.getSecond().equals("SoftwareSystemInstance")) {
+                if (el.getSecond().equals("Relationship")) {
                     out = out + el.getFirst() + ",\n";
                 } else {
                     out = out + "\t\t{\n" + "\t\t\t\"name\": \"" + el.getFirst() + "\",\n\t\t\t\"type\": \""
                             + el.getSecond() + "\"\n\t\t},\n";
                 }
             } else {
-                if (el.getSecond().equals("Relationship") || el.getSecond().equals("ContainerInstance")
-                        || el.getSecond().equals("SoftwareSystemInstance")) {
+                if (el.getSecond().equals("Relationship")) {
                     out = out + el.getFirst() + "\n";
                 } else {
                     out = out + "\t\t{\n" + "\t\t\t\"name\": \"" + el.getFirst() + "\",\n\t\t\t\"type\": \""
