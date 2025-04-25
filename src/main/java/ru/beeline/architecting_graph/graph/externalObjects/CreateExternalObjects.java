@@ -21,8 +21,8 @@ public class CreateExternalObjects {
         boolean exists = CommonFunctions.checkIfObjectExists(session, graphTag, systemGraphObject);
         if (!exists) {
             CommonFunctions.createObject(session, graphTag, systemGraphObject);
+            CommonFunctions.setObjectParameter(session, graphTag, systemGraphObject, "name", softwareSystem.getName());
         }
-        CommonFunctions.setObjectParameter(session, graphTag, systemGraphObject, "name", softwareSystem.getName());
         objects.put(softwareSystem.getId(), systemGraphObject);
     }
 
@@ -34,8 +34,8 @@ public class CreateExternalObjects {
         Boolean exists = CommonFunctions.checkIfObjectExists(session, graphTag, containerGraphObject);
         if (!exists) {
             CommonFunctions.createObject(session, graphTag, containerGraphObject);
+            CommonFunctions.setObjectParameter(session, graphTag, containerGraphObject, "name", container.getName());
         }
-        CommonFunctions.setObjectParameter(session, graphTag, containerGraphObject, "name", container.getName());
         objects.put(container.getId(), containerGraphObject);
     }
 
@@ -47,8 +47,8 @@ public class CreateExternalObjects {
         Boolean exists = CommonFunctions.checkIfObjectExists(session, graphTag, componentGraphObject);
         if (!exists) {
             CommonFunctions.createObject(session, graphTag, componentGraphObject);
+            CommonFunctions.setObjectParameter(session, graphTag, componentGraphObject, "name", component.getName());
         }
-        CommonFunctions.setObjectParameter(session, graphTag, componentGraphObject, "name", component.getName());
         objects.put(component.getId(), componentGraphObject);
     }
 
