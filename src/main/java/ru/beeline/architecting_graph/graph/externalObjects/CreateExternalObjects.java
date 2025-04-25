@@ -14,18 +14,19 @@ import ru.beeline.architecting_graph.graph.commonFunctions.CommonFunctions;
 
 public class CreateExternalObjects {
 
-    public static void createExternalSystem(Session session, String graphTag, String systemId, String cmdb,
-            HashMap<String, GraphObject> objects) {
+    public static void createExternalSystem(Session session, String graphTag, SoftwareSystem softwareSystem,
+            String cmdb, HashMap<String, GraphObject> objects) {
 
         GraphObject systemGraphObject = GraphObject.createGraphObject("SoftwareSystem", "cmdb", cmdb);
         boolean exists = CommonFunctions.checkIfObjectExists(session, graphTag, systemGraphObject);
         if (!exists) {
             CommonFunctions.createObject(session, graphTag, systemGraphObject);
         }
-        objects.put(systemId, systemGraphObject);
+        CommonFunctions.setObjectParameter(session, graphTag, systemGraphObject, "name", softwareSystem.getName());
+        objects.put(softwareSystem.getId(), systemGraphObject);
     }
 
-    public static void createExternalContainer(Session session, String graphTag, String containerId,
+    public static void createExternalContainer(Session session, String graphTag, Container container,
             String containerExternalName, HashMap<String, GraphObject> objects) {
 
         GraphObject containerGraphObject = GraphObject.createGraphObject("Container", "external_name",
@@ -34,10 +35,11 @@ public class CreateExternalObjects {
         if (!exists) {
             CommonFunctions.createObject(session, graphTag, containerGraphObject);
         }
-        objects.put(containerId, containerGraphObject);
+        CommonFunctions.setObjectParameter(session, graphTag, containerGraphObject, "name", container.getName());
+        objects.put(container.getId(), containerGraphObject);
     }
 
-    public static void createExternalComponent(Session session, String graphTag, String componentId,
+    public static void createExternalComponent(Session session, String graphTag, Component component,
             String componentExternalName, HashMap<String, GraphObject> objects) {
 
         GraphObject componentGraphObject = GraphObject.createGraphObject("Component", "external_name",
@@ -46,7 +48,8 @@ public class CreateExternalObjects {
         if (!exists) {
             CommonFunctions.createObject(session, graphTag, componentGraphObject);
         }
-        objects.put(componentId, componentGraphObject);
+        CommonFunctions.setObjectParameter(session, graphTag, componentGraphObject, "name", component.getName());
+        objects.put(component.getId(), componentGraphObject);
     }
 
     public static void createExternalObject(Session session, String graphTag, Model model, String curVersion,
@@ -61,7 +64,7 @@ public class CreateExternalObjects {
             String cmdb = softwareSystem.getProperties().get("cmdb").toString();
 
             if (objectId.equals(softwareSystem.getId())) {
-                createExternalSystem(session, graphTag, softwareSystem.getId(), cmdb, objects);
+                createExternalSystem(session, graphTag, softwareSystem, cmdb, objects);
                 return;
             }
 
@@ -76,10 +79,9 @@ public class CreateExternalObjects {
                     }
 
                     if (objectId.equals(container.getId())) {
-                        createExternalContainer(session, graphTag, container.getId(), containerExternalName, objects);
+                        createExternalContainer(session, graphTag, container, containerExternalName, objects);
                         RelationshipUpdateFunctions.updateChildRelationship(session, graphTag, model, curVersion,
-                                softwareSystem.getId(),
-                                container.getId(), cmdb, objects);
+                                softwareSystem.getId(), container.getId(), cmdb, objects);
                         return;
                     }
 
@@ -96,12 +98,10 @@ public class CreateExternalObjects {
                                             + "." + containerExternalName;
                                 }
 
-                                createExternalComponent(session, graphTag, component.getId(), componentExternalName,
+                                createExternalComponent(session, graphTag, component, componentExternalName,
                                         objects);
                                 RelationshipUpdateFunctions.updateChildRelationship(session, graphTag, model,
-                                        curVersion,
-                                        container.getId(),
-                                        component.getId(), cmdb, objects);
+                                        curVersion, container.getId(), component.getId(), cmdb, objects);
                                 return;
                             }
                         }

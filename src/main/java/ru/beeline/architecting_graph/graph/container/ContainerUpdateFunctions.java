@@ -95,6 +95,15 @@ public class ContainerUpdateFunctions {
     public static Boolean changeContainer(Session session, String graphTag, Container container,
             GraphObject externalContainerGraphObject, String curVersion, HashMap<String, GraphObject> objects) {
 
+        String startVersion = CommonFunctions
+                .getObjectParameter(session, graphTag, externalContainerGraphObject, "startVersion").toString();
+
+        if (startVersion.equals("NULL")) {
+            CommonFunctions.setObjectParameter(session, graphTag, externalContainerGraphObject, "name",
+                    container.getName());
+            return true;
+        }
+
         String endVersion = CommonFunctions
                 .getObjectParameter(session, graphTag, externalContainerGraphObject, "endVersion").toString();
 
@@ -108,9 +117,6 @@ public class ContainerUpdateFunctions {
     public static void updateContainer(Session session, String graphTag, Container container, String curVersion,
             HashMap<String, GraphObject> objects) {
 
-        GraphObject containerGraphObject = GraphObject.createGraphObject("Container", "name", container.getName());
-
-        boolean exists = CommonFunctions.checkIfObjectExists(session, graphTag, containerGraphObject);
         boolean externalExists = false;
         GraphObject externalContainerGraphObject = null;
 
@@ -131,6 +137,9 @@ public class ContainerUpdateFunctions {
                 container.getProperties().put("external_name", null);
             }
         }
+
+        GraphObject containerGraphObject = GraphObject.createGraphObject("Container", "name", container.getName());
+        boolean exists = CommonFunctions.checkIfObjectExists(session, graphTag, containerGraphObject);
 
         if (!exists) {
             CommonFunctions.createObject(session, graphTag, containerGraphObject);

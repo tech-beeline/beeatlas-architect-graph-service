@@ -92,6 +92,15 @@ public class ComponentUpdateFunctions {
     public static Boolean changeComponent(Session session, String graphTag, Component component,
             GraphObject externalComponentGraphObject, String curVersion, HashMap<String, GraphObject> objects) {
 
+        String startVersion = CommonFunctions
+                .getObjectParameter(session, graphTag, externalComponentGraphObject, "startVersion").toString();
+
+        if (startVersion.equals("NULL")) {
+            CommonFunctions.setObjectParameter(session, graphTag, externalComponentGraphObject, "name",
+                    component.getName());
+            return true;
+        }
+
         String endVersion = CommonFunctions
                 .getObjectParameter(session, graphTag, externalComponentGraphObject, "endVersion").toString();
 
@@ -105,9 +114,6 @@ public class ComponentUpdateFunctions {
     public static void updateComponent(Session session, String graphTag, Component component, String curVersion,
             HashMap<String, GraphObject> objects) {
 
-        GraphObject componentGraphObject = GraphObject.createGraphObject("Component", "name", component.getName());
-
-        boolean exists = CommonFunctions.checkIfObjectExists(session, graphTag, componentGraphObject);
         boolean externalExists = false;
         GraphObject externalComponentGraphObject = null;
 
@@ -128,6 +134,9 @@ public class ComponentUpdateFunctions {
                 component.getProperties().put("external_name", null);
             }
         }
+
+        GraphObject componentGraphObject = GraphObject.createGraphObject("Component", "name", component.getName());
+        boolean exists = CommonFunctions.checkIfObjectExists(session, graphTag, componentGraphObject);
 
         if (!exists) {
             CommonFunctions.createObject(session, graphTag, componentGraphObject);
