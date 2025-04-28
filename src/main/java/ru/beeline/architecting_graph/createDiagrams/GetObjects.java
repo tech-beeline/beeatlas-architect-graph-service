@@ -1,4 +1,4 @@
-package ru.beeline.architecting_graph;
+package ru.beeline.architecting_graph.createDiagrams;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;

@@ -1,4 +1,4 @@
-package ru.beeline.architecting_graph.graph;
+package ru.beeline.architecting_graph.graph.graphFunctions;
 
 import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
@@ -21,7 +21,7 @@ import ru.beeline.architecting_graph.graph.softwareSystem.*;
 import ru.beeline.architecting_graph.graph.workspace.Workspace;
 import ru.beeline.architecting_graph.graph.container.ContainerUpdateFunctions;
 
-public class graphFunctions {
+public class GraphFunctions {
 
     public static void setEndVersion(Session session, String graphTag, String cmdb, String curVersion) {
         ContainerEndVersionFunctions.setContainerEndVersion(session, graphTag, cmdb, curVersion);
