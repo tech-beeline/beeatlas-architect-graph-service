@@ -1,4 +1,4 @@
-package ru.beeline.architecting_graph;
+package ru.beeline.architecting_graph.graphAPI;
 
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import org.springframework.http.ResponseEntity;
 
-import ru.beeline.architecting_graph.otherObjects.RestConfig;
 import ru.beeline.architecting_graph.graph.graphConstruction.GraphConstruction;
 import ru.beeline.architecting_graph.createDiagrams.CreateDiagrams;
 import ru.beeline.architecting_graph.compareVersions.CompareVersions;
@@ -52,14 +51,14 @@ public class GraphApi {
         return CreateDiagrams.createDiagramm(autorization, softwareSystemMnemonic, null, environment);
     }
 
-    @GetMapping("/diff/{cmdb_code}/{v1}/{v2}")
+    @GetMapping("/diff/{cmdb}/{firstVersion}/{secondVersion}")
     public ResponseEntity<String> compareVersions(@PathVariable String cmdb, @PathVariable Integer firstVersion,
             @PathVariable(required = false) Integer secondVersion) {
 
         return CompareVersions.compareVersion(autorization, cmdb, firstVersion, secondVersion);
     }
 
-    @GetMapping("/diff/{cmdb_code}/{v1}")
+    @GetMapping("/diff/{cmdb}/{firstVersion}")
     public ResponseEntity<String> compareWithCur(@PathVariable String cmdb, @PathVariable Integer firstVersion) {
         return CompareVersions.compareVersion(autorization, cmdb, firstVersion, null);
     }

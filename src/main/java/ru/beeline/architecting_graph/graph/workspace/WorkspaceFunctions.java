@@ -16,7 +16,7 @@ public class WorkspaceFunctions {
     public static Workspace getWorkspace(String json, ObjectMapper objectMapper) throws Exception {
         Workspace workspace;
         try {
-            workspace = objectMapper.convertValue(json, Workspace.class);
+            workspace = objectMapper.readValue(json, Workspace.class);
         } catch (Exception e) {
             throw e;
         }

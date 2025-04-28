@@ -2,9 +2,9 @@ package ru.beeline.architecting_graph.graph.workspace;
 
 import java.util.Map;
 
+import ru.beeline.architecting_graph.createDiagrams.ViewObjects.Views;
 import ru.beeline.architecting_graph.graph.model.Model;
 import ru.beeline.architecting_graph.otherObjects.Documentation;
-import ru.beeline.architecting_graph.otherObjects.Views;
 import ru.beeline.architecting_graph.otherObjects.WorkspaceConfiguration;
 
 public class Workspace {

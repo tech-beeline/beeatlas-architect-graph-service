@@ -14,7 +14,7 @@ import org.springframework.http.ResponseEntity;
 import ru.beeline.architecting_graph.graph.commonFunctions.CommonFunctions;
 import ru.beeline.architecting_graph.graph.graphConstruction.GraphConstruction;
 import ru.beeline.architecting_graph.graph.graphObject.GraphObject;
-import ru.beeline.architecting_graph.otherObjects.RestConfig;
+import ru.beeline.architecting_graph.graphAPI.RestConfig;
 
 public class CompareVersions {
 
@@ -70,6 +70,8 @@ public class CompareVersions {
 
         if (curVersionString.equals("NULL")) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("У данной системы отсутствует версионность");
+        } else {
+            curVersionString = curVersionString.substring(1, curVersionString.length() - 1);
         }
 
         Integer curVersion = Integer.parseInt(curVersionString);

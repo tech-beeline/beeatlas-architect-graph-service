@@ -1,23 +1,26 @@
-package ru.beeline.architecting_graph.otherObjects;
+package ru.beeline.architecting_graph.createDiagrams.ViewObjects;
 
 import java.util.List;
 import java.util.Map;
 
-public class ComponentView {
+import ru.beeline.architecting_graph.otherObjects.AnimationStep;
+import ru.beeline.architecting_graph.otherObjects.Dimensions;
+
+public class SystemContextView {
 
     private String key;
     private Integer order;
     private String title;
     private String description;
     private Map<String, Object> properties;
-    private String containerId;
+    private String softwareSystemId;
     private PaperSize paperSize;
     private Dimensions dimensions;
     private AutomaticLayout automaticLayout;
+    private Boolean enterpriseBoundaryVisible;
     private List<ElementView> elements;
     private List<RelationshipView> relationships;
     private List<AnimationStep> animations;
-    private Boolean externalContainerBoundariesVisible;
 
     public String getKey() {
         return key;
@@ -59,12 +62,12 @@ public class ComponentView {
         this.properties = properties;
     }
 
-    public String getContainerId() {
-        return containerId;
+    public String getSoftwareSystemId() {
+        return softwareSystemId;
     }
 
-    public void setContainerId(String containerId) {
-        this.containerId = containerId;
+    public void setSoftwareSystemId(String softwareSystemId) {
+        this.softwareSystemId = softwareSystemId;
     }
 
     public PaperSize getPaperSize() {
@@ -91,6 +94,14 @@ public class ComponentView {
         this.automaticLayout = automaticLayout;
     }
 
+    public Boolean getEnterpriseBoundaryVisible() {
+        return enterpriseBoundaryVisible;
+    }
+
+    public void setEnterpriseBoundaryVisible(Boolean enterpriseBoundaryVisible) {
+        this.enterpriseBoundaryVisible = enterpriseBoundaryVisible;
+    }
+
     public List<ElementView> getElements() {
         return elements;
     }
@@ -113,14 +124,6 @@ public class ComponentView {
 
     public void setAnimations(List<AnimationStep> animations) {
         this.animations = animations;
-    }
-
-    public Boolean getExternalContainerBoundariesVisible() {
-        return externalContainerBoundariesVisible;
-    }
-
-    public void setExternalContainerBoundariesVisible(Boolean externalContainerBoundariesVisible) {
-        this.externalContainerBoundariesVisible = externalContainerBoundariesVisible;
     }
 
     public enum PaperSize {

@@ -17,7 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import ru.beeline.architecting_graph.graph.commonFunctions.CommonFunctions;
 import ru.beeline.architecting_graph.graph.graphObject.GraphObject;
-import ru.beeline.architecting_graph.otherObjects.RestConfig;
+import ru.beeline.architecting_graph.graphAPI.RestConfig;
 import ru.beeline.architecting_graph.graph.graphConstruction.GraphConstruction;
 import ru.beeline.architecting_graph.graph.functionsForJson.FunctionsForWorkingWithJson;
 
@@ -26,9 +26,9 @@ public class CreateDiagrams {
     public static Boolean checkifContainerExists(Session session, String softwareSystemMnemonic,
             String containerMnemonic) {
 
-        String query = "MATCH (a:SoftwareSystem {graph: \"Global\", structurizr_dsl_identifier: $val1})"
-                + "-[r:Child]->(b:Container {graph: \"Global\", structurizr_dsl_identifier: $val2}) "
-                + "WHERE r.graph = \"Global\"  RETURN EXISTS((a)-->(b)) AS relationship_exists";
+        String query = "MATCH (a:SoftwareSystem {graphTag: \"Global\", structurizr_dsl_identifier: $val1})"
+                + "-[r:Child]->(b:Container {graphTag: \"Global\", structurizr_dsl_identifier: $val2}) "
+                + "WHERE r.graphTag = \"Global\"  RETURN EXISTS((a)-->(b)) AS relationship_exists";
         Value parameters = Values.parameters("val1", softwareSystemMnemonic, "val2", containerMnemonic);
         Result result = session.run(query, parameters);
         if (!result.hasNext()) {

@@ -1,6 +1,12 @@
-package ru.beeline.architecting_graph.otherObjects;
+package ru.beeline.architecting_graph.createDiagrams.ViewObjects;
 
 import java.util.List;
+
+import ru.beeline.architecting_graph.otherObjects.Configuration;
+import ru.beeline.architecting_graph.otherObjects.DynamicView;
+import ru.beeline.architecting_graph.otherObjects.FilteredView;
+import ru.beeline.architecting_graph.otherObjects.ImageView;
+import ru.beeline.architecting_graph.otherObjects.SystemLandscapeView;
 
 public class Views {
 

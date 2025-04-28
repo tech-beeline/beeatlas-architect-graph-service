@@ -60,9 +60,9 @@ public class FindChanges {
             Integer startVersion = Integer.parseInt(startVersionString);
 
             String endVersionString = record.get("r.endVersion").toString();
-            endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
             Integer endVersion = cur_version;
             if (!endVersionString.equals("NULL")) {
+                endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
                 endVersion = Integer.parseInt(endVersionString);
             }
 
@@ -92,9 +92,9 @@ public class FindChanges {
             Integer startVersion = Integer.parseInt(startVersionString);
 
             String endVersionString = record.get("m.endVersion").toString();
-            endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
             Integer endVersion = cur_version;
             if (!endVersionString.equals("NULL")) {
+                endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
                 endVersion = Integer.parseInt(endVersionString);
             }
 
@@ -129,9 +129,9 @@ public class FindChanges {
             Integer startVersion = Integer.parseInt(startVersionString);
 
             String endVersionString = record.get("m.endVersion").toString();
-            endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
             Integer endVersion = cur_version;
             if (!endVersionString.equals("NULL")) {
+                endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
                 endVersion = Integer.parseInt(endVersionString);
             }
 
@@ -164,9 +164,9 @@ public class FindChanges {
                 startVersion = Integer.parseInt(startVersionString);
 
                 endVersionString = record.get("r.endVersion").toString();
-                endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
                 endVersion = cur_version;
                 if (!endVersionString.equals("NULL")) {
+                    endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
                     endVersion = Integer.parseInt(endVersionString);
                 }
 
@@ -196,9 +196,9 @@ public class FindChanges {
             Integer startVersion = Integer.parseInt(startVersionString);
 
             String endVersionString = record.get("m.endVersion").toString();
-            endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
             Integer endVersion = cur_version;
             if (!endVersionString.equals("NULL")) {
+                endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
                 endVersion = Integer.parseInt(endVersionString);
             }
 
@@ -231,9 +231,9 @@ public class FindChanges {
                 startVersion = Integer.parseInt(startVersionString);
 
                 endVersionString = record.get("r.endVersion").toString();
-                endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
                 endVersion = cur_version;
                 if (!endVersionString.equals("NULL")) {
+                    endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
                     endVersion = Integer.parseInt(endVersionString);
                 }
 
@@ -268,9 +268,9 @@ public class FindChanges {
             Integer startVersion = Integer.parseInt(startVersionString);
 
             String endVersionString = record.get("r.endVersion").toString();
-            endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
             Integer endVersion = cur_version;
             if (!endVersionString.equals("NULL")) {
+                endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
                 endVersion = Integer.parseInt(endVersionString);
             }
 
@@ -292,9 +292,9 @@ public class FindChanges {
             Integer startVersion = Integer.parseInt(startVersionString);
 
             String endVersionString = record.get("r.endVersion").toString();
-            endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
             Integer endVersion = cur_version;
             if (!endVersionString.equals("NULL")) {
+                endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
                 endVersion = Integer.parseInt(endVersionString);
             }
 
@@ -317,9 +317,9 @@ public class FindChanges {
             Integer startVersion = Integer.parseInt(startVersionString);
 
             String endVersionString = record.get("m.endVersion").toString();
-            endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
             Integer endVersion = cur_version;
             if (!endVersionString.equals("NULL")) {
+                endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
                 endVersion = Integer.parseInt(endVersionString);
             }
 
@@ -344,9 +344,9 @@ public class FindChanges {
                 startVersion = Integer.parseInt(startVersionString);
 
                 endVersionString = record.get("r.endVersion").toString();
-                endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
                 endVersion = cur_version;
                 if (!endVersionString.equals("NULL")) {
+                    endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
                     endVersion = Integer.parseInt(endVersionString);
                 }
 
@@ -368,9 +368,9 @@ public class FindChanges {
                 startVersion = Integer.parseInt(startVersionString);
 
                 endVersionString = record.get("r.endVersion").toString();
-                endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
                 endVersion = cur_version;
                 if (!endVersionString.equals("NULL")) {
+                    endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
                     endVersion = Integer.parseInt(endVersionString);
                 }
 
@@ -393,9 +393,9 @@ public class FindChanges {
                 startVersion = Integer.parseInt(startVersionString);
 
                 endVersionString = record.get("m.endVersion").toString();
-                endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
                 endVersion = cur_version;
                 if (!endVersionString.equals("NULL")) {
+                    endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
                     endVersion = Integer.parseInt(endVersionString);
                 }
 
@@ -420,9 +420,9 @@ public class FindChanges {
                     startVersion = Integer.parseInt(startVersionString);
 
                     endVersionString = record.get("r.endVersion").toString();
-                    endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
                     endVersion = cur_version;
                     if (!endVersionString.equals("NULL")) {
+                        endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
                         endVersion = Integer.parseInt(endVersionString);
                     }
 
@@ -445,9 +445,9 @@ public class FindChanges {
                     startVersion = Integer.parseInt(startVersionString);
 
                     endVersionString = record.get("r.endVersion").toString();
-                    endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
                     endVersion = cur_version;
                     if (!endVersionString.equals("NULL")) {
+                        endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
                         endVersion = Integer.parseInt(endVersionString);
                     }
 
@@ -472,9 +472,9 @@ public class FindChanges {
             Integer startVersion = Integer.parseInt(startVersionString);
 
             String endVersionString = record.get("r.endVersion").toString();
-            endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
             Integer endVersion = cur_version;
             if (!endVersionString.equals("NULL")) {
+                endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
                 endVersion = Integer.parseInt(endVersionString);
             }
 
@@ -497,9 +497,9 @@ public class FindChanges {
             Integer startVersion = Integer.parseInt(startVersionString);
 
             String endVersionString = record.get("m.endVersion").toString();
-            endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
             Integer endVersion = cur_version;
             if (!endVersionString.equals("NULL")) {
+                endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
                 endVersion = Integer.parseInt(endVersionString);
             }
 
@@ -533,9 +533,9 @@ public class FindChanges {
             Integer startVersion = Integer.parseInt(startVersionString);
 
             String endVersionString = record.get("r.endVersion").toString();
-            endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
             Integer endVersion = cur_version;
             if (!endVersionString.equals("NULL")) {
+                endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
                 endVersion = Integer.parseInt(endVersionString);
             }
 
@@ -557,9 +557,9 @@ public class FindChanges {
             Integer startVersion = Integer.parseInt(startVersionString);
 
             String endVersionString = record.get("r.endVersion").toString();
-            endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
             Integer endVersion = cur_version;
             if (!endVersionString.equals("NULL")) {
+                endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
                 endVersion = Integer.parseInt(endVersionString);
             }
 
@@ -582,9 +582,9 @@ public class FindChanges {
             Integer startVersion = Integer.parseInt(startVersionString);
 
             String endVersionString = record.get("m.endVersion").toString();
-            endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
             Integer endVersion = cur_version;
             if (!endVersionString.equals("NULL")) {
+                endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
                 endVersion = Integer.parseInt(endVersionString);
             }
 
@@ -609,9 +609,9 @@ public class FindChanges {
                 startVersion = Integer.parseInt(startVersionString);
 
                 endVersionString = record.get("r.endVersion").toString();
-                endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
                 endVersion = cur_version;
                 if (!endVersionString.equals("NULL")) {
+                    endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
                     endVersion = Integer.parseInt(endVersionString);
                 }
 
@@ -633,9 +633,9 @@ public class FindChanges {
                 startVersion = Integer.parseInt(startVersionString);
 
                 endVersionString = record.get("r.endVersion").toString();
-                endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
                 endVersion = cur_version;
                 if (!endVersionString.equals("NULL")) {
+                    endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
                     endVersion = Integer.parseInt(endVersionString);
                 }
 
@@ -658,9 +658,9 @@ public class FindChanges {
                 startVersion = Integer.parseInt(startVersionString);
 
                 endVersionString = record.get("m.endVersion").toString();
-                endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
                 endVersion = cur_version;
                 if (!endVersionString.equals("NULL")) {
+                    endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
                     endVersion = Integer.parseInt(endVersionString);
                 }
 
@@ -685,9 +685,9 @@ public class FindChanges {
                     startVersion = Integer.parseInt(startVersionString);
 
                     endVersionString = record.get("r.endVersion").toString();
-                    endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
                     endVersion = cur_version;
                     if (!endVersionString.equals("NULL")) {
+                        endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
                         endVersion = Integer.parseInt(endVersionString);
                     }
 
@@ -710,9 +710,9 @@ public class FindChanges {
                     startVersion = Integer.parseInt(startVersionString);
 
                     endVersionString = record.get("r.endVersion").toString();
-                    endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
                     endVersion = cur_version;
                     if (!endVersionString.equals("NULL")) {
+                        endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
                         endVersion = Integer.parseInt(endVersionString);
                     }
 
@@ -737,9 +737,9 @@ public class FindChanges {
             Integer startVersion = Integer.parseInt(startVersionString);
 
             String endVersionString = record.get("r.endVersion").toString();
-            endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
             Integer endVersion = cur_version;
             if (!endVersionString.equals("NULL")) {
+                endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
                 endVersion = Integer.parseInt(endVersionString);
             }
 
@@ -762,9 +762,9 @@ public class FindChanges {
             Integer startVersion = Integer.parseInt(startVersionString);
 
             String endVersionString = record.get("m.endVersion").toString();
-            endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
             Integer endVersion = cur_version;
             if (!endVersionString.equals("NULL")) {
+                endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
                 endVersion = Integer.parseInt(endVersionString);
             }
 

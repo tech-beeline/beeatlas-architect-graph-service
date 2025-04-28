@@ -16,7 +16,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import ru.beeline.architecting_graph.graph.workspace.Workspace;
 import ru.beeline.architecting_graph.graph.workspace.WorkspaceFunctions;
-import ru.beeline.architecting_graph.otherObjects.RestConfig;
+import ru.beeline.architecting_graph.graphAPI.RestConfig;
 import ru.beeline.architecting_graph.graph.functionsForJson.FunctionsForWorkingWithJson;
 import ru.beeline.architecting_graph.graph.graphFunctions.GraphFunctions;
 
@@ -24,7 +24,7 @@ public class GraphConstruction {
 
     public static Session connectToDatabase(Driver driver, RestConfig autorization) throws ServiceUnavailableException {
         Session session = driver.session();
-        String query = "MATCH (n)";
+        String query = "MATCH (n) RETURN n";
         session.run(query);
         return session;
     }

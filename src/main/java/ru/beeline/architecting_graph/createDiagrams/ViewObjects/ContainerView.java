@@ -1,9 +1,12 @@
-package ru.beeline.architecting_graph.otherObjects;
+package ru.beeline.architecting_graph.createDiagrams.ViewObjects;
 
 import java.util.List;
 import java.util.Map;
 
-public class SystemContextView {
+import ru.beeline.architecting_graph.otherObjects.AnimationStep;
+import ru.beeline.architecting_graph.otherObjects.Dimensions;
+
+public class ContainerView {
 
     private String key;
     private Integer order;
@@ -14,10 +17,10 @@ public class SystemContextView {
     private PaperSize paperSize;
     private Dimensions dimensions;
     private AutomaticLayout automaticLayout;
-    private Boolean enterpriseBoundaryVisible;
     private List<ElementView> elements;
     private List<RelationshipView> relationships;
     private List<AnimationStep> animations;
+    private Boolean externalSoftwareSystemBoundariesVisible;
 
     public String getKey() {
         return key;
@@ -91,14 +94,6 @@ public class SystemContextView {
         this.automaticLayout = automaticLayout;
     }
 
-    public Boolean getEnterpriseBoundaryVisible() {
-        return enterpriseBoundaryVisible;
-    }
-
-    public void setEnterpriseBoundaryVisible(Boolean enterpriseBoundaryVisible) {
-        this.enterpriseBoundaryVisible = enterpriseBoundaryVisible;
-    }
-
     public List<ElementView> getElements() {
         return elements;
     }
@@ -121,6 +116,14 @@ public class SystemContextView {
 
     public void setAnimations(List<AnimationStep> animations) {
         this.animations = animations;
+    }
+
+    public Boolean getExternalSoftwareSystemBoundariesVisible() {
+        return externalSoftwareSystemBoundariesVisible;
+    }
+
+    public void setExternalSoftwareSystemBoundariesVisible(Boolean externalSoftwareSystemBoundariesVisible) {
+        this.externalSoftwareSystemBoundariesVisible = externalSoftwareSystemBoundariesVisible;
     }
 
     public enum PaperSize {

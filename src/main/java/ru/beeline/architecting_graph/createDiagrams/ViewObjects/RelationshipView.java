@@ -1,6 +1,8 @@
-package ru.beeline.architecting_graph.otherObjects;
+package ru.beeline.architecting_graph.createDiagrams.ViewObjects;
 
 import java.util.List;
+
+import ru.beeline.architecting_graph.otherObjects.Vertex;
 
 public class RelationshipView {
 

@@ -1,23 +1,26 @@
-package ru.beeline.architecting_graph.otherObjects;
+package ru.beeline.architecting_graph.createDiagrams.ViewObjects;
 
 import java.util.List;
 import java.util.Map;
 
-public class DeploymentView {
+import ru.beeline.architecting_graph.otherObjects.AnimationStep;
+import ru.beeline.architecting_graph.otherObjects.Dimensions;
+
+public class ComponentView {
 
     private String key;
     private Integer order;
     private String title;
     private String description;
     private Map<String, Object> properties;
-    private String softwareSystemId;
-    private String environment;
+    private String containerId;
     private PaperSize paperSize;
     private Dimensions dimensions;
     private AutomaticLayout automaticLayout;
     private List<ElementView> elements;
     private List<RelationshipView> relationships;
     private List<AnimationStep> animations;
+    private Boolean externalContainerBoundariesVisible;
 
     public String getKey() {
         return key;
@@ -59,20 +62,12 @@ public class DeploymentView {
         this.properties = properties;
     }
 
-    public String getSoftwareSystemId() {
-        return softwareSystemId;
+    public String getContainerId() {
+        return containerId;
     }
 
-    public void setSoftwareSystemId(String softwareSystemId) {
-        this.softwareSystemId = softwareSystemId;
-    }
-
-    public String getEnvironment() {
-        return environment;
-    }
-
-    public void setEnvironment(String environment) {
-        this.environment = environment;
+    public void setContainerId(String containerId) {
+        this.containerId = containerId;
     }
 
     public PaperSize getPaperSize() {
@@ -121,6 +116,14 @@ public class DeploymentView {
 
     public void setAnimations(List<AnimationStep> animations) {
         this.animations = animations;
+    }
+
+    public Boolean getExternalContainerBoundariesVisible() {
+        return externalContainerBoundariesVisible;
+    }
+
+    public void setExternalContainerBoundariesVisible(Boolean externalContainerBoundariesVisible) {
+        this.externalContainerBoundariesVisible = externalContainerBoundariesVisible;
     }
 
     public enum PaperSize {

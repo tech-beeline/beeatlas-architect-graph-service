@@ -3,6 +3,10 @@ package ru.beeline.architecting_graph.otherObjects;
 import java.util.List;
 import java.util.Map;
 
+import ru.beeline.architecting_graph.createDiagrams.ViewObjects.AutomaticLayout;
+import ru.beeline.architecting_graph.createDiagrams.ViewObjects.ElementView;
+import ru.beeline.architecting_graph.createDiagrams.ViewObjects.RelationshipView;
+
 public class DynamicView {
 
     private String key;

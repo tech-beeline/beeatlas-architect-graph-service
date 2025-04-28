@@ -1,5 +1,7 @@
 package ru.beeline.architecting_graph.graph.functionsForJson;
 
+import java.nio.charset.StandardCharsets;
+
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -9,7 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
-import ru.beeline.architecting_graph.otherObjects.RestConfig;
+import ru.beeline.architecting_graph.graphAPI.RestConfig;
 
 public class FunctionsForWorkingWithJson {
 
@@ -18,12 +20,9 @@ public class FunctionsForWorkingWithJson {
         RestTemplate restTemplate = new RestTemplate();
         String url = autorization.getDocUrl() + "/api/v1/documents/" + Long.toString(docId);
 
-        ResponseEntity<byte[]> response;
         try {
-            response = restTemplate.getForEntity(url, byte[].class);
-            byte[] responseBody = response.getBody();
-            String json = new String(responseBody, "UTF-8");
-            return json;
+            ResponseEntity<byte[]> response = restTemplate.getForEntity(url, byte[].class);
+            return new String(response.getBody(), StandardCharsets.UTF_8);
         } catch (Exception e) {
             throw new HttpClientErrorException(HttpStatus.BAD_REQUEST);
         }
