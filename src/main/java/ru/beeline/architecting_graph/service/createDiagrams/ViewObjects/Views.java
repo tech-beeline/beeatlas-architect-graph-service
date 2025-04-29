@@ -2,11 +2,11 @@ package ru.beeline.architecting_graph.service.createDiagrams.ViewObjects;
 
 import java.util.List;
 
-import ru.beeline.architecting_graph.otherObjects.Configuration;
-import ru.beeline.architecting_graph.otherObjects.DynamicView;
-import ru.beeline.architecting_graph.otherObjects.FilteredView;
-import ru.beeline.architecting_graph.otherObjects.ImageView;
-import ru.beeline.architecting_graph.otherObjects.SystemLandscapeView;
+import ru.beeline.architecting_graph.model.Configuration;
+import ru.beeline.architecting_graph.model.DynamicView;
+import ru.beeline.architecting_graph.model.FilteredView;
+import ru.beeline.architecting_graph.model.ImageView;
+import ru.beeline.architecting_graph.model.SystemLandscapeView;
 
 public class Views {
 

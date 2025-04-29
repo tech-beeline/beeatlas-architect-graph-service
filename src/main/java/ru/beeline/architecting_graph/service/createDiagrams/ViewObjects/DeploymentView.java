@@ -3,8 +3,8 @@ package ru.beeline.architecting_graph.service.createDiagrams.ViewObjects;
 import java.util.List;
 import java.util.Map;
 
-import ru.beeline.architecting_graph.otherObjects.AnimationStep;
-import ru.beeline.architecting_graph.otherObjects.Dimensions;
+import ru.beeline.architecting_graph.model.AnimationStep;
+import ru.beeline.architecting_graph.model.Dimensions;
 
 public class DeploymentView {
 

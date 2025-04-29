@@ -15,11 +15,11 @@ import org.springframework.http.ResponseEntity;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import ru.beeline.architecting_graph.graph.commonFunctions.CommonFunctions;
-import ru.beeline.architecting_graph.graph.graphObject.GraphObject;
+import ru.beeline.architecting_graph.service.graph.commonFunctions.CommonFunctions;
+import ru.beeline.architecting_graph.model.GraphObject;
 import ru.beeline.architecting_graph.config.RestConfig;
-import ru.beeline.architecting_graph.graph.graphConstruction.GraphConstruction;
-import ru.beeline.architecting_graph.graph.functionsForJson.FunctionsForWorkingWithJson;
+import ru.beeline.architecting_graph.service.graph.graphConstruction.GraphConstruction;
+import ru.beeline.architecting_graph.service.graph.functionsForJson.FunctionsForWorkingWithJson;
 
 public class CreateDiagrams {
 

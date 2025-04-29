@@ -2,7 +2,7 @@ package ru.beeline.architecting_graph.service.createDiagrams.ViewObjects;
 
 import java.util.List;
 
-import ru.beeline.architecting_graph.otherObjects.Vertex;
+import ru.beeline.architecting_graph.model.Vertex;
 
 public class RelationshipView {
 

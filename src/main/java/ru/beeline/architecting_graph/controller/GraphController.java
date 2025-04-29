@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.beeline.architecting_graph.config.RestConfig;
-import ru.beeline.architecting_graph.graph.graphConstruction.GraphConstruction;
+import ru.beeline.architecting_graph.service.graph.graphConstruction.GraphConstruction;
 import ru.beeline.architecting_graph.service.compareVersions.CompareVersions;
 import ru.beeline.architecting_graph.service.createDiagrams.CreateDiagrams;
 

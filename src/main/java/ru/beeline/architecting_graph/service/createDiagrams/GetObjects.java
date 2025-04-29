@@ -27,15 +27,15 @@ import ru.beeline.architecting_graph.service.createDiagrams.ViewObjects.SystemCo
 import ru.beeline.architecting_graph.service.createDiagrams.ViewObjects.Views;
 import ru.beeline.architecting_graph.service.createDiagrams.ViewObjects.AutomaticLayout.LayoutImplementation;
 import ru.beeline.architecting_graph.service.createDiagrams.ViewObjects.AutomaticLayout.RankDirection;
-import ru.beeline.architecting_graph.graph.component.Component;
-import ru.beeline.architecting_graph.graph.container.Container;
-import ru.beeline.architecting_graph.graph.containerInstance.ContainerInstance;
-import ru.beeline.architecting_graph.graph.deploymentNode.DeploymentNode;
-import ru.beeline.architecting_graph.graph.infrastructureNode.InfrastructureNode;
-import ru.beeline.architecting_graph.graph.model.Model;
-import ru.beeline.architecting_graph.graph.relationship.Relationship;
-import ru.beeline.architecting_graph.graph.softwareSystem.SoftwareSystem;
-import ru.beeline.architecting_graph.graph.workspace.Workspace;
+import ru.beeline.architecting_graph.model.Component;
+import ru.beeline.architecting_graph.model.Container;
+import ru.beeline.architecting_graph.model.ContainerInstance;
+import ru.beeline.architecting_graph.model.DeploymentNode;
+import ru.beeline.architecting_graph.model.InfrastructureNode;
+import ru.beeline.architecting_graph.model.Model;
+import ru.beeline.architecting_graph.model.Relationship;
+import ru.beeline.architecting_graph.model.SoftwareSystem;
+import ru.beeline.architecting_graph.model.Workspace;
 
 public class GetObjects {
     private static Long id_obj;

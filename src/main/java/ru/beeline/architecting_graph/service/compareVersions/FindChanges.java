@@ -6,7 +6,9 @@ import org.neo4j.driver.Value;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Values;
 import org.neo4j.driver.Session;
+import org.springframework.stereotype.Component;
 
+@Component
 public class FindChanges {
 
     private static Set<Pair> out;
@@ -252,7 +254,7 @@ public class FindChanges {
         }
     }
 
-    public static Set<Pair> EarlierChanges(Integer v1, Integer v2, Integer cur_version, String cmdb, Session session) {
+    public  Set<Pair> EarlierChanges(Integer v1, Integer v2, Integer cur_version, String cmdb, Session session) {
         out = new HashSet<>();
 
         // Проход по прямым связям системы
@@ -517,7 +519,7 @@ public class FindChanges {
         return out;
     }
 
-    public static Set<Pair> LaterChanges(Integer v1, Integer v2, Integer cur_version, String cmdb, Session session) {
+    public  Set<Pair> LaterChanges(Integer v1, Integer v2, Integer cur_version, String cmdb, Session session) {
         out = new HashSet<>();
 
         // Проход по прямым связям системы
