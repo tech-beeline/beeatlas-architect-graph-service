@@ -11,7 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
-import ru.beeline.architecting_graph.graphAPI.RestConfig;
+import ru.beeline.architecting_graph.config.RestConfig;
 
 public class FunctionsForWorkingWithJson {
 

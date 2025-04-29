@@ -1,4 +1,4 @@
-package ru.beeline.architecting_graph.createDiagrams;
+package ru.beeline.architecting_graph.service.createDiagrams;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -17,16 +17,16 @@ import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.GraphDatabase;
 import org.neo4j.driver.types.Node;
 
-import ru.beeline.architecting_graph.createDiagrams.ViewObjects.AutomaticLayout;
-import ru.beeline.architecting_graph.createDiagrams.ViewObjects.ComponentView;
-import ru.beeline.architecting_graph.createDiagrams.ViewObjects.ContainerView;
-import ru.beeline.architecting_graph.createDiagrams.ViewObjects.DeploymentView;
-import ru.beeline.architecting_graph.createDiagrams.ViewObjects.ElementView;
-import ru.beeline.architecting_graph.createDiagrams.ViewObjects.RelationshipView;
-import ru.beeline.architecting_graph.createDiagrams.ViewObjects.SystemContextView;
-import ru.beeline.architecting_graph.createDiagrams.ViewObjects.Views;
-import ru.beeline.architecting_graph.createDiagrams.ViewObjects.AutomaticLayout.LayoutImplementation;
-import ru.beeline.architecting_graph.createDiagrams.ViewObjects.AutomaticLayout.RankDirection;
+import ru.beeline.architecting_graph.service.createDiagrams.ViewObjects.AutomaticLayout;
+import ru.beeline.architecting_graph.service.createDiagrams.ViewObjects.ComponentView;
+import ru.beeline.architecting_graph.service.createDiagrams.ViewObjects.ContainerView;
+import ru.beeline.architecting_graph.service.createDiagrams.ViewObjects.DeploymentView;
+import ru.beeline.architecting_graph.service.createDiagrams.ViewObjects.ElementView;
+import ru.beeline.architecting_graph.service.createDiagrams.ViewObjects.RelationshipView;
+import ru.beeline.architecting_graph.service.createDiagrams.ViewObjects.SystemContextView;
+import ru.beeline.architecting_graph.service.createDiagrams.ViewObjects.Views;
+import ru.beeline.architecting_graph.service.createDiagrams.ViewObjects.AutomaticLayout.LayoutImplementation;
+import ru.beeline.architecting_graph.service.createDiagrams.ViewObjects.AutomaticLayout.RankDirection;
 import ru.beeline.architecting_graph.graph.component.Component;
 import ru.beeline.architecting_graph.graph.container.Container;
 import ru.beeline.architecting_graph.graph.containerInstance.ContainerInstance;

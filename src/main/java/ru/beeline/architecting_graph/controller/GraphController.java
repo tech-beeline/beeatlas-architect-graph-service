@@ -1,24 +1,23 @@
-package ru.beeline.architecting_graph.graphAPI;
+package ru.beeline.architecting_graph.controller;
 
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-
+import org.springframework.web.bind.annotation.*;
+import ru.beeline.architecting_graph.config.RestConfig;
 import ru.beeline.architecting_graph.graph.graphConstruction.GraphConstruction;
-import ru.beeline.architecting_graph.createDiagrams.CreateDiagrams;
-import ru.beeline.architecting_graph.compareVersions.CompareVersions;
+import ru.beeline.architecting_graph.service.compareVersions.CompareVersions;
+import ru.beeline.architecting_graph.service.createDiagrams.CreateDiagrams;
 
 @RestController
 @RequestMapping("/api/v1")
-public class GraphApi {
+public class GraphController {
+
+    @Autowired
+    CompareVersions compareVersions;
 
     private final RestConfig autorization;
 
-    public GraphApi(RestConfig autorization) {
+    public GraphController(RestConfig autorization) {
         this.autorization = autorization;
     }
 
@@ -34,7 +33,7 @@ public class GraphApi {
 
     @GetMapping("/context/{softwareSystemMnemonic}/{containerMnemonic}")
     public ResponseEntity<String> getC4Diagramm(@PathVariable String softwareSystemMnemonic,
-            @PathVariable(required = false) String containerMnemonic) {
+                                                @PathVariable(required = false) String containerMnemonic) {
 
         return CreateDiagrams.createDiagramm(autorization, softwareSystemMnemonic, containerMnemonic, null);
     }
@@ -46,20 +45,21 @@ public class GraphApi {
 
     @GetMapping("/deployment/{environment}/{softwareSystemMnemonic}")
     public ResponseEntity<String> getDeploymentDiagramm(@PathVariable String environment,
-            @PathVariable String softwareSystemMnemonic) {
+                                                        @PathVariable String softwareSystemMnemonic) {
 
         return CreateDiagrams.createDiagramm(autorization, softwareSystemMnemonic, null, environment);
     }
 
     @GetMapping("/diff/{cmdb}/{firstVersion}/{secondVersion}")
-    public ResponseEntity<String> compareVersions(@PathVariable String cmdb, @PathVariable Integer firstVersion,
-            @PathVariable(required = false) Integer secondVersion) {
-
-        return CompareVersions.compareVersion(autorization, cmdb, firstVersion, secondVersion);
+    public ResponseEntity<String> compareVersions(@PathVariable String cmdb,
+                                                  @PathVariable Integer firstVersion,
+                                                  @PathVariable(required = false) Integer secondVersion) {
+        return compareVersions.compareVersion(cmdb, firstVersion, secondVersion);
     }
 
     @GetMapping("/diff/{cmdb}/{firstVersion}")
-    public ResponseEntity<String> compareWithCur(@PathVariable String cmdb, @PathVariable Integer firstVersion) {
-        return CompareVersions.compareVersion(autorization, cmdb, firstVersion, null);
+    public ResponseEntity<String> compareWithCur(@PathVariable String cmdb,
+                                                 @PathVariable Integer firstVersion) {
+        return compareVersions.compareVersion(cmdb, firstVersion, null);
     }
 }

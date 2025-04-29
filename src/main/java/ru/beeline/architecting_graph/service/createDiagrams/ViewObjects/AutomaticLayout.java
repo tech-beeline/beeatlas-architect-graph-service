@@ -1,4 +1,4 @@
-package ru.beeline.architecting_graph.createDiagrams.ViewObjects;
+package ru.beeline.architecting_graph.service.createDiagrams.ViewObjects;
 
 public class AutomaticLayout {
 

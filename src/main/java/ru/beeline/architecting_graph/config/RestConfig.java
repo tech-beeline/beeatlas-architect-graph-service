@@ -1,4 +1,4 @@
-package ru.beeline.architecting_graph.graphAPI;
+package ru.beeline.architecting_graph.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;

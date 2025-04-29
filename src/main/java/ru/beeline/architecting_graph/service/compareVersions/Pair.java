@@ -1,4 +1,4 @@
-package ru.beeline.architecting_graph.compareVersions;
+package ru.beeline.architecting_graph.service.compareVersions;
 
 import java.util.Objects;
 

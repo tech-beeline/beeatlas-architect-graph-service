@@ -1,4 +1,4 @@
-package ru.beeline.architecting_graph.createDiagrams;
+package ru.beeline.architecting_graph.service.createDiagrams;
 
 import java.util.Objects;
 

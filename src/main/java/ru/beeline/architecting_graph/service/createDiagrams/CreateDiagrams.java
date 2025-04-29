@@ -1,4 +1,4 @@
-package ru.beeline.architecting_graph.createDiagrams;
+package ru.beeline.architecting_graph.service.createDiagrams;
 
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Driver;
@@ -17,7 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import ru.beeline.architecting_graph.graph.commonFunctions.CommonFunctions;
 import ru.beeline.architecting_graph.graph.graphObject.GraphObject;
-import ru.beeline.architecting_graph.graphAPI.RestConfig;
+import ru.beeline.architecting_graph.config.RestConfig;
 import ru.beeline.architecting_graph.graph.graphConstruction.GraphConstruction;
 import ru.beeline.architecting_graph.graph.functionsForJson.FunctionsForWorkingWithJson;
 

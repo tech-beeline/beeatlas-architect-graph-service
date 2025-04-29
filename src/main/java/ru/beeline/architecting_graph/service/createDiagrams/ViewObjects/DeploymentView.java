@@ -1,4 +1,4 @@
-package ru.beeline.architecting_graph.createDiagrams.ViewObjects;
+package ru.beeline.architecting_graph.service.createDiagrams.ViewObjects;
 
 import java.util.List;
 import java.util.Map;
@@ -6,7 +6,7 @@ import java.util.Map;
 import ru.beeline.architecting_graph.otherObjects.AnimationStep;
 import ru.beeline.architecting_graph.otherObjects.Dimensions;
 
-public class SystemContextView {
+public class DeploymentView {
 
     private String key;
     private Integer order;
@@ -14,10 +14,10 @@ public class SystemContextView {
     private String description;
     private Map<String, Object> properties;
     private String softwareSystemId;
+    private String environment;
     private PaperSize paperSize;
     private Dimensions dimensions;
     private AutomaticLayout automaticLayout;
-    private Boolean enterpriseBoundaryVisible;
     private List<ElementView> elements;
     private List<RelationshipView> relationships;
     private List<AnimationStep> animations;
@@ -70,6 +70,14 @@ public class SystemContextView {
         this.softwareSystemId = softwareSystemId;
     }
 
+    public String getEnvironment() {
+        return environment;
+    }
+
+    public void setEnvironment(String environment) {
+        this.environment = environment;
+    }
+
     public PaperSize getPaperSize() {
         return paperSize;
     }
@@ -92,14 +100,6 @@ public class SystemContextView {
 
     public void setAutomaticLayout(AutomaticLayout automaticLayout) {
         this.automaticLayout = automaticLayout;
-    }
-
-    public Boolean getEnterpriseBoundaryVisible() {
-        return enterpriseBoundaryVisible;
-    }
-
-    public void setEnterpriseBoundaryVisible(Boolean enterpriseBoundaryVisible) {
-        this.enterpriseBoundaryVisible = enterpriseBoundaryVisible;
     }
 
     public List<ElementView> getElements() {
