@@ -335,7 +335,7 @@ public class GetObjects {
 
         // Добавление связей
         deploymentNode.setRelationships(new ArrayList<>());
-        String query = "MATCH (n:DeploymentNode {graphTag: \"Global\", structurizr_dsl_identifier: $val1})-[r:Relationship {source_workspace: $cmdb}]->(m) RETURN r, m.structurizr_dsl_identifier";
+        String query = "MATCH (n:DeploymentNode {graphTag: \"Global\", structurizr_dsl_identifier: $val1})-[r:Relationship {sourceWorkspace: $cmdb}]->(m) RETURN r, m.structurizr_dsl_identifier";
         Value parameters = Values.parameters("val1", deploymentNode.getProperties().get("structurizr_dsl_identifier"),
                 "cmdb", cmdb);
         Result result = session.run(query, parameters);
@@ -360,7 +360,7 @@ public class GetObjects {
             InfrastructureNode infrastructureNode = infrastructureNodes
                     .get(record.get("m.structurizr_dsl_identifier").asString());
 
-            query = "MATCH (n:InfrastructureNode {graphTag: \"Global\", structurizr_dsl_identifier: $val1})-[r:Relationship {source_workspace: $cmdb}]->(m) RETURN r, m.structurizr_dsl_identifier";
+            query = "MATCH (n:InfrastructureNode {graphTag: \"Global\", structurizr_dsl_identifier: $val1})-[r:Relationship {sourceWorkspace: $cmdb}]->(m) RETURN r, m.structurizr_dsl_identifier";
             parameters = Values.parameters("val1",
                     infrastructureNode.getProperties().get("structurizr_dsl_identifier"), "cmdb", cmdb);
             Result result1 = session.run(query, parameters);
@@ -388,7 +388,7 @@ public class GetObjects {
             ContainerInstance containerInstance = containerInstances
                     .get(record.get("m.structurizr_dsl_identifier").asString());
 
-            query = "MATCH (n:ContainerInstance {graphTag: \"Global\", structurizr_dsl_identifier: $val1})-[r:Relationship {source_workspace: $cmdb}]->(m) RETURN r, m.structurizr_dsl_identifier";
+            query = "MATCH (n:ContainerInstance {graphTag: \"Global\", structurizr_dsl_identifier: $val1})-[r:Relationship {sourceWorkspace: $cmdb}]->(m) RETURN r, m.structurizr_dsl_identifier";
             parameters = Values.parameters("val1", containerInstance.getProperties().get("structurizr_dsl_identifier"),
                     "cmdb", cmdb);
             Result result1 = session.run(query, parameters);
@@ -589,7 +589,7 @@ public class GetObjects {
                 Component component = components.get(record.get("m.structurizr_dsl_identifier").asString());
 
                 // Добавление прямых связей
-                query = "MATCH (n:Component{graphTag: \"Global\", structurizr_dsl_identifier: $val1})-[r:Relationship {source_workspace: $cmdb}]->(m) RETURN r, m, m.structurizr_dsl_identifier";
+                query = "MATCH (n:Component{graphTag: \"Global\", structurizr_dsl_identifier: $val1})-[r:Relationship {sourceWorkspace: $cmdb}]->(m) RETURN r, m, m.structurizr_dsl_identifier";
                 parameters = Values.parameters("val1",
                         component.getProperties().get("structurizr_dsl_identifier"), "cmdb", cmdb);
                 Result result1 = session.run(query, parameters);
@@ -636,7 +636,7 @@ public class GetObjects {
                 }
 
                 // Добавление обратных связей
-                query = "MATCH (m)-[r:Relationship {source_workspace: $cmdb}]->(n:Component {graphTag: \"Global\", structurizr_dsl_identifier: $val1}) RETURN r, m, m.structurizr_dsl_identifier";
+                query = "MATCH (m)-[r:Relationship {sourceWorkspace: $cmdb}]->(n:Component {graphTag: \"Global\", structurizr_dsl_identifier: $val1}) RETURN r, m, m.structurizr_dsl_identifier";
                 result1 = session.run(query, parameters);
 
                 while (result1.hasNext()) {
@@ -703,7 +703,7 @@ public class GetObjects {
             }
 
             // Добавление прямых связей
-            query = "MATCH (n:SoftwareSystem {graphTag: \"Global\", structurizr_dsl_identifier: $val1})-[r:Relationship {source_workspace: $cmdb}]->(m) RETURN r, m, m.structurizr_dsl_identifier";
+            query = "MATCH (n:SoftwareSystem {graphTag: \"Global\", structurizr_dsl_identifier: $val1})-[r:Relationship {sourceWorkspace: $cmdb}]->(m) RETURN r, m, m.structurizr_dsl_identifier";
             parameters = Values.parameters("val1", softwareSystemMnemonic, "cmdb", cmdb);
             result = session.run(query, parameters);
 
@@ -739,7 +739,7 @@ public class GetObjects {
             }
 
             // Добавление обратных связей
-            query = "MATCH (m)-[r:Relationship {source_workspace: $cmdb}]->(n:SoftwareSystem {graphTag: \"Global\", structurizr_dsl_identifier: $val1}) RETURN r, m, m.structurizr_dsl_identifier";
+            query = "MATCH (m)-[r:Relationship {sourceWorkspace: $cmdb}]->(n:SoftwareSystem {graphTag: \"Global\", structurizr_dsl_identifier: $val1}) RETURN r, m, m.structurizr_dsl_identifier";
             result = session.run(query, parameters);
 
             while (result.hasNext()) {
@@ -786,7 +786,7 @@ public class GetObjects {
                 Container container = containers.get(record.get("m.structurizr_dsl_identifier").asString());
 
                 // Добавление прямых связей
-                query = "MATCH (n:Container{graphTag: \"Global\", structurizr_dsl_identifier: $val1})-[r:Relationship {source_workspace: $cmdb}]->(m) RETURN r, m, m.structurizr_dsl_identifier";
+                query = "MATCH (n:Container{graphTag: \"Global\", structurizr_dsl_identifier: $val1})-[r:Relationship {sourceWorkspace: $cmdb}]->(m) RETURN r, m, m.structurizr_dsl_identifier";
                 parameters = Values.parameters("val1", container.getProperties().get("structurizr_dsl_identifier"),
                         "cmdb", cmdb);
                 Result result1 = session.run(query, parameters);
@@ -840,7 +840,7 @@ public class GetObjects {
                 }
 
                 // Добавление обратных связей
-                query = "MATCH (m)-[r:Relationship {source_workspace: $cmdb}]->(n:Container {graphTag: \"Global\", structurizr_dsl_identifier: $val1}) RETURN r, m, m.structurizr_dsl_identifier";
+                query = "MATCH (m)-[r:Relationship {sourceWorkspace: $cmdb}]->(n:Container {graphTag: \"Global\", structurizr_dsl_identifier: $val1}) RETURN r, m, m.structurizr_dsl_identifier";
                 result1 = session.run(query, parameters);
 
                 while (result1.hasNext()) {
@@ -901,7 +901,7 @@ public class GetObjects {
                     Component component = components.get(record.get("m.structurizr_dsl_identifier").asString());
 
                     // Добавление прямых связей
-                    query = "MATCH (n:Component {graphTag: \"Global\", structurizr_dsl_identifier: $val1})-[r:Relationship {source_workspace: $cmdb}]->(m) RETURN r, m, m.structurizr_dsl_identifier";
+                    query = "MATCH (n:Component {graphTag: \"Global\", structurizr_dsl_identifier: $val1})-[r:Relationship {sourceWorkspace: $cmdb}]->(m) RETURN r, m, m.structurizr_dsl_identifier";
                     parameters = Values.parameters("val1", component.getProperties().get("structurizr_dsl_identifier"),
                             "cmdb", cmdb);
                     Result result2 = session.run(query, parameters);
@@ -959,7 +959,7 @@ public class GetObjects {
                     }
 
                     // Добавление обратных связей
-                    query = "MATCH (m)-[r:Relationship {source_workspace: $cmdb}]->(n:Component {graphTag: \"Global\", structurizr_dsl_identifier: $val1}) RETURN r, m, m.structurizr_dsl_identifier";
+                    query = "MATCH (m)-[r:Relationship {sourceWorkspace: $cmdb}]->(n:Component {graphTag: \"Global\", structurizr_dsl_identifier: $val1}) RETURN r, m, m.structurizr_dsl_identifier";
                     result2 = session.run(query, parameters);
 
                     while (result2.hasNext()) {

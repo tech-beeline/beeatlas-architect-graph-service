@@ -87,7 +87,12 @@ public class RelationshipUpdateFunctions {
             String numberOfConnects = getRelationshipParameter(session, graphTag, "None", connection,
                     "numberOfConnects").toString();
 
-            if (numberOfConnects.equals("NULL")) {
+            String endVersionRelationship = getRelationshipParameter(session, graphTag, "None", connection,
+                    "endVersion").toString();
+
+            System.out.println(endVersionRelationship);
+
+            if (numberOfConnects.equals("NULL") || !endVersionRelationship.equals("NULL")) {
                 numberOfConnects = "0";
             } else {
                 numberOfConnects = numberOfConnects.substring(1, numberOfConnects.length() - 1);
@@ -110,6 +115,8 @@ public class RelationshipUpdateFunctions {
                     curVersion);
         }
 
+        setRelationshipNumberOfConnects(session, graphTag, relationship, connection);
+
         String setParameters = "MATCH (a:" + connection.getSource().getType() + " {graphTag: $graphTag1, "
                 + connection.getSource().getKey() + ": $val1})-[r:" + connection.getRelationshipType()
                 + " {graphTag: $graphTag1, sourceWorkspace: $cmdb, description: $description1}]->(b:"
@@ -125,7 +132,6 @@ public class RelationshipUpdateFunctions {
         session.run(setParameters, parameters);
 
         setRelationshipProperties(session, graphTag, relationship, connection);
-        setRelationshipNumberOfConnects(session, graphTag, relationship, connection);
     }
 
     public static void updateChildRelationship(Session session, String graphTag, Model model, String curVersion,

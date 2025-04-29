@@ -22,6 +22,16 @@ public class CreateExternalObjects {
         if (!exists) {
             CommonFunctions.createObject(session, graphTag, systemGraphObject);
             CommonFunctions.setObjectParameter(session, graphTag, systemGraphObject, "name", softwareSystem.getName());
+
+            System.out.println(1);
+
+            if (softwareSystem.getProperties() != null
+                    && softwareSystem.getProperties().containsKey("structurizr.dsl.identifier")) {
+                System.out.println(2);
+
+                CommonFunctions.setObjectParameter(session, graphTag, systemGraphObject, "structurizr_dsl_identifier",
+                        softwareSystem.getProperties().get("structurizr.dsl.identifier").toString());
+            }
         }
         objects.put(softwareSystem.getId(), systemGraphObject);
     }
@@ -35,6 +45,14 @@ public class CreateExternalObjects {
         if (!exists) {
             CommonFunctions.createObject(session, graphTag, containerGraphObject);
             CommonFunctions.setObjectParameter(session, graphTag, containerGraphObject, "name", container.getName());
+
+            if (container.getProperties() != null
+                    && container.getProperties().containsKey("structurizr.dsl.identifier")) {
+
+                CommonFunctions.setObjectParameter(session, graphTag, containerGraphObject,
+                        "structurizr_dsl_identifier",
+                        container.getProperties().get("structurizr.dsl.identifier").toString());
+            }
         }
         objects.put(container.getId(), containerGraphObject);
     }
@@ -48,6 +66,14 @@ public class CreateExternalObjects {
         if (!exists) {
             CommonFunctions.createObject(session, graphTag, componentGraphObject);
             CommonFunctions.setObjectParameter(session, graphTag, componentGraphObject, "name", component.getName());
+
+            if (component.getProperties() != null
+                    && component.getProperties().containsKey("structurizr.dsl.identifier")) {
+
+                CommonFunctions.setObjectParameter(session, graphTag, componentGraphObject,
+                        "structurizr_dsl_identifier",
+                        component.getProperties().get("structurizr.dsl.identifier").toString());
+            }
         }
         objects.put(component.getId(), componentGraphObject);
     }
