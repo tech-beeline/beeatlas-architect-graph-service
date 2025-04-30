@@ -16,8 +16,7 @@ public class ContainerInstanceUpdateFunctions {
         if (containerInstance.getProperties() != null) {
             for (Map.Entry<String, Object> entry : containerInstance.getProperties().entrySet()) {
                 String key = entry.getKey();
-                key = key.replace(' ', '_');
-                key = key.replace('.', '_');
+                key = key.replaceAll("[^a-zA-Z0-9]", "_");
                 String setProperties = "MATCH (n:ContainerInstance {graphTag: $graphTag1, name: $val1}) SET n." + key
                         + " = $value";
                 Value parameters = Values.parameters("graphTag1", graphTag, "val1", containerInstanceName,

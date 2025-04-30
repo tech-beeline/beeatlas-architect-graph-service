@@ -19,23 +19,20 @@ import java.util.Map;
 
 public class DeploymentNodeUpdateFunctions {
 
-    public static void setDeploymentNodeProperties(Session session, String graphTag,
-                                                   DeploymentNode deploymentNode) {
-        if (deploymentNode.getProperties() != null) {
-            for (Map.Entry<String, Object> entry : deploymentNode.getProperties().entrySet()) {
-                String key = entry.getKey();
-                key = key.replace(' ', '_');
-                key = key.replace('.', '_');
-                String setProperties = "MATCH (n:DeploymentNode {graphTag: $graphTag1, name: $name1}) SET n."
-                        + key
-                        + " = $value";
-                Value parameters = Values.parameters("graphTag1", graphTag, "name1",
-                        deploymentNode.getName(),
-                        "value", entry.getValue());
-                session.run(setProperties, parameters);
-            }
+        public static void setDeploymentNodeProperties(Session session, String graphTag,
+                        DeploymentNode deploymentNode) {
+                if (deploymentNode.getProperties() != null) {
+                        for (Map.Entry<String, Object> entry : deploymentNode.getProperties().entrySet()) {
+                                String key = entry.getKey();
+                                key = key.replaceAll("[^a-zA-Z0-9]", "_");
+                                String setProperties = "MATCH (n:DeploymentNode {graphTag: $graphTag1, name: $name1}) SET n."
+                                                + key + " = $value";
+                                Value parameters = Values.parameters("graphTag1", graphTag, "name1",
+                                                deploymentNode.getName(), "value", entry.getValue());
+                                session.run(setProperties, parameters);
+                        }
+                }
         }
-    }
 
     public static void setParametersForDeploymentNode(Session session, String graphTag,
                                                       DeploymentNode deploymentNode, GraphObject deploymentNodeGraphObject, String curVersion) {

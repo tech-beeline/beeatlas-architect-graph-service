@@ -35,8 +35,7 @@ public class RelationshipUpdateFunctions {
         if (relationship.getProperties() != null) {
             for (Map.Entry<String, Object> entry : relationship.getProperties().entrySet()) {
                 String key = entry.getKey();
-                key = key.replace(' ', '_');
-                key = key.replace('.', '_');
+                key = key.replaceAll("[^a-zA-Z0-9]", "_");
                 String setProperties = "MATCH (a:" + connection.getSource().getType() + " {graphTag: $graphTag1, "
                         + connection.getSource().getKey() + ": $val1})-[r:" + connection.getRelationshipType()
                         + " {graphTag: $graphTag1, sourceWorkspace: $cmdb, description: $description1}]->(b:"

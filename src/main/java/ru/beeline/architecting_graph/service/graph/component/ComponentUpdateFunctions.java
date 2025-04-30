@@ -20,8 +20,7 @@ public class ComponentUpdateFunctions {
         if (component.getProperties() != null) {
             for (Map.Entry<String, Object> entry : component.getProperties().entrySet()) {
                 String key = entry.getKey();
-                key = key.replace(' ', '_');
-                key = key.replace('.', '_');
+                key = key.replaceAll("[^a-zA-Z0-9]", "_");
                 String setProperties = "MATCH (n:Component {graphTag: $graphTag1, name: $name1}) SET n." + key
                         + " = $value";
                 Value parameters = Values.parameters("graphTag1", graphTag, "name1", component.getName(), "value",

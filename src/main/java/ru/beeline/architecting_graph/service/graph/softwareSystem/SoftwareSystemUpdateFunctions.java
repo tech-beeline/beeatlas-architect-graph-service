@@ -28,8 +28,7 @@ public class SoftwareSystemUpdateFunctions {
         if (softwareSystem.getProperties() != null) {
             for (Map.Entry<String, Object> entry : softwareSystem.getProperties().entrySet()) {
                 String key = entry.getKey();
-                key = key.replace(' ', '_');
-                key = key.replace('.', '_');
+                key = key.replaceAll("[^a-zA-Z0-9]", "_");
                 String setProperties = "MATCH (n:SoftwareSystem {graphTag: $graphTag1, cmdb: $cmdb1}) SET n." + key
                         + " = $value";
                 Value parameters = Values.parameters("graphTag1", graphTag, "cmdb1", cmdb,

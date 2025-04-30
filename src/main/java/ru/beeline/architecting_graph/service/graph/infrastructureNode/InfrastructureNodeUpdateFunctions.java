@@ -15,21 +15,18 @@ public class InfrastructureNodeUpdateFunctions {
     public static void setInfrastructureNodeProperties(Session session, String graphTag,
                                                        InfrastructureNode infrastructureNode) {
 
-        if (infrastructureNode.getProperties() != null) {
-            for (Map.Entry<String, Object> entry : infrastructureNode.getProperties().entrySet()) {
-                String key = entry.getKey();
-                key = key.replace(' ', '_');
-                key = key.replace('.', '_');
-                String setProperties = "MATCH (n:InfrastructureNode {graphTag: $graphTag1, name: $name1}) SET n."
-                        + key
-                        + " = $value";
-                Value parameters = Values.parameters("graphTag1", graphTag, "name1",
-                        infrastructureNode.getName(),
-                        "value", entry.getValue());
-                session.run(setProperties, parameters);
-            }
+                if (infrastructureNode.getProperties() != null) {
+                        for (Map.Entry<String, Object> entry : infrastructureNode.getProperties().entrySet()) {
+                                String key = entry.getKey();
+                                key = key.replaceAll("[^a-zA-Z0-9]", "_");
+                                String setProperties = "MATCH (n:InfrastructureNode {graphTag: $graphTag1, name: $name1}) SET n."
+                                                + key + " = $value";
+                                Value parameters = Values.parameters("graphTag1", graphTag, "name1",
+                                                infrastructureNode.getName(), "value", entry.getValue());
+                                session.run(setProperties, parameters);
+                        }
+                }
         }
-    }
 
     public static void setParametersForInfrastructureNode(Session session, String graphTag,
                                                           InfrastructureNode infrastructureNode, GraphObject infrastructureNodeGraphObject,

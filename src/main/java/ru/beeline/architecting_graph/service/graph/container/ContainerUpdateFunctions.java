@@ -21,8 +21,7 @@ public class ContainerUpdateFunctions {
         if (container.getProperties() != null) {
             for (Map.Entry<String, Object> entry : container.getProperties().entrySet()) {
                 String key = entry.getKey();
-                key = key.replace(' ', '_');
-                key = key.replace('.', '_');
+                key = key.replaceAll("[^a-zA-Z0-9]", "_");
                 String setProperties = "MATCH (n:Container {graphTag: $graphTag1, name: $name1}) SET n." + key
                         + " = $value";
                 Value parameters = Values.parameters("graphTag1", graphTag, "name1", container.getName(),
