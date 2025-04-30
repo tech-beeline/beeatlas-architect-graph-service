@@ -5,12 +5,11 @@ import org.neo4j.driver.Driver;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.exceptions.ServiceUnavailableException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import ru.beeline.architecting_graph.service.graph.commonFunctions.CommonFunctions;
+import ru.beeline.architecting_graph.exception.NotFoundException;
+import ru.beeline.architecting_graph.exception.ValidationException;
 import ru.beeline.architecting_graph.model.GraphObject;
+import ru.beeline.architecting_graph.service.graph.commonFunctions.CommonFunctions;
 
 import java.util.Set;
 
@@ -18,35 +17,31 @@ import java.util.Set;
 @Service
 public class CompareVersions {
 
-    private final Driver driver;
+    @Autowired
+    private Driver driver;
 
     @Autowired
     FindChanges findChanges;
 
-    public CompareVersions(Driver driver) {
-        this.driver = driver;
-    }
-
-    public ResponseEntity<String> compareVersion(String cmdb, Integer firstVersion, Integer secondVersion) {
+    public String compareVersion(String cmdb, Integer firstVersion, Integer secondVersion) {
         try (Session session = driver.session()) {
-            GraphObject systemGraphObject = GraphObject.createGraphObject("SoftwareSystem", "cmdb", cmdb);
+            GraphObject systemGraphObject = new GraphObject("SoftwareSystem", "cmdb", cmdb);
             boolean exists = CommonFunctions.checkIfObjectExists(session, "Global", systemGraphObject);
             if (!exists) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Система не найдена");
+                throw new NotFoundException("Система не найдена");
             }
-            String curVersionString = CommonFunctions.getObjectParameter(session, "Global", systemGraphObject, "version")
-                    .asString();
-            if (curVersionString.equals("NULL")) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("У данной системы отсутствует версионность");
+            String versionValue = CommonFunctions.getObjectParameter(session, "Global", systemGraphObject, "version").asString();
+            if (versionValue == null || versionValue.isEmpty()) {
+                throw new ValidationException("У данной системы отсутствует версионность");
             }
-            Integer curVersion = Integer.parseInt(curVersionString);
+            Integer curVersion = Integer.parseInt(versionValue.trim());
             if (secondVersion == null) {
                 secondVersion = curVersion;
             }
             if (firstVersion.equals(secondVersion)) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Версии не могут быть равны");
+                throw new ValidationException("Версии не могут быть равны");
             } else if (Math.min(firstVersion, secondVersion) < 1 || Math.max(firstVersion, secondVersion) > curVersion) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Неверное значение версий");
+                throw new ValidationException("Неверное значение версий");
             }
             // упорядочим версии
             if (firstVersion > secondVersion) {
@@ -58,13 +53,15 @@ public class CompareVersions {
             Set<Pair> removeElements = findChanges.EarlierChanges(firstVersion, secondVersion, curVersion, cmdb, session);
             String out = "{\n\t\"addElements\": [\n" + constactOutput(addElements) + "\t],\n\t\"removeElements\": [\n"
                     + constactOutput(removeElements) + "\t]\n}";
-            return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(out);
+            return out;
+        } catch (NotFoundException e) {
+            throw new NotFoundException(e.getMessage());
         } catch (ServiceUnavailableException e) {
             log.info("Нет подключения к БД", e);
-            return ResponseEntity.badRequest().body("Нет подключения к БД");
+            throw new ServiceUnavailableException("Нет подключения к БД");
         } catch (Exception e) {
-            log.info("Ошибка при сравнении версий", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Ошибка при сравнении версий");
+            log.info("Ошибка сервера", e);
+            throw new RuntimeException("Ошибка сервера", e);
         }
     }
 

@@ -1,23 +1,22 @@
 package ru.beeline.architecting_graph.service.graph.externalObjects;
 
-import java.util.HashMap;
-
 import org.neo4j.driver.Session;
-
+import ru.beeline.architecting_graph.model.Component;
+import ru.beeline.architecting_graph.model.Container;
 import ru.beeline.architecting_graph.model.GraphObject;
 import ru.beeline.architecting_graph.model.Model;
-import ru.beeline.architecting_graph.model.Container;
-import ru.beeline.architecting_graph.model.Component;
-import ru.beeline.architecting_graph.service.graph.relationship.RelationshipUpdateFunctions;
 import ru.beeline.architecting_graph.model.SoftwareSystem;
 import ru.beeline.architecting_graph.service.graph.commonFunctions.CommonFunctions;
+import ru.beeline.architecting_graph.service.graph.relationship.RelationshipUpdateFunctions;
+
+import java.util.HashMap;
 
 public class CreateExternalObjects {
 
     public static void createExternalSystem(Session session, String graphTag, SoftwareSystem softwareSystem,
-            String cmdb, HashMap<String, GraphObject> objects) {
+                                            String cmdb, HashMap<String, GraphObject> objects) {
 
-        GraphObject systemGraphObject = GraphObject.createGraphObject("SoftwareSystem", "cmdb", cmdb);
+        GraphObject systemGraphObject = new GraphObject("SoftwareSystem", "cmdb", cmdb);
         boolean exists = CommonFunctions.checkIfObjectExists(session, graphTag, systemGraphObject);
         if (!exists) {
             CommonFunctions.createObject(session, graphTag, systemGraphObject);
@@ -34,9 +33,9 @@ public class CreateExternalObjects {
     }
 
     public static void createExternalContainer(Session session, String graphTag, Container container,
-            String containerExternalName, HashMap<String, GraphObject> objects) {
+                                               String containerExternalName, HashMap<String, GraphObject> objects) {
 
-        GraphObject containerGraphObject = GraphObject.createGraphObject("Container", "external_name",
+        GraphObject containerGraphObject = new GraphObject("Container", "external_name",
                 containerExternalName);
         Boolean exists = CommonFunctions.checkIfObjectExists(session, graphTag, containerGraphObject);
         if (!exists) {
@@ -55,9 +54,9 @@ public class CreateExternalObjects {
     }
 
     public static void createExternalComponent(Session session, String graphTag, Component component,
-            String componentExternalName, HashMap<String, GraphObject> objects) {
+                                               String componentExternalName, HashMap<String, GraphObject> objects) {
 
-        GraphObject componentGraphObject = GraphObject.createGraphObject("Component", "external_name",
+        GraphObject componentGraphObject = new GraphObject("Component", "external_name",
                 componentExternalName);
         Boolean exists = CommonFunctions.checkIfObjectExists(session, graphTag, componentGraphObject);
         if (!exists) {

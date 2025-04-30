@@ -1,18 +1,13 @@
 package ru.beeline.architecting_graph.service.graph.containerInstance;
 
-import java.util.HashMap;
-import java.util.Map;
-
+import org.neo4j.driver.Session;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
-import org.neo4j.driver.Session;
-
-import ru.beeline.architecting_graph.model.ContainerInstance;
-import ru.beeline.architecting_graph.model.Model;
-import ru.beeline.architecting_graph.model.SoftwareSystem;
-import ru.beeline.architecting_graph.model.Container;
-import ru.beeline.architecting_graph.model.GraphObject;
+import ru.beeline.architecting_graph.model.*;
 import ru.beeline.architecting_graph.service.graph.commonFunctions.CommonFunctions;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class ContainerInstanceUpdateFunctions {
 
@@ -36,7 +31,7 @@ public class ContainerInstanceUpdateFunctions {
 
         if (graphTag.equals("Global")
                 && CommonFunctions.getObjectParameter(session, graphTag, containerInstanceGraphObject,
-                        "startVersion").toString().equals("NULL")) {
+                "startVersion").toString().equals("NULL")) {
 
             CommonFunctions.setObjectParameter(session, graphTag, containerInstanceGraphObject, "startVersion",
                     curVersion);
@@ -66,7 +61,7 @@ public class ContainerInstanceUpdateFunctions {
     }
 
     public static void updateContainerInstance(Session session, String graphTag, Model model,
-            ContainerInstance containerInstance, String curVersion, HashMap<String, GraphObject> objects) {
+                                               ContainerInstance containerInstance, String curVersion, HashMap<String, GraphObject> objects) {
 
         String containerInstanceName = getContainerforContainerInstance(model, containerInstance.getContainerId());
 
@@ -76,7 +71,7 @@ public class ContainerInstanceUpdateFunctions {
 
         containerInstanceName = "ContainerInstance." + containerInstanceName;
 
-        GraphObject containerInstanceGraphObject = GraphObject.createGraphObject("ContainerInstance", "name",
+        GraphObject containerInstanceGraphObject = new GraphObject("ContainerInstance", "name",
                 containerInstanceName);
 
         if (!CommonFunctions.checkIfObjectExists(session, graphTag, containerInstanceGraphObject)) {

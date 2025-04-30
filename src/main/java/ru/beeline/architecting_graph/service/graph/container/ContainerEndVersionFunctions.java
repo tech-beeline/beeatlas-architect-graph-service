@@ -1,10 +1,9 @@
 package ru.beeline.architecting_graph.service.graph.container;
 
-import org.neo4j.driver.Value;
-import org.neo4j.driver.Values;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
-
+import org.neo4j.driver.Value;
+import org.neo4j.driver.Values;
 import ru.beeline.architecting_graph.model.GraphObject;
 import ru.beeline.architecting_graph.service.graph.commonFunctions.CommonFunctions;
 import ru.beeline.architecting_graph.service.graph.component.ComponentEndVersionFunctions;
@@ -21,7 +20,7 @@ public class ContainerEndVersionFunctions {
         while (result.hasNext()) {
             String containerName = result.next().get("containerName").toString();
             containerName = containerName.substring(1, containerName.length() - 1);
-            GraphObject containerGraphObject = GraphObject.createGraphObject("Container", "name", containerName);
+            GraphObject containerGraphObject = new GraphObject("Container", "name", containerName);
 
             CommonFunctions.setObjectParameter(session, graphTag, containerGraphObject, "endVersion", curVersion);
             ComponentEndVersionFunctions.setComponentEndVersion(session, graphTag, containerName, cmdb, curVersion);
