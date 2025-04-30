@@ -1,19 +1,18 @@
 package ru.beeline.architecting_graph.service.graph.deploymentNode;
 
-import org.neo4j.driver.Value;
-import org.neo4j.driver.Values;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
-
+import org.neo4j.driver.Value;
+import org.neo4j.driver.Values;
 import ru.beeline.architecting_graph.model.GraphObject;
 import ru.beeline.architecting_graph.service.graph.commonFunctions.CommonFunctions;
-import ru.beeline.architecting_graph.service.graph.infrastructureNode.InfrastructureNodeEndVersionFunctions;
 import ru.beeline.architecting_graph.service.graph.containerInstance.ContainerInstanceEndVersionFunctions;
+import ru.beeline.architecting_graph.service.graph.infrastructureNode.InfrastructureNodeEndVersionFunctions;
 
 public class DeploymentNodeEndVersionFunctions {
 
     public static void setChildDeploymentNodeEndVersion(Session session, String graphTag, String deploymentNodeName,
-            String curVersion, String cmdb) {
+                                                        String curVersion, String cmdb) {
 
         String getChildDeploymentNodes = "MATCH (n:DeploymentNode "
                 + "{name: $name1, graphTag: $graphTag1})-[r:Child]->(m:DeploymentNode) "
@@ -29,9 +28,9 @@ public class DeploymentNodeEndVersionFunctions {
     }
 
     public static void setDeploymentNodeEndVersion(Session session, String graphTag, String deploymentNodeName,
-            String curVersion, String cmdb) {
+                                                   String curVersion, String cmdb) {
 
-        GraphObject deploymentNodeGraphObject = GraphObject.createGraphObject("DeploymentNode", "name",
+        GraphObject deploymentNodeGraphObject = new GraphObject("DeploymentNode", "name",
                 deploymentNodeName);
 
         CommonFunctions.setObjectParameter(session, graphTag, deploymentNodeGraphObject, "endVersion", curVersion);

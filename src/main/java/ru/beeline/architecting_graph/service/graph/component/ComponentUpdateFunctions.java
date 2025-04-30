@@ -1,19 +1,18 @@
 package ru.beeline.architecting_graph.service.graph.component;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import org.neo4j.driver.Session;
-import org.neo4j.driver.Values;
-import org.neo4j.driver.Value;
 import org.neo4j.driver.Result;
-
+import org.neo4j.driver.Session;
+import org.neo4j.driver.Value;
+import org.neo4j.driver.Values;
 import ru.beeline.architecting_graph.model.Component;
-import ru.beeline.architecting_graph.service.graph.commonFunctions.CommonFunctions;
 import ru.beeline.architecting_graph.model.Container;
 import ru.beeline.architecting_graph.model.GraphObject;
 import ru.beeline.architecting_graph.model.Model;
+import ru.beeline.architecting_graph.service.graph.commonFunctions.CommonFunctions;
 import ru.beeline.architecting_graph.service.graph.relationship.RelationshipUpdateFunctions;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class ComponentUpdateFunctions {
 
@@ -33,11 +32,11 @@ public class ComponentUpdateFunctions {
     }
 
     public static void setParametersForComponent(Session session, String graphTag, Component component,
-            GraphObject componentGraphObject, String curVersion) {
+                                                 GraphObject componentGraphObject, String curVersion) {
 
         if (graphTag.equals("Global")
                 && CommonFunctions.getObjectParameter(session, graphTag, componentGraphObject, "startVersion")
-                        .toString().equals("NULL")) {
+                .toString().equals("NULL")) {
 
             CommonFunctions.setObjectParameter(session, graphTag, componentGraphObject, "startVersion", curVersion);
         }
@@ -70,7 +69,7 @@ public class ComponentUpdateFunctions {
     }
 
     public static Boolean needComponentReplace(Session session, String graphTag, Component component,
-            GraphObject externalComponentGraphObject) {
+                                               GraphObject externalComponentGraphObject) {
 
         Integer numberOfRelationshipsFirst = getComponentNumberOfConnects(session, graphTag,
                 externalComponentGraphObject.getValue());
@@ -91,7 +90,7 @@ public class ComponentUpdateFunctions {
     }
 
     public static Boolean changeComponent(Session session, String graphTag, Component component,
-            GraphObject externalComponentGraphObject, String curVersion, HashMap<String, GraphObject> objects) {
+                                          GraphObject externalComponentGraphObject, String curVersion, HashMap<String, GraphObject> objects) {
 
         String startVersion = CommonFunctions
                 .getObjectParameter(session, graphTag, externalComponentGraphObject, "startVersion").toString();
@@ -113,7 +112,7 @@ public class ComponentUpdateFunctions {
     }
 
     public static void updateComponent(Session session, String graphTag, Component component, String curVersion,
-            HashMap<String, GraphObject> objects) {
+                                       HashMap<String, GraphObject> objects) {
 
         boolean externalExists = false;
         GraphObject externalComponentGraphObject = null;
@@ -122,7 +121,7 @@ public class ComponentUpdateFunctions {
                 && component.getProperties().get("external_name") != null) {
 
             String componentExternalName = component.getProperties().get("external_name").toString();
-            externalComponentGraphObject = GraphObject.createGraphObject("Component", "external_name",
+            externalComponentGraphObject = new GraphObject("Component", "external_name",
                     componentExternalName);
             externalExists = CommonFunctions.checkIfObjectExists(session, graphTag, externalComponentGraphObject);
         }
@@ -136,7 +135,7 @@ public class ComponentUpdateFunctions {
             }
         }
 
-        GraphObject componentGraphObject = GraphObject.createGraphObject("Component", "name", component.getName());
+        GraphObject componentGraphObject = new GraphObject("Component", "name", component.getName());
         boolean exists = CommonFunctions.checkIfObjectExists(session, graphTag, componentGraphObject);
 
         if (!exists) {

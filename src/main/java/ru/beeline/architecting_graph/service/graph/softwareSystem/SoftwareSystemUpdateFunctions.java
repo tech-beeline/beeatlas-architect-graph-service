@@ -1,15 +1,14 @@
 package ru.beeline.architecting_graph.service.graph.softwareSystem;
 
-import ru.beeline.architecting_graph.model.SoftwareSystem;
-import ru.beeline.architecting_graph.service.graph.commonFunctions.CommonFunctions;
-import ru.beeline.architecting_graph.model.GraphObject;
-
-import java.util.HashMap;
-import java.util.Map;
-
 import org.neo4j.driver.Session;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
+import ru.beeline.architecting_graph.model.GraphObject;
+import ru.beeline.architecting_graph.model.SoftwareSystem;
+import ru.beeline.architecting_graph.service.graph.commonFunctions.CommonFunctions;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class SoftwareSystemUpdateFunctions {
 
@@ -25,7 +24,7 @@ public class SoftwareSystemUpdateFunctions {
     }
 
     public static void setSystemProperties(Session session, String graphTag, SoftwareSystem softwareSystem,
-            String cmdb) {
+                                           String cmdb) {
         if (softwareSystem.getProperties() != null) {
             for (Map.Entry<String, Object> entry : softwareSystem.getProperties().entrySet()) {
                 String key = entry.getKey();
@@ -41,7 +40,7 @@ public class SoftwareSystemUpdateFunctions {
     }
 
     public static String setParametersForSystem(Session session, String graphTag, SoftwareSystem softwareSystem,
-            String cmdb, GraphObject systemGraphObject) {
+                                                String cmdb, GraphObject systemGraphObject) {
 
         String version = null;
 
@@ -63,9 +62,9 @@ public class SoftwareSystemUpdateFunctions {
     }
 
     public static String updateSystem(Session session, String graphTag, SoftwareSystem softwareSystem, String cmdb,
-            HashMap<String, GraphObject> objects) {
+                                      HashMap<String, GraphObject> objects) {
 
-        GraphObject systemGraphObject = GraphObject.createGraphObject("SoftwareSystem", "cmdb", cmdb);
+        GraphObject systemGraphObject = new GraphObject("SoftwareSystem", "cmdb", cmdb);
 
         boolean exists = CommonFunctions.checkIfObjectExists(session, graphTag, systemGraphObject);
 

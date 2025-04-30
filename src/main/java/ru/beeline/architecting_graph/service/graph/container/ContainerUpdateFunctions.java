@@ -1,20 +1,19 @@
 package ru.beeline.architecting_graph.service.graph.container;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import org.neo4j.driver.Value;
-import org.neo4j.driver.Values;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
-
+import org.neo4j.driver.Value;
+import org.neo4j.driver.Values;
 import ru.beeline.architecting_graph.model.Container;
 import ru.beeline.architecting_graph.model.GraphObject;
 import ru.beeline.architecting_graph.model.Model;
 import ru.beeline.architecting_graph.model.SoftwareSystem;
 import ru.beeline.architecting_graph.service.graph.commonFunctions.CommonFunctions;
-import ru.beeline.architecting_graph.service.graph.relationship.RelationshipUpdateFunctions;
 import ru.beeline.architecting_graph.service.graph.component.ComponentUpdateFunctions;
+import ru.beeline.architecting_graph.service.graph.relationship.RelationshipUpdateFunctions;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class ContainerUpdateFunctions {
 
@@ -34,11 +33,11 @@ public class ContainerUpdateFunctions {
     }
 
     public static void setParametersForContainer(Session session, String graphTag, Container container,
-            GraphObject containerGraphObject, String curVersion) {
+                                                 GraphObject containerGraphObject, String curVersion) {
 
         if (graphTag.equals("Global")
                 && CommonFunctions.getObjectParameter(session, graphTag, containerGraphObject, "startVersion")
-                        .toString().equals("NULL")) {
+                .toString().equals("NULL")) {
 
             CommonFunctions.setObjectParameter(session, graphTag, containerGraphObject, "startVersion", curVersion);
         }
@@ -70,7 +69,7 @@ public class ContainerUpdateFunctions {
     }
 
     public static Boolean needContainerReplace(Session session, String graphTag, Container container,
-            GraphObject externalContainerGraphObject) {
+                                               GraphObject externalContainerGraphObject) {
         Integer numberOfRelationshipsFirst = getContainerNumberOfConnects(session, graphTag,
                 externalContainerGraphObject.getValue());
         String source = CommonFunctions.getObjectParameter(session, graphTag, externalContainerGraphObject, "source")
@@ -94,7 +93,7 @@ public class ContainerUpdateFunctions {
     }
 
     public static Boolean changeContainer(Session session, String graphTag, Container container,
-            GraphObject externalContainerGraphObject, String curVersion, HashMap<String, GraphObject> objects) {
+                                          GraphObject externalContainerGraphObject, String curVersion, HashMap<String, GraphObject> objects) {
 
         String startVersion = CommonFunctions
                 .getObjectParameter(session, graphTag, externalContainerGraphObject, "startVersion").toString();
@@ -116,7 +115,7 @@ public class ContainerUpdateFunctions {
     }
 
     public static void updateContainer(Session session, String graphTag, Container container, String curVersion,
-            HashMap<String, GraphObject> objects) {
+                                       HashMap<String, GraphObject> objects) {
 
         boolean externalExists = false;
         GraphObject externalContainerGraphObject = null;
@@ -125,7 +124,7 @@ public class ContainerUpdateFunctions {
                 && container.getProperties().get("external_name") != null) {
 
             String containerExternalName = container.getProperties().get("external_name").toString();
-            externalContainerGraphObject = GraphObject.createGraphObject("Container", "external_name",
+            externalContainerGraphObject = new GraphObject("Container", "external_name",
                     containerExternalName);
             externalExists = CommonFunctions.checkIfObjectExists(session, graphTag, externalContainerGraphObject);
         }
@@ -139,7 +138,7 @@ public class ContainerUpdateFunctions {
             }
         }
 
-        GraphObject containerGraphObject = GraphObject.createGraphObject("Container", "name", container.getName());
+        GraphObject containerGraphObject = new GraphObject("Container", "name", container.getName());
         boolean exists = CommonFunctions.checkIfObjectExists(session, graphTag, containerGraphObject);
 
         if (!exists) {

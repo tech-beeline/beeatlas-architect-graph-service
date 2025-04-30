@@ -1,17 +1,16 @@
 package ru.beeline.architecting_graph.service.graph.containerInstance;
 
-import org.neo4j.driver.Value;
-import org.neo4j.driver.Values;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
-
+import org.neo4j.driver.Value;
+import org.neo4j.driver.Values;
 import ru.beeline.architecting_graph.model.GraphObject;
 import ru.beeline.architecting_graph.service.graph.commonFunctions.CommonFunctions;
 
 public class ContainerInstanceEndVersionFunctions {
 
     public static void setContainerInstanceEndVersion(Session session, String graphTag, String deploymentNodeName,
-            String curVersion) {
+                                                      String curVersion) {
 
         String getContainerInstances = "MATCH (n:DeploymentNode "
                 + "{name: $name1, graphTag: $graphTag1})-[r:Child]->(m:ContainerInstance) "
@@ -22,7 +21,7 @@ public class ContainerInstanceEndVersionFunctions {
         while (result.hasNext()) {
             String containerInstanceName = result.next().get("containerInstanceName").toString();
             containerInstanceName = containerInstanceName.substring(1, containerInstanceName.length() - 1);
-            GraphObject containerInstanceGraphObject = GraphObject.createGraphObject("ContainerInstance", "name",
+            GraphObject containerInstanceGraphObject = new GraphObject("ContainerInstance", "name",
                     containerInstanceName);
             CommonFunctions.setObjectParameter(session, graphTag, containerInstanceGraphObject, "endVersion",
                     curVersion);
