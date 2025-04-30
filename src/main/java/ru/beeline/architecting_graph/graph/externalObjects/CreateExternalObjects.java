@@ -23,11 +23,8 @@ public class CreateExternalObjects {
             CommonFunctions.createObject(session, graphTag, systemGraphObject);
             CommonFunctions.setObjectParameter(session, graphTag, systemGraphObject, "name", softwareSystem.getName());
 
-            System.out.println(1);
-
             if (softwareSystem.getProperties() != null
                     && softwareSystem.getProperties().containsKey("structurizr.dsl.identifier")) {
-                System.out.println(2);
 
                 CommonFunctions.setObjectParameter(session, graphTag, systemGraphObject, "structurizr_dsl_identifier",
                         softwareSystem.getProperties().get("structurizr.dsl.identifier").toString());
