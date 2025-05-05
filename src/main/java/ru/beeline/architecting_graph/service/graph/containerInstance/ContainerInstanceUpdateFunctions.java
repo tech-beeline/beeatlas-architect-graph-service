@@ -12,7 +12,7 @@ import java.util.Map;
 public class ContainerInstanceUpdateFunctions {
 
     public static void setContainerInstanceProperties(Session session, String graphTag,
-                                                      ContainerInstance containerInstance, String containerInstanceName) {
+            ContainerInstance containerInstance, String containerInstanceName) {
         if (containerInstance.getProperties() != null) {
             for (Map.Entry<String, Object> entry : containerInstance.getProperties().entrySet()) {
                 String key = entry.getKey();
@@ -27,11 +27,11 @@ public class ContainerInstanceUpdateFunctions {
     }
 
     public static void setParametersForContainerInstance(Session session, String graphTag,
-                                                         ContainerInstance containerInstance, GraphObject containerInstanceGraphObject, String curVersion) {
+            ContainerInstance containerInstance, GraphObject containerInstanceGraphObject, String curVersion) {
 
         if (graphTag.equals("Global")
                 && CommonFunctions.getObjectParameter(session, graphTag, containerInstanceGraphObject,
-                "startVersion").toString().equals("NULL")) {
+                        "startVersion").toString().equals("NULL")) {
 
             CommonFunctions.setObjectParameter(session, graphTag, containerInstanceGraphObject, "startVersion",
                     curVersion);
@@ -61,7 +61,8 @@ public class ContainerInstanceUpdateFunctions {
     }
 
     public static void updateContainerInstance(Session session, String graphTag, Model model,
-                                               ContainerInstance containerInstance, String curVersion, HashMap<String, GraphObject> objects) {
+            DeploymentNode deploymentNode, ContainerInstance containerInstance, String curVersion,
+            HashMap<String, GraphObject> objects) {
 
         String containerInstanceName = getContainerforContainerInstance(model, containerInstance.getContainerId());
 
@@ -69,7 +70,7 @@ public class ContainerInstanceUpdateFunctions {
             return;
         }
 
-        containerInstanceName = "ContainerInstance." + containerInstanceName;
+        containerInstanceName = containerInstanceName + ".ContainerInstance." + deploymentNode.getName().toString();
 
         GraphObject containerInstanceGraphObject = new GraphObject("ContainerInstance", "name",
                 containerInstanceName);
