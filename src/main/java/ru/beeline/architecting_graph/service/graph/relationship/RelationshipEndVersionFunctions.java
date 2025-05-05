@@ -1,12 +1,11 @@
 package ru.beeline.architecting_graph.service.graph.relationship;
 
-import org.neo4j.driver.Value;
-import org.neo4j.driver.Values;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
-
-import ru.beeline.architecting_graph.service.graph.connection.Connection;
+import org.neo4j.driver.Value;
+import org.neo4j.driver.Values;
 import ru.beeline.architecting_graph.model.GraphObject;
+import ru.beeline.architecting_graph.service.graph.connection.Connection;
 
 public class RelationshipEndVersionFunctions {
     public static GraphObject getGraphObject(Value graphNode) {
@@ -25,7 +24,7 @@ public class RelationshipEndVersionFunctions {
             value = graphNode.asNode().asMap().get("external_name");
         }
 
-        return GraphObject.createGraphObject(type, key, value.toString());
+        return new GraphObject(type, key, value.toString());
     }
 
     public static void setRelationshipsEndVersion(Session session, String graphTag, String curVersion, String cmdb) {

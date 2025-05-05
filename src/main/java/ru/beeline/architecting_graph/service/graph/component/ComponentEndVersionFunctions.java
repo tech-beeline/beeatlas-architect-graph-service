@@ -1,17 +1,16 @@
 package ru.beeline.architecting_graph.service.graph.component;
 
-import org.neo4j.driver.Value;
-import org.neo4j.driver.Values;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
-
+import org.neo4j.driver.Value;
+import org.neo4j.driver.Values;
 import ru.beeline.architecting_graph.model.GraphObject;
 import ru.beeline.architecting_graph.service.graph.commonFunctions.CommonFunctions;
 
 public class ComponentEndVersionFunctions {
 
     public static void setComponentEndVersion(Session session, String graphTag, String containerName, String cmdb,
-            String curVersion) {
+                                              String curVersion) {
 
         String getComponents = "MATCH (n:Container {name: $name1, graphTag: $graphTag1})-[r:Child]->(m:Component) " +
                 "WHERE m.endVersion IS NULL RETURN m.name AS componentName";
@@ -21,7 +20,7 @@ public class ComponentEndVersionFunctions {
         while (result.hasNext()) {
             String componentName = result.next().get("componentName").toString();
             componentName = componentName.substring(1, componentName.length() - 1);
-            GraphObject componentGraphObject = GraphObject.createGraphObject("Component", "name", componentName);
+            GraphObject componentGraphObject = new GraphObject("Component", "name", componentName);
 
             CommonFunctions.setObjectParameter(session, graphTag, componentGraphObject, "endVersion", curVersion);
         }

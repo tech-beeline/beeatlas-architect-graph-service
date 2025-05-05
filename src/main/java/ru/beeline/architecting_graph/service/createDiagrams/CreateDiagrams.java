@@ -1,30 +1,28 @@
 package ru.beeline.architecting_graph.service.createDiagrams;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.GraphDatabase;
-import org.neo4j.driver.Session;
-import org.neo4j.driver.Values;
-import org.neo4j.driver.Value;
 import org.neo4j.driver.Result;
+import org.neo4j.driver.Session;
+import org.neo4j.driver.Value;
+import org.neo4j.driver.Values;
 import org.neo4j.driver.exceptions.ServiceUnavailableException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import ru.beeline.architecting_graph.service.graph.commonFunctions.CommonFunctions;
-import ru.beeline.architecting_graph.model.GraphObject;
 import ru.beeline.architecting_graph.config.RestConfig;
-import ru.beeline.architecting_graph.service.graph.graphConstruction.GraphConstruction;
+import ru.beeline.architecting_graph.model.GraphObject;
+import ru.beeline.architecting_graph.service.graph.commonFunctions.CommonFunctions;
 import ru.beeline.architecting_graph.service.graph.functionsForJson.FunctionsForWorkingWithJson;
+import ru.beeline.architecting_graph.service.graph.graphConstruction.GraphConstruction;
 
 public class CreateDiagrams {
 
     public static Boolean checkifContainerExists(Session session, String softwareSystemMnemonic,
-            String containerMnemonic) {
+                                                 String containerMnemonic) {
 
         String query = "MATCH (a:SoftwareSystem {graphTag: \"Global\", structurizr_dsl_identifier: $val1})"
                 + "-[r:Child]->(b:Container {graphTag: \"Global\", structurizr_dsl_identifier: $val2}) "
@@ -48,7 +46,7 @@ public class CreateDiagrams {
     }
 
     public static ResponseEntity<String> createDiagramm(RestConfig autorization, String softwareSystemMnemonic,
-            String containerMnemonic, String environment) {
+                                                        String containerMnemonic, String environment) {
 
         Driver driver = GraphDatabase.driver(autorization.getUri(),
                 AuthTokens.basic(autorization.getUser(), autorization.getPassword()));
@@ -64,7 +62,7 @@ public class CreateDiagrams {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
-        GraphObject systemGraphObject = GraphObject.createGraphObject("SoftwareSystem", "structurizr_dsl_identifier",
+        GraphObject systemGraphObject = new GraphObject("SoftwareSystem", "structurizr_dsl_identifier",
                 softwareSystemMnemonic);
 
         boolean exists = CommonFunctions.checkIfObjectExists(session, "Global", systemGraphObject);
