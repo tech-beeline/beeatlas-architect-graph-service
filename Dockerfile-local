@@ -21,4 +21,4 @@ RUN keytool -importcert -file /app/certs/apps.yd-m6-kt22.vimpelcom.ru.crt -alias
 RUN mvn clean package
 
 # Запускаем приложение
-CMD ["java", "-jar", "target/architecting_graph-0.0.1-SNAPSHOT.jar"]
+CMD ["java", "-jar", "target/architecting_graph-0.0.2-SNAPSHOT.jar"]

@@ -344,8 +344,13 @@ public class GetObjects {
             org.neo4j.driver.Record record = result.next();
 
             String second_id = map_id.get(record.get("m.structurizr_dsl_identifier").asString()).toString();
-            deploymentNode.getRelationships()
-                    .add(getRelation(record.get("r").asRelationship(), deploymentNode.getId(), second_id));
+
+            Relationship relationship = getRelation(record.get("r").asRelationship(), deploymentNode.getId(),
+                    second_id);
+
+            if (relationship != null) {
+                deploymentNode.getRelationships().add(relationship);
+            }
         }
 
         // Добавление InfrastructureNode
@@ -369,8 +374,13 @@ public class GetObjects {
                 record = result1.next();
 
                 String second_id = map_id.get(record.get("m.structurizr_dsl_identifier").asString()).toString();
-                infrastructureNode.getRelationships()
-                        .add(getRelation(record.get("r").asRelationship(), infrastructureNode.getId(), second_id));
+
+                Relationship relationship = getRelation(record.get("r").asRelationship(), infrastructureNode.getId(),
+                        second_id);
+
+                if (relationship != null) {
+                    infrastructureNode.getRelationships().add(relationship);
+                }
             }
 
             deploymentNode.getInfrastructureNodes().add(infrastructureNode);
@@ -397,8 +407,13 @@ public class GetObjects {
                 record = result1.next();
 
                 String second_id = map_id.get(record.get("m.structurizr_dsl_identifier").asString()).toString();
-                containerInstance.getRelationships()
-                        .add(getRelation(record.get("r").asRelationship(), containerInstance.getId(), second_id));
+
+                Relationship relationship = getRelation(record.get("r").asRelationship(), containerInstance.getId(),
+                        second_id);
+
+                if (relationship != null) {
+                    containerInstance.getRelationships().add(relationship);
+                }
             }
 
             deploymentNode.getContainerInstances().add(containerInstance);
@@ -1040,7 +1055,6 @@ public class GetObjects {
 
             while (result.hasNext()) {
                 record = result.next();
-                System.out.println(record.get("m.structurizr_dsl_identifier").asString());
                 model.getDeploymentNodes().add(getDeploymentNodeRelations(
                         deploymentNodes.get(record.get("m.structurizr_dsl_identifier").asString()), session, cmdb));
             }
