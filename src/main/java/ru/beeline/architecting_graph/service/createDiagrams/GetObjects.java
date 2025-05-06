@@ -1055,9 +1055,15 @@ public class GetObjects {
 
             while (result.hasNext()) {
                 record = result.next();
-                model.getDeploymentNodes().add(getDeploymentNodeRelations(
-                        deploymentNodes.get(record.get("m.structurizr_dsl_identifier").asString()), session, cmdb));
+
+                DeploymentNode deploymentNode = deploymentNodes
+                        .get(record.get("m.structurizr_dsl_identifier").asString());
+
+                if (deploymentNode != null) {
+                    model.getDeploymentNodes().add(getDeploymentNodeRelations(deploymentNode, session, cmdb));
+                }
             }
+
         }
 
         systems.put(system.getProperties().get("structurizr_dsl_identifier").toString(), system);
