@@ -3,6 +3,7 @@ package ru.beeline.architecting_graph.service.compareVersions;
 import lombok.extern.slf4j.Slf4j;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Session;
+import org.neo4j.driver.Value;
 import org.neo4j.driver.exceptions.ServiceUnavailableException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -30,10 +31,11 @@ public class CompareVersions {
             if (!exists) {
                 throw new NotFoundException("Система не найдена");
             }
-            String versionValue = CommonFunctions.getObjectParameter(session, "Global", systemGraphObject, "version").asString();
-            if (versionValue == null || versionValue.isEmpty()) {
+            Value versionVal = CommonFunctions.getObjectParameter(session, "Global", systemGraphObject, "version");
+            if (versionVal == null || versionVal.isNull()) {
                 throw new ValidationException("У данной системы отсутствует версионность");
             }
+            String versionValue = versionVal.asString();
             Integer curVersion = Integer.parseInt(versionValue.trim());
             if (secondVersion == null) {
                 secondVersion = curVersion;
