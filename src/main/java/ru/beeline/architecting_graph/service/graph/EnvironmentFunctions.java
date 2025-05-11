@@ -1,8 +1,8 @@
-package ru.beeline.architecting_graph.service.graph.environment;
+package ru.beeline.architecting_graph.service.graph;
 
 import org.neo4j.driver.Session;
 import ru.beeline.architecting_graph.model.GraphObject;
-import ru.beeline.architecting_graph.service.graph.commonFunctions.CommonFunctions;
+import ru.beeline.architecting_graph.service.graph.CommonFunctions;
 
 import java.util.HashMap;
 

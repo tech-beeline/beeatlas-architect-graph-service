@@ -93,7 +93,6 @@ public class FindChanges {
             int start = parseVersion(record.get("m.startVersion"), 0);
             int end = parseVersion(record.get("m.endVersion"), curVersion);
             String name = record.get("m.name").asString();
-
             if (isVersionInRange(start, end, v1, v2, flag)) {
                 out.add(new Pair(name, childType));
                 out.add(new Pair(descriptionRelation(record.get("n"), record.get("m"), "Child", "Child"), "Relationship"));
@@ -109,273 +108,172 @@ public class FindChanges {
 
     public Set<Pair> EarlierChanges(Integer v1, Integer v2, Integer cur_version, String cmdb, Session session) {
         out = new HashSet<>();
+        processSystemRelationships(v1, v2, cur_version, cmdb, session);
+        processContainers(v1, v2, cur_version, cmdb, session);
+        processSoftwareSystemInstances(v1, v2, cur_version, cmdb, session);
+        processDeploymentNodes(v1, v2, cur_version, cmdb, session);
+        return out;
+    }
+
+    private void processSystemRelationships(Integer v1, Integer v2, Integer cur_version, String cmdb, Session session) {
+        // Обработка прямых связей системы
         String query = "MATCH (n:SoftwareSystem {graphTag: \"Global\", cmdb: $val1})-[r:Relationship {sourceWorkspace: $cmdb}]->(m) RETURN n, m, r.startVersion, r.endVersion, r.description";
         Value parameters = Values.parameters("cmdb", cmdb, "val1", cmdb);
         Result result = session.run(query, parameters);
-
         while (result.hasNext()) {
             Record record = result.next();
-
-            String startVersionString = record.get("r.startVersion").toString();
-            startVersionString = startVersionString.substring(1, startVersionString.length() - 1);
-            Integer startVersion = Integer.parseInt(startVersionString);
-
-            String endVersionString = record.get("r.endVersion").toString();
-            Integer endVersion = cur_version;
-            if (!endVersionString.equals("NULL")) {
-                endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
-                endVersion = Integer.parseInt(endVersionString);
-            }
-
-            if (startVersion <= v1 && v1 <= endVersion && endVersion < v2) {
+            Integer startVersionRelationship = getVersion(record.get("r.startVersion").toString(), cur_version);
+            Integer endVersionRelationship = getVersion(record.get("r.endVersion").toString(), cur_version);
+            if (startVersionRelationship <= v1 && v1 <= endVersionRelationship && endVersionRelationship < v2) {
                 out.add(new Pair(descriptionRelation(record.get("n"), record.get("m"), "Relationship",
                         record.get("r.description").asString()), "Relationship"));
             }
         }
-
-        // Проход по обратным связям системы
+        // Обработка обратных связей системы
         query = "MATCH (m)-[r:Relationship {sourceWorkspace: $cmdb}]->(n:SoftwareSystem {graphTag: \"Global\", cmdb: $val1}) RETURN n, m, r.startVersion, r.endVersion, r.description";
         result = session.run(query, parameters);
-
         while (result.hasNext()) {
             Record record = result.next();
-
-            String startVersionString = record.get("r.startVersion").toString();
-            startVersionString = startVersionString.substring(1, startVersionString.length() - 1);
-            Integer startVersion = Integer.parseInt(startVersionString);
-
-            String endVersionString = record.get("r.endVersion").toString();
-            Integer endVersion = cur_version;
-            if (!endVersionString.equals("NULL")) {
-                endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
-                endVersion = Integer.parseInt(endVersionString);
-            }
-
-            if (startVersion <= v1 && v1 <= endVersion && endVersion < v2) {
+            Integer startVersionRelationship = getVersion(record.get("r.startVersion").toString(), cur_version);
+            Integer endVersionRelationship = getVersion(record.get("r.endVersion").toString(), cur_version);
+            if (startVersionRelationship <= v1 && v1 <= endVersionRelationship && endVersionRelationship < v2) {
                 out.add(new Pair(descriptionRelation(record.get("m"), record.get("n"), "Relationship",
                         record.get("r.description").asString()), "Relationship"));
             }
         }
+    }
 
-        // Проход по контейнерам
-        query = "MATCH (n:SoftwareSystem {graphTag: \"Global\", cmdb: $val1})-[r:Child]->(m:Container) RETURN n, m, m.name, m.startVersion, m.endVersion";
-        parameters = Values.parameters("val1", cmdb);
-        result = session.run(query, parameters);
-
+    private void processContainers(Integer v1, Integer v2, Integer cur_version, String cmdb, Session session) {
+        // Обработка контейнеров и их связей
+        String query = "MATCH (n:SoftwareSystem {graphTag: \"Global\", cmdb: $val1})-[r:Child]->(m:Container) RETURN n, m, m.name, m.startVersion, m.endVersion";
+        Value parameters = Values.parameters("val1", cmdb);
+        Result result = session.run(query, parameters);
         while (result.hasNext()) {
             Record record = result.next();
-
-            String startVersionString = record.get("m.startVersion").toString();
-            startVersionString = startVersionString.substring(1, startVersionString.length() - 1);
-            Integer startVersion = Integer.parseInt(startVersionString);
-
-            String endVersionString = record.get("m.endVersion").toString();
-            Integer endVersion = cur_version;
-            if (!endVersionString.equals("NULL")) {
-                endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
-                endVersion = Integer.parseInt(endVersionString);
+            Integer startVersionContainer = getVersion(record.get("m.startVersion").toString(), cur_version);
+            Integer endVersionContainer = getVersion(record.get("m.endVersion").toString(), cur_version);
+            String containerName = record.get("m.name").asString();
+            if (startVersionContainer <= v1 && v1 <= endVersionContainer && endVersionContainer < v2) {
+                out.add(new Pair(containerName, "Container"));
+                out.add(new Pair(descriptionRelation(record.get("n"), record.get("m"), "Child", "Child"), "Relationship"));
             }
+            processContainerRelationships(containerName, v1, v2, cur_version, cmdb, session);
+            processComponents(containerName, v1, v2, cur_version, cmdb, session);
+        }
+    }
 
-            String cont_name = record.get("m.name").asString();
-
-            if (startVersion <= v1 && v1 <= endVersion && endVersion < v2) {
-                out.add(new Pair(cont_name, "Container"));
-                out.add(new Pair(descriptionRelation(record.get("n"), record.get("m"), "Child",
-                        "Child"), "Relationship"));
+    private void processContainerRelationships(String containerName, Integer v1, Integer v2, Integer cur_version, String cmdb, Session session) {
+        // Обработка связей контейнера
+        String query = "MATCH (n:Container {graphTag: \"Global\", name: $val1})-[r:Relationship {sourceWorkspace: $cmdb}]->(m) RETURN n, m, r.startVersion, r.endVersion, r.description";
+        Value parameters = Values.parameters("val1", containerName, "cmdb", cmdb);
+        Result containerResult = session.run(query, parameters);
+        while (containerResult.hasNext()) {
+            Record record = containerResult.next();
+            Integer startVersionContainerRel = getVersion(record.get("r.startVersion").toString(), cur_version);
+            Integer endVersionContainerRel = getVersion(record.get("r.endVersion").toString(), cur_version);
+            if (startVersionContainerRel <= v1 && v1 <= endVersionContainerRel && endVersionContainerRel < v2) {
+                out.add(new Pair(descriptionRelation(record.get("n"), record.get("m"), "Relationship",
+                        record.get("r.description").asString()), "Relationship"));
             }
+        }
+        // Обработка обратных связей контейнера
+        query = "MATCH (m)-[r:Relationship {sourceWorkspace: $cmdb}]->(n:Container {graphTag: \"Global\", name: $val1}) RETURN n, m, r.startVersion, r.endVersion, r.description";
+        containerResult = session.run(query, parameters);
+        while (containerResult.hasNext()) {
+            Record record = containerResult.next();
+            Integer startVersionContainerRelRev = getVersion(record.get("r.startVersion").toString(), cur_version);
+            Integer endVersionContainerRelRev = getVersion(record.get("r.endVersion").toString(), cur_version);
+            if (startVersionContainerRelRev <= v1 && v1 <= endVersionContainerRelRev && endVersionContainerRelRev < v2) {
+                out.add(new Pair(descriptionRelation(record.get("m"), record.get("n"), "Relationship",
+                        record.get("r.description").asString()), "Relationship"));
+            }
+        }
+    }
 
-            // Проход по прямым связям контейнера
-            query = "MATCH (n:Container {graphTag: \"Global\", name: $val1})-[r:Relationship {sourceWorkspace: $cmdb}]->(m) RETURN n, m, r.startVersion, r.endVersion, r.description";
-            parameters = Values.parameters("val1", cont_name, "cmdb", cmdb);
-            Result result1 = session.run(query, parameters);
+    private void processComponents(String containerName, Integer v1, Integer v2, Integer cur_version, String cmdb, Session session) {
+        // Обработка компонентов и их связей
+        String query = "MATCH (n:Container {graphTag: \"Global\", name: $val1})-[r:Child]->(m:Component) RETURN n, m, m.name, m.startVersion, m.endVersion";
+        Value parameters = Values.parameters("val1", containerName);
+        Result componentResult = session.run(query, parameters);
+        while (componentResult.hasNext()) {
+            Record record = componentResult.next();
+            Integer startVersionComponent = getVersion(record.get("m.startVersion").toString(), cur_version);
+            Integer endVersionComponent = getVersion(record.get("m.endVersion").toString(), cur_version);
+            String componentName = record.get("m.name").asString();
+            if (startVersionComponent <= v1 && v1 <= endVersionComponent && endVersionComponent < v2) {
+                out.add(new Pair(componentName, "Component"));
+                out.add(new Pair(descriptionRelation(record.get("n"), record.get("m"), "Child", "Child"), "Relationship"));
+            }
+            // Обработка связей компонента
+            query = "MATCH (n:Component {graphTag: \"Global\", name: $val1})-[r:Relationship {sourceWorkspace: $cmdb}]->(m) RETURN n, m, r.startVersion, r.endVersion, r.description";
+            parameters = Values.parameters("val1", componentName, "cmdb", cmdb);
+            Result componentRelResult = session.run(query, parameters);
+            while (componentRelResult.hasNext()) {
+                record = componentRelResult.next();
+                Integer startVersionComponentRel = getVersion(record.get("r.startVersion").toString(), cur_version);
+                Integer endVersionComponentRel = getVersion(record.get("r.endVersion").toString(), cur_version);
 
-            while (result1.hasNext()) {
-                record = result1.next();
-
-                startVersionString = record.get("r.startVersion").toString();
-                startVersionString = startVersionString.substring(1, startVersionString.length() - 1);
-                startVersion = Integer.parseInt(startVersionString);
-
-                endVersionString = record.get("r.endVersion").toString();
-                endVersion = cur_version;
-                if (!endVersionString.equals("NULL")) {
-                    endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
-                    endVersion = Integer.parseInt(endVersionString);
-                }
-
-                if (startVersion <= v1 && v1 <= endVersion && endVersion < v2) {
+                if (startVersionComponentRel <= v1 && v1 <= endVersionComponentRel && endVersionComponentRel < v2) {
                     out.add(new Pair(descriptionRelation(record.get("n"), record.get("m"), "Relationship",
                             record.get("r.description").asString()), "Relationship"));
                 }
             }
-
-            // Проход по обратным связям контейнера
-            query = "MATCH (m)-[r:Relationship {sourceWorkspace: $cmdb}]->(n:Container {graphTag: \"Global\", name: $val1}) RETURN n, m, r.startVersion, r.endVersion, r.description";
-            result1 = session.run(query, parameters);
-
-            while (result1.hasNext()) {
-                record = result1.next();
-
-                startVersionString = record.get("r.startVersion").toString();
-                startVersionString = startVersionString.substring(1, startVersionString.length() - 1);
-                startVersion = Integer.parseInt(startVersionString);
-
-                endVersionString = record.get("r.endVersion").toString();
-                endVersion = cur_version;
-                if (!endVersionString.equals("NULL")) {
-                    endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
-                    endVersion = Integer.parseInt(endVersionString);
-                }
-
-                if (startVersion <= v1 && v1 <= endVersion && endVersion < v2) {
+            // Обработка обратных связей компонента
+            query = "MATCH (m)-[r:Relationship {sourceWorkspace: $cmdb}]->(n:Component {graphTag: \"Global\", name: $val1}) RETURN n, m, r.startVersion, r.endVersion, r.description";
+            componentRelResult = session.run(query, parameters);
+            while (componentRelResult.hasNext()) {
+                record = componentRelResult.next();
+                Integer startVersionComponentRelRev = getVersion(record.get("r.startVersion").toString(), cur_version);
+                Integer endVersionComponentRelRev = getVersion(record.get("r.endVersion").toString(), cur_version);
+                if (startVersionComponentRelRev <= v1 && v1 <= endVersionComponentRelRev && endVersionComponentRelRev < v2) {
                     out.add(new Pair(descriptionRelation(record.get("m"), record.get("n"), "Relationship",
                             record.get("r.description").asString()), "Relationship"));
                 }
             }
-
-            // Добавление компонентов
-            query = "MATCH (n:Container {graphTag: \"Global\", name: $val1})-[r:Child]->(m:Component) RETURN n, m, m.name, m.startVersion, m.endVersion";
-            parameters = Values.parameters("val1", cont_name);
-            result1 = session.run(query, parameters);
-
-            while (result1.hasNext()) {
-                record = result1.next();
-
-                startVersionString = record.get("m.startVersion").toString();
-                startVersionString = startVersionString.substring(1, startVersionString.length() - 1);
-                startVersion = Integer.parseInt(startVersionString);
-
-                endVersionString = record.get("m.endVersion").toString();
-                endVersion = cur_version;
-                if (!endVersionString.equals("NULL")) {
-                    endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
-                    endVersion = Integer.parseInt(endVersionString);
-                }
-
-                String comp_name = record.get("m.name").asString();
-
-                if (startVersion <= v1 && v1 <= endVersion && endVersion < v2) {
-                    out.add(new Pair(comp_name, "Component"));
-                    out.add(new Pair(descriptionRelation(record.get("n"), record.get("m"), "Child",
-                            "Child"), "Relationship"));
-                }
-
-                // Проход по прямым связям компонента
-                query = "MATCH (n:Component {graphTag: \"Global\", name: $val1})-[r:Relationship {sourceWorkspace: $cmdb}]->(m) RETURN n, m, r.startVersion, r.endVersion, r.description";
-                parameters = Values.parameters("val1", comp_name, "cmdb", cmdb);
-                Result result2 = session.run(query, parameters);
-
-                while (result2.hasNext()) {
-                    record = result2.next();
-
-                    startVersionString = record.get("r.startVersion").toString();
-                    startVersionString = startVersionString.substring(1, startVersionString.length() - 1);
-                    startVersion = Integer.parseInt(startVersionString);
-
-                    endVersionString = record.get("r.endVersion").toString();
-                    endVersion = cur_version;
-                    if (!endVersionString.equals("NULL")) {
-                        endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
-                        endVersion = Integer.parseInt(endVersionString);
-                    }
-
-                    if (startVersion <= v1 && v1 <= endVersion && endVersion < v2) {
-                        out.add(new Pair(descriptionRelation(record.get("n"), record.get("m"), "Relationship",
-                                record.get("r.description").asString()), "Relationship"));
-                    }
-                }
-
-                // Проход по обратным связям компонента
-                query = "MATCH (m)-[r:Relationship {sourceWorkspace: $cmdb}]->(n:Component {graphTag: \"Global\", name: $val1}) RETURN n, m, r.startVersion, r.endVersion, r.description";
-                parameters = Values.parameters("val1", comp_name, "cmdb", cmdb);
-                result2 = session.run(query, parameters);
-
-                while (result2.hasNext()) {
-                    record = result2.next();
-
-                    startVersionString = record.get("r.startVersion").toString();
-                    startVersionString = startVersionString.substring(1, startVersionString.length() - 1);
-                    startVersion = Integer.parseInt(startVersionString);
-
-                    endVersionString = record.get("r.endVersion").toString();
-                    endVersion = cur_version;
-                    if (!endVersionString.equals("NULL")) {
-                        endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
-                        endVersion = Integer.parseInt(endVersionString);
-                    }
-
-                    if (startVersion <= v1 && v1 <= endVersion && endVersion < v2) {
-                        out.add(new Pair(descriptionRelation(record.get("m"), record.get("n"), "Relationship",
-                                record.get("r.description").asString()), "Relationship"));
-                    }
-                }
-            }
         }
+    }
 
-        // Проход по SoftwareSystemInstances
-        query = "MATCH (n:SoftwareSystem {graphTag: \"Global\", cmdb: $val1})-[r:Deploy {sourceWorkspace: $cmdb}]->(m) RETURN n, m, r.startVersion, r.endVersion";
-        parameters = Values.parameters("cmdb", cmdb, "val1", cmdb);
-        result = session.run(query, parameters);
-
+    private void processSoftwareSystemInstances(Integer v1, Integer v2, Integer cur_version, String cmdb, Session session) {
+        // Обработка экземпляров программных систем
+        String query = "MATCH (n:SoftwareSystem {graphTag: \"Global\", cmdb: $val1})-[r:Deploy {sourceWorkspace: $cmdb}]->(m) RETURN n, m, r.startVersion, r.endVersion";
+        Value parameters = Values.parameters("cmdb", cmdb, "val1", cmdb);
+        Result result = session.run(query, parameters);
         while (result.hasNext()) {
             Record record = result.next();
-
-            String startVersionString = record.get("r.startVersion").toString();
-            startVersionString = startVersionString.substring(1, startVersionString.length() - 1);
-            Integer startVersion = Integer.parseInt(startVersionString);
-
-            String endVersionString = record.get("r.endVersion").toString();
-            Integer endVersion = cur_version;
-            if (!endVersionString.equals("NULL")) {
-                endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
-                endVersion = Integer.parseInt(endVersionString);
-            }
-
-            if (startVersion <= v1 && v1 <= endVersion && endVersion < v2) {
+            Integer startVersionDeploy = getVersion(record.get("r.startVersion").toString(), cur_version);
+            Integer endVersionDeploy = getVersion(record.get("r.endVersion").toString(), cur_version);
+            if (startVersionDeploy <= v1 && v1 <= endVersionDeploy && endVersionDeploy < v2) {
                 out.add(new Pair(descriptionRelation(record.get("n"), record.get("m"), "SoftwareSystemInstance",
                         "Deploy"), "SoftwareSystemInstance"));
             }
         }
-
-        // Проход по DeploymentNodes
-        query = "MATCH (n:SoftwareSystem {graphTag: \"Global\", cmdb: $val1})-[r:Child]->(m:DeploymentNode) RETURN n, m, m.name, m.startVersion, m.endVersion";
-        parameters = Values.parameters("val1", cmdb);
-        result = session.run(query, parameters);
-
-        while (result.hasNext()) {
-            Record record = result.next();
-
-            String startVersionString = record.get("m.startVersion").toString();
-            startVersionString = startVersionString.substring(1, startVersionString.length() - 1);
-            Integer startVersion = Integer.parseInt(startVersionString);
-
-            String endVersionString = record.get("m.endVersion").toString();
-            Integer endVersion = cur_version;
-            if (!endVersionString.equals("NULL")) {
-                endVersionString = endVersionString.substring(1, endVersionString.length() - 1);
-                endVersion = Integer.parseInt(endVersionString);
-            }
-
-            String depl_name = record.get("m.name").asString();
-
-            if (startVersion <= v1 && v1 <= endVersion && endVersion < v2) {
-                out.add(new Pair(depl_name, "DeploymentNode"));
-                out.add(new Pair(descriptionRelation(record.get("n"), record.get("m"), "Child",
-                        "Child"), "Relationship"));
-            }
-
-            checkDeploymentNodes(depl_name, session, v1, v2, cur_version, cmdb, true);
-        }
-
-        return out;
     }
 
-    private Integer getParsedVersion(String versionString, Integer cur_version) {
+    private void processDeploymentNodes(Integer v1, Integer v2, Integer cur_version, String cmdb, Session session) {
+        // Обработка узлов развертывания
+        String query = "MATCH (n:SoftwareSystem {graphTag: \"Global\", cmdb: $val1})-[r:Child]->(m:DeploymentNode) RETURN n, m, m.name, m.startVersion, m.endVersion";
+        Value parameters = Values.parameters("val1", cmdb);
+        Result result = session.run(query, parameters);
+        while (result.hasNext()) {
+            Record record = result.next();
+            Integer startVersionDeploymentNode = getVersion(record.get("m.startVersion").toString(), cur_version);
+            Integer endVersionDeploymentNode = getVersion(record.get("m.endVersion").toString(), cur_version);
+            String deploymentNodeName = record.get("m.name").asString();
+            if (startVersionDeploymentNode <= v1 && v1 <= endVersionDeploymentNode && endVersionDeploymentNode < v2) {
+                out.add(new Pair(deploymentNodeName, "DeploymentNode"));
+                out.add(new Pair(descriptionRelation(record.get("n"), record.get("m"), "Child", "Child"), "Relationship"));
+            }
+            checkDeploymentNodes(deploymentNodeName, session, v1, v2, cur_version, cmdb, true);
+        }
+    }
+
+    // Метод для извлечения и преобразования версии
+    private Integer getVersion(String versionString, Integer cur_version) {
         if (versionString.equals("NULL")) {
             return cur_version;
         }
-        versionString = versionString.substring(1, versionString.length() - 1);
-        return Integer.parseInt(versionString);
+        versionString = versionString.substring(1, versionString.length() - 1); // Убираем кавычки
+        return Integer.parseInt(versionString); // Преобразуем в Integer
     }
 
     public Set<Pair> LaterChanges(Integer v1, Integer v2, Integer cur_version, String cmdb, Session session) {
@@ -385,6 +283,14 @@ public class FindChanges {
         processSoftwareSystemInstances(cmdb, v1, v2, cur_version, session);
         processDeploymentNodes(cmdb, v1, v2, cur_version, session);
         return out;
+    }
+
+    private Integer getParsedVersion(String versionString, Integer cur_version) {
+        if (versionString.equals("NULL")) {
+            return cur_version;
+        }
+        versionString = versionString.substring(1, versionString.length() - 1);
+        return Integer.parseInt(versionString);
     }
 
     private void processSystemRelationships(String cmdb, Integer v1, Integer v2, Integer cur_version, Session session) {

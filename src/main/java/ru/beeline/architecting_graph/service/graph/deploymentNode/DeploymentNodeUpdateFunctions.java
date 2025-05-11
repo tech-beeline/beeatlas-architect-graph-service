@@ -8,9 +8,9 @@ import ru.beeline.architecting_graph.model.DeploymentNode;
 import ru.beeline.architecting_graph.model.GraphObject;
 import ru.beeline.architecting_graph.model.InfrastructureNode;
 import ru.beeline.architecting_graph.model.Model;
-import ru.beeline.architecting_graph.service.graph.commonFunctions.CommonFunctions;
+import ru.beeline.architecting_graph.service.graph.CommonFunctions;
 import ru.beeline.architecting_graph.service.graph.containerInstance.ContainerInstanceUpdateFunctions;
-import ru.beeline.architecting_graph.service.graph.environment.EnvironmentFunctions;
+import ru.beeline.architecting_graph.service.graph.EnvironmentFunctions;
 import ru.beeline.architecting_graph.service.graph.infrastructureNode.InfrastructureNodeUpdateFunctions;
 import ru.beeline.architecting_graph.service.graph.relationship.RelationshipUpdateFunctions;
 

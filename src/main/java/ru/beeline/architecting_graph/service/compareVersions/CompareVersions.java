@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import ru.beeline.architecting_graph.exception.NotFoundException;
 import ru.beeline.architecting_graph.exception.ValidationException;
 import ru.beeline.architecting_graph.model.GraphObject;
-import ru.beeline.architecting_graph.service.graph.commonFunctions.CommonFunctions;
+import ru.beeline.architecting_graph.service.graph.CommonFunctions;
 
 import java.util.Set;
 

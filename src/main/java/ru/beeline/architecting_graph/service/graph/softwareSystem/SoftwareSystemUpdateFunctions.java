@@ -5,7 +5,7 @@ import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
 import ru.beeline.architecting_graph.model.GraphObject;
 import ru.beeline.architecting_graph.model.SoftwareSystem;
-import ru.beeline.architecting_graph.service.graph.commonFunctions.CommonFunctions;
+import ru.beeline.architecting_graph.service.graph.CommonFunctions;
 
 import java.util.HashMap;
 import java.util.Map;

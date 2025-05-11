@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import ru.beeline.architecting_graph.config.RestConfig;
 import ru.beeline.architecting_graph.service.compareVersions.CompareVersions;
 import ru.beeline.architecting_graph.service.createDiagrams.CreateDiagrams;
-import ru.beeline.architecting_graph.service.graph.graphConstruction.GraphConstruction;
+import ru.beeline.architecting_graph.service.graph.GraphConstruction;
 
 @RestController
 @RequestMapping("/api/v1")

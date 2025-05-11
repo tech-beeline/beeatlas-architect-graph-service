@@ -1,4 +1,4 @@
-package ru.beeline.architecting_graph.service.graph.functionsForJson;
+package ru.beeline.architecting_graph.service.graph;
 
 import java.nio.charset.StandardCharsets;
 
