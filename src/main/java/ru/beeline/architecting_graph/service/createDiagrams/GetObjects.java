@@ -604,7 +604,7 @@ public class GetObjects {
                 Component component = components.get(record.get("m.structurizr_dsl_identifier").asString());
 
                 // Добавление прямых связей
-                query = "MATCH (n:Component{graphTag: \"Global\", structurizr_dsl_identifier: $val1})-[r:Relationship {sourceWorkspace: $cmdb}]->(m) RETURN r, m, m.structurizr_dsl_identifier";
+                query = "MATCH (n:Component {graphTag: \"Global\", structurizr_dsl_identifier: $val1})-[r:Relationship {sourceWorkspace: $cmdb}]->(m) RETURN r, m, m.structurizr_dsl_identifier";
                 parameters = Values.parameters("val1",
                         component.getProperties().get("structurizr_dsl_identifier"), "cmdb", cmdb);
                 Result result1 = session.run(query, parameters);
@@ -801,7 +801,7 @@ public class GetObjects {
                 Container container = containers.get(record.get("m.structurizr_dsl_identifier").asString());
 
                 // Добавление прямых связей
-                query = "MATCH (n:Container{graphTag: \"Global\", structurizr_dsl_identifier: $val1})-[r:Relationship {sourceWorkspace: $cmdb}]->(m) RETURN r, m, m.structurizr_dsl_identifier";
+                query = "MATCH (n:Container {graphTag: \"Global\", structurizr_dsl_identifier: $val1})-[r:Relationship {sourceWorkspace: $cmdb}]->(m) RETURN r, m, m.structurizr_dsl_identifier";
                 parameters = Values.parameters("val1", container.getProperties().get("structurizr_dsl_identifier"),
                         "cmdb", cmdb);
                 Result result1 = session.run(query, parameters);
@@ -906,13 +906,13 @@ public class GetObjects {
                 containers.put(container.getProperties().get("structurizr_dsl_identifier").toString(), container);
 
                 // Добавление связей для компонентов
-                query = "MATCH (n:Container {graphTag: \"Global\", structurizr_dsl_identifier: $val1})-[r:Child]->(m:Container) RETURN m.structurizr_dsl_identifier";
+                query = "MATCH (n:Container {graphTag: \"Global\", structurizr_dsl_identifier: $val1})-[r:Child]->(m:Component) RETURN m.structurizr_dsl_identifier";
                 parameters = Values.parameters("val1", container.getProperties().get("structurizr_dsl_identifier"));
                 result1 = session.run(query, parameters);
 
                 while (result1.hasNext()) {
 
-                    record = result.next();
+                    record = result1.next();
                     Component component = components.get(record.get("m.structurizr_dsl_identifier").asString());
 
                     // Добавление прямых связей
@@ -954,6 +954,12 @@ public class GetObjects {
 
                             if (rel != null) {
                                 component.getRelationships().add(rel);
+                            }
+
+                            rel = getRelation(record.get("r").asRelationship(), container.getId(), second_sys_id);
+
+                            if (rel != null) {
+                                container.getRelationships().add(rel);
                             }
 
                             rel = getRelation(record.get("r").asRelationship(), system.getId(), second_sys_id);
@@ -1010,6 +1016,12 @@ public class GetObjects {
 
                         Relationship rel = getRelation(record.get("r").asRelationship(), system1.getId(),
                                 component.getId());
+
+                        if (rel != null) {
+                            system1.getRelationships().add(rel);
+                        }
+
+                        rel = getRelation(record.get("r").asRelationship(), system1.getId(), container.getId());
 
                         if (rel != null) {
                             system1.getRelationships().add(rel);
