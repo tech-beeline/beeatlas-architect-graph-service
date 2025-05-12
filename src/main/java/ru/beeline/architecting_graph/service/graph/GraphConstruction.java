@@ -1,4 +1,4 @@
-package ru.beeline.architecting_graph.service.graph.graphConstruction;
+package ru.beeline.architecting_graph.service.graph;
 
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.GraphDatabase;
@@ -15,10 +15,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import ru.beeline.architecting_graph.model.Workspace;
-import ru.beeline.architecting_graph.service.graph.workspace.WorkspaceFunctions;
 import ru.beeline.architecting_graph.config.RestConfig;
-import ru.beeline.architecting_graph.service.graph.functionsForJson.FunctionsForWorkingWithJson;
-import ru.beeline.architecting_graph.service.graph.graphFunctions.GraphFunctions;
 
 public class GraphConstruction {
 

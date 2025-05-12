@@ -5,7 +5,7 @@ import org.neo4j.driver.Session;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
 import ru.beeline.architecting_graph.model.GraphObject;
-import ru.beeline.architecting_graph.service.graph.commonFunctions.CommonFunctions;
+import ru.beeline.architecting_graph.service.graph.CommonFunctions;
 import ru.beeline.architecting_graph.service.graph.containerInstance.ContainerInstanceEndVersionFunctions;
 import ru.beeline.architecting_graph.service.graph.infrastructureNode.InfrastructureNodeEndVersionFunctions;
 

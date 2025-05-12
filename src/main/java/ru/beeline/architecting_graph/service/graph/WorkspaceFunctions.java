@@ -1,4 +1,4 @@
-package ru.beeline.architecting_graph.service.graph.workspace;
+package ru.beeline.architecting_graph.service.graph;
 
 import java.io.File;
 

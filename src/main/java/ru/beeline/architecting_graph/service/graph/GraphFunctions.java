@@ -1,4 +1,4 @@
-package ru.beeline.architecting_graph.service.graph.graphFunctions;
+package ru.beeline.architecting_graph.service.graph;
 
 import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;

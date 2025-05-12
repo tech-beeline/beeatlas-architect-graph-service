@@ -10,7 +10,8 @@ import org.springframework.stereotype.Service;
 import ru.beeline.architecting_graph.exception.NotFoundException;
 import ru.beeline.architecting_graph.exception.ValidationException;
 import ru.beeline.architecting_graph.model.GraphObject;
-import ru.beeline.architecting_graph.service.graph.commonFunctions.CommonFunctions;
+import ru.beeline.architecting_graph.model.Pair;
+import ru.beeline.architecting_graph.service.graph.CommonFunctions;
 
 import java.util.Set;
 
@@ -45,17 +46,16 @@ public class CompareVersions {
             } else if (Math.min(firstVersion, secondVersion) < 1 || Math.max(firstVersion, secondVersion) > curVersion) {
                 throw new ValidationException("Неверное значение версий");
             }
-            // упорядочим версии
             if (firstVersion > secondVersion) {
                 int tmp = firstVersion;
                 firstVersion = secondVersion;
                 secondVersion = tmp;
             }
-            Set<Pair> addElements = findChanges.LaterChanges(firstVersion, secondVersion, curVersion, cmdb, session);
-            Set<Pair> removeElements = findChanges.EarlierChanges(firstVersion, secondVersion, curVersion, cmdb, session);
-            String out = "{\n\t\"addElements\": [\n" + constactOutput(addElements) + "\t],\n\t\"removeElements\": [\n"
+            Set<Pair> addElements = findChanges.laterChanges(firstVersion, secondVersion, curVersion, cmdb, session);
+            Set<Pair> removeElements = findChanges.earlierChanges(firstVersion, secondVersion, curVersion, cmdb, session);
+            String result = "{\n\t\"addElements\": [\n" + constactOutput(addElements) + "\t],\n\t\"removeElements\": [\n"
                     + constactOutput(removeElements) + "\t]\n}";
-            return out;
+            return result;
         } catch (NotFoundException e) {
             throw new NotFoundException(e.getMessage());
         } catch (ServiceUnavailableException e) {

@@ -9,8 +9,8 @@ import org.neo4j.driver.Value;
 import org.neo4j.driver.Result;
 
 import ru.beeline.architecting_graph.model.Relationship;
-import ru.beeline.architecting_graph.service.graph.connection.Connection;
-import ru.beeline.architecting_graph.service.graph.externalObjects.CreateExternalObjects;
+import ru.beeline.architecting_graph.model.Connection;
+import ru.beeline.architecting_graph.service.graph.CreateExternalObjects;
 import ru.beeline.architecting_graph.model.GraphObject;
 import ru.beeline.architecting_graph.model.Model;
 

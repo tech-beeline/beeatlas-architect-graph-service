@@ -15,9 +15,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import ru.beeline.architecting_graph.config.RestConfig;
 import ru.beeline.architecting_graph.model.GraphObject;
-import ru.beeline.architecting_graph.service.graph.commonFunctions.CommonFunctions;
-import ru.beeline.architecting_graph.service.graph.functionsForJson.FunctionsForWorkingWithJson;
-import ru.beeline.architecting_graph.service.graph.graphConstruction.GraphConstruction;
+import ru.beeline.architecting_graph.service.graph.CommonFunctions;
+import ru.beeline.architecting_graph.service.graph.FunctionsForWorkingWithJson;
+import ru.beeline.architecting_graph.service.graph.GraphConstruction;
 
 public class CreateDiagrams {
 

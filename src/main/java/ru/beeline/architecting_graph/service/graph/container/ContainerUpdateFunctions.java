@@ -8,7 +8,7 @@ import ru.beeline.architecting_graph.model.Container;
 import ru.beeline.architecting_graph.model.GraphObject;
 import ru.beeline.architecting_graph.model.Model;
 import ru.beeline.architecting_graph.model.SoftwareSystem;
-import ru.beeline.architecting_graph.service.graph.commonFunctions.CommonFunctions;
+import ru.beeline.architecting_graph.service.graph.CommonFunctions;
 import ru.beeline.architecting_graph.service.graph.component.ComponentUpdateFunctions;
 import ru.beeline.architecting_graph.service.graph.relationship.RelationshipUpdateFunctions;
 

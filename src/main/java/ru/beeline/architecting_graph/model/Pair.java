@@ -1,4 +1,4 @@
-package ru.beeline.architecting_graph.service.compareVersions;
+package ru.beeline.architecting_graph.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
