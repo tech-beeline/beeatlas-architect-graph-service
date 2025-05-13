@@ -1,12 +1,10 @@
-package ru.beeline.architecting_graph.service.graph.containerInstance;
+package ru.beeline.architecting_graph.service.graph;
 
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
 import ru.beeline.architecting_graph.model.*;
-import ru.beeline.architecting_graph.service.graph.CommonFunctions;
-import ru.beeline.architecting_graph.service.graph.relationship.RelationshipUpdateFunctions;
 
 import java.util.HashMap;
 import java.util.Map;
