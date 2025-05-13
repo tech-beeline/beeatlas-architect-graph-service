@@ -23,6 +23,9 @@ public class GraphController {
     @Autowired
     CreateDiagrams createDiagrams;
 
+    @Autowired
+    GraphConstruction graphConstruction;
+
     private final RestConfig autorization;
 
     public GraphController(RestConfig autorization) {
@@ -31,12 +34,12 @@ public class GraphController {
 
     @PostMapping("/graph/local/{docId}")
     public ResponseEntity<String> LocalGraph(@PathVariable("docId") Long docId) {
-        return GraphConstruction.graphConstruct(docId, autorization, "Local");
+        return graphConstruction.graphConstruct(docId, autorization, "Local");
     }
 
     @PostMapping("/graph/{docId}")
     public ResponseEntity<String> GlobalGraph(@PathVariable("docId") Long docId) {
-        return GraphConstruction.graphConstruct(docId, autorization, "Global");
+        return graphConstruction.graphConstruct(docId, autorization, "Global");
     }
 
     @GetMapping("/context/{softwareSystemMnemonic}/{containerMnemonic}")

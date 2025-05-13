@@ -5,9 +5,11 @@ import org.neo4j.driver.GraphDatabase;
 import org.neo4j.driver.exceptions.ServiceUnavailableException;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.Driver;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 
@@ -17,7 +19,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ru.beeline.architecting_graph.model.Workspace;
 import ru.beeline.architecting_graph.config.RestConfig;
 
+@Service
 public class GraphConstruction {
+
+    @Autowired
+    ContainerUpdateFunctions containerUpdateFunctions;
 
     public static Session connectToDatabase(Driver driver, RestConfig autorization) throws ServiceUnavailableException {
         Session session = driver.session();
@@ -44,7 +50,7 @@ public class GraphConstruction {
         }
     }
 
-    public static ResponseEntity<String> graphConstruct(Long docId, RestConfig autorization, String GraphTag) {
+    public  ResponseEntity<String> graphConstruct(Long docId, RestConfig autorization, String GraphTag) {
 
         Driver driver = GraphDatabase.driver(autorization.getUri(),
                 AuthTokens.basic(autorization.getUser(), autorization.getPassword()));
@@ -76,7 +82,7 @@ public class GraphConstruction {
         }
 
         try {
-            GraphFunctions.createGraph(session, GraphTag, workspace);
+            containerUpdateFunctions.createGraph(session, GraphTag, workspace);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Граф не построен");
         }

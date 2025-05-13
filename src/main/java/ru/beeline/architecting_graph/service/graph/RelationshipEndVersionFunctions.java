@@ -1,4 +1,4 @@
-package ru.beeline.architecting_graph.service.graph.relationship;
+package ru.beeline.architecting_graph.service.graph;
 
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;

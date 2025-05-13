@@ -1,4 +1,4 @@
-package ru.beeline.architecting_graph.service.graph.relationship;
+package ru.beeline.architecting_graph.service.graph;
 
 import java.util.HashMap;
 import java.util.Map;
