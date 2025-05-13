@@ -4,10 +4,7 @@ import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
-import ru.beeline.architecting_graph.model.Component;
-import ru.beeline.architecting_graph.model.Container;
-import ru.beeline.architecting_graph.model.GraphObject;
-import ru.beeline.architecting_graph.model.Model;
+import ru.beeline.architecting_graph.model.*;
 import ru.beeline.architecting_graph.service.graph.CommonFunctions;
 import ru.beeline.architecting_graph.service.graph.relationship.RelationshipUpdateFunctions;
 
@@ -165,6 +162,40 @@ public class ComponentUpdateFunctions {
                 RelationshipUpdateFunctions.updateChildRelationship(session, graphTag, model, curVersion,
                         container.getId(), component.getId(), cmdb, objects);
             }
+        }
+    }
+    public static void updateComponentRelationships(Session session, String graphTag, Model model, Container container,
+                                                    String cmdb, String curVersion, HashMap<String, GraphObject> objects) {
+
+        if (container.getComponents() != null) {
+            for (Component component : container.getComponents()) {
+
+                if (component.getRelationships() != null) {
+                    for (Relationship relationship : component.getRelationships()) {
+                        if (relationship.getLinkedRelationshipId() == null) {
+                            RelationshipUpdateFunctions.updateDefaultRelationship(session, graphTag, relationship,
+                                    model, curVersion, cmdb, "C3", objects);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public static void setComponentEndVersion(Session session, String graphTag, String containerName, String cmdb,
+                                              String curVersion) {
+
+        String getComponents = "MATCH (n:Container {name: $name1, graphTag: $graphTag1})-[r:Child]->(m:Component) " +
+                "WHERE m.endVersion IS NULL RETURN m.name AS componentName";
+        Value parameters = Values.parameters("graphTag1", graphTag, "name1", containerName);
+        Result result = session.run(getComponents, parameters);
+
+        while (result.hasNext()) {
+            String componentName = result.next().get("componentName").toString();
+            componentName = componentName.substring(1, componentName.length() - 1);
+            GraphObject componentGraphObject = new GraphObject("Component", "name", componentName);
+
+            CommonFunctions.setObjectParameter(session, graphTag, componentGraphObject, "endVersion", curVersion);
         }
     }
 }

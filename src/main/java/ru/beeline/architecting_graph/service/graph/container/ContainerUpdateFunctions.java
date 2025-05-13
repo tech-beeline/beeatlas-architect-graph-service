@@ -4,10 +4,7 @@ import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
-import ru.beeline.architecting_graph.model.Container;
-import ru.beeline.architecting_graph.model.GraphObject;
-import ru.beeline.architecting_graph.model.Model;
-import ru.beeline.architecting_graph.model.SoftwareSystem;
+import ru.beeline.architecting_graph.model.*;
 import ru.beeline.architecting_graph.service.graph.CommonFunctions;
 import ru.beeline.architecting_graph.service.graph.component.ComponentUpdateFunctions;
 import ru.beeline.architecting_graph.service.graph.relationship.RelationshipUpdateFunctions;
@@ -172,6 +169,44 @@ public class ContainerUpdateFunctions {
 
                 ComponentUpdateFunctions.updateComponents(session, graphTag, model, container, cmdb, curVersion,
                         containerExternalName, objects);
+            }
+        }
+    }
+
+    public static void setContainerEndVersion(Session session, String graphTag, String cmdb, String curVersion) {
+
+        String getContainers = "MATCH (n:SoftwareSystem {cmdb: $cmdb1, graphTag: $graphTag1})-[r:Child]->(m:Container) "
+                + "WHERE m.endVersion IS NULL RETURN m.name AS containerName";
+        Value parameters = Values.parameters("graphTag1", graphTag, "cmdb1", cmdb);
+        Result result = session.run(getContainers, parameters);
+
+        while (result.hasNext()) {
+            String containerName = result.next().get("containerName").toString();
+            containerName = containerName.substring(1, containerName.length() - 1);
+            GraphObject containerGraphObject = new GraphObject("Container", "name", containerName);
+
+            CommonFunctions.setObjectParameter(session, graphTag, containerGraphObject, "endVersion", curVersion);
+            ComponentUpdateFunctions.setComponentEndVersion(session, graphTag, containerName, cmdb, curVersion);
+        }
+    }
+
+    public static void updateContainerRelationships(Session session, String graphTag, Model model,
+                                                    SoftwareSystem softwareSystem, String cmdb, String curVersion, HashMap<String, GraphObject> objects) {
+
+        if (softwareSystem.getContainers() != null) {
+            for (Container container : softwareSystem.getContainers()) {
+
+                if (container.getRelationships() != null) {
+                    for (Relationship relationship : container.getRelationships()) {
+                        if (relationship.getLinkedRelationshipId() == null) {
+                            RelationshipUpdateFunctions.updateDefaultRelationship(session, graphTag, relationship,
+                                    model, curVersion, cmdb, "C2", objects);
+                        }
+                    }
+                }
+
+                ComponentUpdateFunctions.updateComponentRelationships(session, graphTag, model, container, cmdb,
+                        curVersion, objects);
             }
         }
     }

@@ -53,9 +53,8 @@ public class CompareVersions {
             }
             Set<Pair> addElements = findChanges.laterChanges(firstVersion, secondVersion, curVersion, cmdb, session);
             Set<Pair> removeElements = findChanges.earlierChanges(firstVersion, secondVersion, curVersion, cmdb, session);
-            String result = "{\n\t\"addElements\": [\n" + constactOutput(addElements) + "\t],\n\t\"removeElements\": [\n"
+            return "{\n\t\"addElements\": [\n" + constactOutput(addElements) + "\t],\n\t\"removeElements\": [\n"
                     + constactOutput(removeElements) + "\t]\n}";
-            return result;
         } catch (NotFoundException e) {
             throw new NotFoundException(e.getMessage());
         } catch (ServiceUnavailableException e) {

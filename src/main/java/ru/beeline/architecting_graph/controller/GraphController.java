@@ -20,6 +20,9 @@ public class GraphController {
     @Autowired
     CompareVersions compareVersions;
 
+    @Autowired
+    CreateDiagrams createDiagrams;
+
     private final RestConfig autorization;
 
     public GraphController(RestConfig autorization) {
@@ -40,7 +43,7 @@ public class GraphController {
     public ResponseEntity<String> getC4Diagramm(@PathVariable String softwareSystemMnemonic,
                                                 @PathVariable(required = false) String containerMnemonic) {
 
-        return CreateDiagrams.createDiagram(autorization, softwareSystemMnemonic, containerMnemonic, null);
+        return createDiagrams.createDiagramm(autorization, softwareSystemMnemonic, containerMnemonic, null);
     }
 
     @GetMapping("/context/{softwareSystemMnemonic}")
@@ -52,7 +55,7 @@ public class GraphController {
     public ResponseEntity<String> getDeploymentDiagramm(@PathVariable String environment,
                                                         @PathVariable String softwareSystemMnemonic) {
 
-        return CreateDiagrams.createDiagram(autorization, softwareSystemMnemonic, null, environment);
+        return createDiagrams.createDiagramm(autorization, softwareSystemMnemonic, null, environment);
     }
 
     @GetMapping("/diff/{cmdb}/{firstVersion}/{secondVersion}")

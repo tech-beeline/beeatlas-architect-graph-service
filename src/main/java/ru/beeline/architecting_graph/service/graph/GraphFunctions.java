@@ -8,17 +8,12 @@ import java.util.HashMap;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
 
-import ru.beeline.architecting_graph.service.graph.container.ContainerEndVersionFunctions;
 import ru.beeline.architecting_graph.model.DeploymentNode;
-import ru.beeline.architecting_graph.service.graph.deploymentNode.DeploymentNodeRelationshipFunctions;
 import ru.beeline.architecting_graph.service.graph.deploymentNode.DeploymentNodeUpdateFunctions;
-import ru.beeline.architecting_graph.service.graph.deploymentNode.DeploymentNodeEndVersionFunctions;
 import ru.beeline.architecting_graph.model.GraphObject;
 import ru.beeline.architecting_graph.model.Model;
-import ru.beeline.architecting_graph.service.graph.ModelFunctions;
 import ru.beeline.architecting_graph.service.graph.relationship.RelationshipEndVersionFunctions;
 import ru.beeline.architecting_graph.model.SoftwareSystem;
-import ru.beeline.architecting_graph.service.graph.softwareSystem.SoftwareSystemRelationshipFunctions;
 import ru.beeline.architecting_graph.service.graph.softwareSystem.SoftwareSystemUpdateFunctions;
 import ru.beeline.architecting_graph.model.Workspace;
 import ru.beeline.architecting_graph.service.graph.container.ContainerUpdateFunctions;
@@ -26,7 +21,7 @@ import ru.beeline.architecting_graph.service.graph.container.ContainerUpdateFunc
 public class GraphFunctions {
 
     public static void setEndVersion(Session session, String graphTag, String cmdb, String curVersion) {
-        ContainerEndVersionFunctions.setContainerEndVersion(session, graphTag, cmdb, curVersion);
+        ContainerUpdateFunctions.setContainerEndVersion(session, graphTag, cmdb, curVersion);
 
         String getDeploymentNode = "MATCH (n:SoftwareSystem {cmdb: $cmdb1, graphTag: $graphTag1})-[r:Child]->(m:DeploymentNode) "
                 + "WHERE m.endVersion IS NULL RETURN m.name as deploymentNodeName";
@@ -36,7 +31,7 @@ public class GraphFunctions {
         while (result.hasNext()) {
             String deploymentNodeName = result.next().get("deploymentNodeName").toString();
             deploymentNodeName = deploymentNodeName.substring(1, deploymentNodeName.length() - 1);
-            DeploymentNodeEndVersionFunctions.setDeploymentNodeEndVersion(session, graphTag, deploymentNodeName,
+            DeploymentNodeUpdateFunctions.setDeploymentNodeEndVersion(session, graphTag, deploymentNodeName,
                     curVersion, cmdb);
         }
 
@@ -66,14 +61,14 @@ public class GraphFunctions {
         }
 
         ContainerUpdateFunctions.updateContainers(session, graphTag, model, softwareSystem, cmdb, curVersion, objects);
-        SoftwareSystemRelationshipFunctions.updateSystemRelationships(session, graphTag, model, cmdb, curVersion,
+        SoftwareSystemUpdateFunctions.updateSystemRelationships(session, graphTag, model, cmdb, curVersion,
                 objects);
         DeploymentNodeUpdateFunctions.updateDeploymentNodes(session, graphTag, model, softwareSystem.getId(),
                 cmdb, curVersion, objects);
 
         if (model.getDeploymentNodes() != null) {
             for (DeploymentNode deploymentNode : model.getDeploymentNodes()) {
-                DeploymentNodeRelationshipFunctions.updateDeploymentNodeRelationships(session, graphTag, deploymentNode,
+                DeploymentNodeUpdateFunctions.updateDeploymentNodeRelationships(session, graphTag, deploymentNode,
                         curVersion, cmdb, model, objects);
             }
         }

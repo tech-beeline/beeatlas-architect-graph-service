@@ -4,8 +4,12 @@ import org.neo4j.driver.Session;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
 import ru.beeline.architecting_graph.model.GraphObject;
+import ru.beeline.architecting_graph.model.Model;
+import ru.beeline.architecting_graph.model.Relationship;
 import ru.beeline.architecting_graph.model.SoftwareSystem;
 import ru.beeline.architecting_graph.service.graph.CommonFunctions;
+import ru.beeline.architecting_graph.service.graph.container.ContainerUpdateFunctions;
+import ru.beeline.architecting_graph.service.graph.relationship.RelationshipUpdateFunctions;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -74,5 +78,24 @@ public class SoftwareSystemUpdateFunctions {
         objects.put(softwareSystem.getId(), systemGraphObject);
 
         return setParametersForSystem(session, graphTag, softwareSystem, cmdb, systemGraphObject);
+    }
+
+    public static void updateSystemRelationships(Session session, String graphTag, Model model, String cmdb,
+                                                 String curVersion, HashMap<String, GraphObject> objects) {
+
+        for (SoftwareSystem softwareSystem : model.getSoftwareSystems()) {
+
+            if (softwareSystem.getRelationships() != null) {
+                for (Relationship relationship : softwareSystem.getRelationships()) {
+                    if (relationship.getLinkedRelationshipId() == null) {
+                        RelationshipUpdateFunctions.updateDefaultRelationship(session, graphTag, relationship, model,
+                                curVersion, cmdb, "C1", objects);
+                    }
+                }
+            }
+
+            ContainerUpdateFunctions.updateContainerRelationships(session, graphTag, model, softwareSystem, cmdb,
+                    curVersion, objects);
+        }
     }
 }
