@@ -1,11 +1,12 @@
 package ru.beeline.architecting_graph.service.graph.infrastructureNode;
 
+import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
-import ru.beeline.architecting_graph.model.GraphObject;
-import ru.beeline.architecting_graph.model.InfrastructureNode;
+import ru.beeline.architecting_graph.model.*;
 import ru.beeline.architecting_graph.service.graph.CommonFunctions;
+import ru.beeline.architecting_graph.service.graph.relationship.RelationshipUpdateFunctions;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -69,5 +70,40 @@ public class InfrastructureNodeUpdateFunctions {
         objects.put(infrastructureNode.getId(), infrastructureNodeGraphObject);
         setParametersForInfrastructureNode(session, graphTag, infrastructureNode, infrastructureNodeGraphObject,
                 curVersion);
+    }
+
+    public static void setInfrastructureNodeEndVersion(Session session, String graphTag, String deploymentNodeName,
+                                                       String curVersion) {
+
+        String getInfrastructureNodes = "MATCH (n:DeploymentNode "
+                + "{name: $name1, graphTag: $graphTag1})-[r:Child]->(m:InfrastructureNode) "
+                + "WHERE m.endVersion IS NULL RETURN m.name AS infrastructureNodeName";
+        Value parameters = Values.parameters("graphTag1", graphTag, "name1", deploymentNodeName);
+        Result result = session.run(getInfrastructureNodes, parameters);
+
+        while (result.hasNext()) {
+            String infrastructureNodeName = result.next().get("infrastructureNodeName").toString();
+            infrastructureNodeName = infrastructureNodeName.substring(1, infrastructureNodeName.length() - 1);
+            GraphObject infrastructureNodeGraphObject = new GraphObject("InfrastructureNode", "name",
+                    infrastructureNodeName);
+            CommonFunctions.setObjectParameter(session, graphTag, infrastructureNodeGraphObject, "endVersion",
+                    curVersion);
+        }
+    }
+
+    public static void updateInfrastructureNodeRelationships(Session session, String graphTag,
+                                                             DeploymentNode deploymentNode, String curVersion, String cmdb, Model model,
+                                                             HashMap<String, GraphObject> objects) {
+
+        if (deploymentNode.getInfrastructureNodes() != null) {
+            for (InfrastructureNode infrastructureNode : deploymentNode.getInfrastructureNodes()) {
+                if (infrastructureNode.getRelationships() != null) {
+                    for (Relationship relationship : infrastructureNode.getRelationships()) {
+                        RelationshipUpdateFunctions.updateDefaultRelationship(session, graphTag, relationship, model,
+                                curVersion, cmdb, "", objects);
+                    }
+                }
+            }
+        }
     }
 }

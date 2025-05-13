@@ -1,13 +1,10 @@
 package ru.beeline.architecting_graph.service.graph.deploymentNode;
 
+import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
-import ru.beeline.architecting_graph.model.ContainerInstance;
-import ru.beeline.architecting_graph.model.DeploymentNode;
-import ru.beeline.architecting_graph.model.GraphObject;
-import ru.beeline.architecting_graph.model.InfrastructureNode;
-import ru.beeline.architecting_graph.model.Model;
+import ru.beeline.architecting_graph.model.*;
 import ru.beeline.architecting_graph.service.graph.CommonFunctions;
 import ru.beeline.architecting_graph.service.graph.containerInstance.ContainerInstanceUpdateFunctions;
 import ru.beeline.architecting_graph.service.graph.EnvironmentFunctions;
@@ -171,5 +168,66 @@ public class DeploymentNodeUpdateFunctions {
                                                 curVersion, softwareSystemId, deploymentNode.getId(), cmdb, objects);
                         }
                 }
+        }
+
+        public static void setChildDeploymentNodeEndVersion(Session session, String graphTag, String deploymentNodeName,
+                                                            String curVersion, String cmdb) {
+
+                String getChildDeploymentNodes = "MATCH (n:DeploymentNode "
+                        + "{name: $name1, graphTag: $graphTag1})-[r:Child]->(m:DeploymentNode) "
+                        + "WHERE m.endVersion IS NULL RETURN m.name AS childDeploymentNodeName";
+                Value parameters = Values.parameters("graphTag1", graphTag, "name1", deploymentNodeName);
+                Result result = session.run(getChildDeploymentNodes, parameters);
+
+                while (result.hasNext()) {
+                        String childDeploymentNodeName = result.next().get("childDeploymentNodeName").toString();
+                        childDeploymentNodeName = childDeploymentNodeName.substring(1, childDeploymentNodeName.length() - 1);
+                        setDeploymentNodeEndVersion(session, graphTag, childDeploymentNodeName, curVersion, cmdb);
+                }
+        }
+
+        public static void setDeploymentNodeEndVersion(Session session, String graphTag, String deploymentNodeName,
+                                                       String curVersion, String cmdb) {
+
+                GraphObject deploymentNodeGraphObject = new GraphObject("DeploymentNode", "name",
+                        deploymentNodeName);
+
+                CommonFunctions.setObjectParameter(session, graphTag, deploymentNodeGraphObject, "endVersion", curVersion);
+                InfrastructureNodeUpdateFunctions.setInfrastructureNodeEndVersion(session, graphTag, deploymentNodeName,
+                        curVersion);
+                ContainerInstanceUpdateFunctions.setContainerInstanceEndVersion(session, graphTag, deploymentNodeName,
+                        curVersion);
+                setChildDeploymentNodeEndVersion(session, graphTag, deploymentNodeName, curVersion, cmdb);
+        }
+
+        public static void updateChildDeploymentNodeRelationships(Session session, String graphTag,
+                                                                  DeploymentNode deploymentNode, String curVersion, String cmdb, Model model,
+                                                                  HashMap<String, GraphObject> objects) {
+
+                if (deploymentNode.getChildren() != null) {
+                        for (DeploymentNode childDeploymentNode : deploymentNode.getChildren()) {
+                                updateDeploymentNodeRelationships(session, graphTag, childDeploymentNode, curVersion, cmdb, model,
+                                        objects);
+                        }
+                }
+        }
+
+        public static void updateDeploymentNodeRelationships(Session session, String graphTag,
+                                                             DeploymentNode deploymentNode, String curVersion, String cmdb, Model model,
+                                                             HashMap<String, GraphObject> objects) {
+
+                if (deploymentNode.getRelationships() != null) {
+                        for (Relationship relationship : deploymentNode.getRelationships()) {
+                                RelationshipUpdateFunctions.updateDefaultRelationship(session, graphTag, relationship, model,
+                                        curVersion,
+                                        cmdb, "", objects);
+                        }
+                }
+
+                InfrastructureNodeUpdateFunctions.updateInfrastructureNodeRelationships(session, graphTag, deploymentNode,
+                        curVersion, cmdb, model, objects);
+                ContainerInstanceUpdateFunctions.updateContainerInstanceRelationships(session, graphTag, deploymentNode,
+                        curVersion, cmdb, model, objects);
+                updateChildDeploymentNodeRelationships(session, graphTag, deploymentNode, curVersion, cmdb, model, objects);
         }
 }

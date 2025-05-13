@@ -17,6 +17,17 @@ import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.GraphDatabase;
 import org.neo4j.driver.types.Node;
 
+import org.springframework.stereotype.Service;
+import ru.beeline.architecting_graph.model.Component;
+import ru.beeline.architecting_graph.model.Container;
+import ru.beeline.architecting_graph.model.ContainerInstance;
+import ru.beeline.architecting_graph.model.DeploymentNode;
+import ru.beeline.architecting_graph.model.Edge;
+import ru.beeline.architecting_graph.model.InfrastructureNode;
+import ru.beeline.architecting_graph.model.Model;
+import ru.beeline.architecting_graph.model.Relationship;
+import ru.beeline.architecting_graph.model.SoftwareSystem;
+import ru.beeline.architecting_graph.model.Workspace;
 import ru.beeline.architecting_graph.service.createDiagrams.ViewObjects.AutomaticLayout;
 import ru.beeline.architecting_graph.service.createDiagrams.ViewObjects.ComponentView;
 import ru.beeline.architecting_graph.service.createDiagrams.ViewObjects.ContainerView;
@@ -27,16 +38,7 @@ import ru.beeline.architecting_graph.service.createDiagrams.ViewObjects.SystemCo
 import ru.beeline.architecting_graph.service.createDiagrams.ViewObjects.Views;
 import ru.beeline.architecting_graph.service.createDiagrams.ViewObjects.AutomaticLayout.LayoutImplementation;
 import ru.beeline.architecting_graph.service.createDiagrams.ViewObjects.AutomaticLayout.RankDirection;
-import ru.beeline.architecting_graph.model.Component;
-import ru.beeline.architecting_graph.model.Container;
-import ru.beeline.architecting_graph.model.ContainerInstance;
-import ru.beeline.architecting_graph.model.DeploymentNode;
-import ru.beeline.architecting_graph.model.InfrastructureNode;
-import ru.beeline.architecting_graph.model.Model;
-import ru.beeline.architecting_graph.model.Relationship;
-import ru.beeline.architecting_graph.model.SoftwareSystem;
-import ru.beeline.architecting_graph.model.Workspace;
-
+@Service
 public class GetObjects {
     private static Long id_obj;
     private static Map<String, Long> map_id;
@@ -76,7 +78,7 @@ public class GetObjects {
         return system;
     }
 
-    public static Container getContainer(Node node, Session session) {
+    public  Container getContainer(Node node, Session session) {
         Container container = new Container();
         container.setProperties(new HashMap<>());
         container.setRelationships(new ArrayList<>());
@@ -118,7 +120,7 @@ public class GetObjects {
         return container;
     }
 
-    public static void getComponent(Node node, Session session) {
+    public  void getComponent(Node node, Session session) {
         Component component = new Component();
         component.setProperties(new HashMap<>());
         component.setRelationships(new ArrayList<>());
@@ -178,8 +180,7 @@ public class GetObjects {
             }
         }
 
-        Edge edge = new Edge();
-        edge.setParams(source, destination, relationship.getDescription());
+        Edge edge = new Edge(source, destination, relationship.getDescription());
         if (rels.contains(edge)) {
             return null;
         }
@@ -533,9 +534,9 @@ public class GetObjects {
         }
     }
 
-    public static Workspace GetWorkspace(String softwareSystemMnemonic, String containerMnemonic, String environment,
-            String uri,
-            String user, String password) {
+    public Workspace GetWorkspace(String softwareSystemMnemonic, String containerMnemonic, String environment,
+                                  String uri,
+                                  String user, String password) {
 
         // Начальная инициализация
         id_obj = 2L;

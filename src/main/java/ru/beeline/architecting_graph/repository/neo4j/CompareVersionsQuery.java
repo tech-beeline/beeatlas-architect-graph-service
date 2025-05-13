@@ -7,7 +7,7 @@ import org.neo4j.driver.Values;
 import org.springframework.stereotype.Component;
 
 @Component
-public class Neo4jQueryProvider {
+public class CompareVersionsQuery {
 
     public Result getSystemRelationshipsOut(Session session, String cmdb) {
         String query = """

@@ -7,7 +7,7 @@ import org.neo4j.driver.Value;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import ru.beeline.architecting_graph.model.Pair;
-import ru.beeline.architecting_graph.repository.neo4j.Neo4jQueryProvider;
+import ru.beeline.architecting_graph.repository.neo4j.CompareVersionsQuery;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -16,7 +16,7 @@ import java.util.Set;
 public class FindChanges {
 
     @Autowired
-    private Neo4jQueryProvider queryProvider;
+    private CompareVersionsQuery queryProvider;
 
     public enum ChangeType {
         EARLIER, LATER
