@@ -231,7 +231,7 @@ public class ContainerUpdateFunctions {
             connection.setRelationshipType(connectValue.asRelationship().type().toString());
             String realtionshipDescription = connectValue.asRelationship().get("description").toString();
             realtionshipDescription = realtionshipDescription.substring(1, realtionshipDescription.length() - 1);
-            CreateExternalObjects.setRelationshipParameter(session, graphTag, realtionshipDescription, connection,
+            buildGraphQuery.setRelationshipParameter(session, graphTag, realtionshipDescription, connection,
                     "endVersion", curVersion);
         }
     }

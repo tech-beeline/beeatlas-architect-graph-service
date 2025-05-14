@@ -6,12 +6,7 @@ import org.neo4j.driver.Session;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
 import org.springframework.stereotype.Repository;
-import ru.beeline.architecting_graph.model.Component;
-import ru.beeline.architecting_graph.model.DeploymentNode;
-import ru.beeline.architecting_graph.model.GraphObject;
-
-import java.util.ArrayList;
-import java.util.List;
+import ru.beeline.architecting_graph.model.*;
 
 @Slf4j
 @Repository
@@ -169,4 +164,82 @@ public class BuildGraphQuery {
         session.run(cypher, parameters);
     }
 
+    public void createRelationshipQuery(Session session, String graphTag, Relationship relationship, Connection connection) {
+        String cypher = "MATCH (a:" + connection.getSource().getType() + " {graphTag: $graphTag1, "
+                + connection.getSource().getKey() + ": $value1}), (b:" + connection.getDestination().getType()
+                + " {graphTag: $graphTag1, " + connection.getDestination().getKey() + ": $value2}) "
+                + "CREATE (a)-[r:" + connection.getRelationshipType()
+                + " {graphTag: $graphTag1, sourceWorkspace: $cmdb, description: $description1}]->(b) RETURN a, b";
+
+        Value parameters = Values.parameters("graphTag1", graphTag, "value1", connection.getSource().getValue(),
+                "value2", connection.getDestination().getValue(), "cmdb", connection.getCmdb(), "description1", relationship.getDescription()
+        );
+        session.run(cypher, parameters);
+    }
+
+    public void setRelationshipProperty(Session session, String graphTag, String key, Object value, Relationship relationship,
+                                        Connection connection) {
+        String cypher = "MATCH (a:" + connection.getSource().getType() + " {graphTag: $graphTag1, " + connection.getSource().getKey()
+                + ": $val1})" + "-[r:" + connection.getRelationshipType() +
+                " {graphTag: $graphTag1, sourceWorkspace: $cmdb, description: $description1}]->" + "(b:" + connection.getDestination().getType()
+                + " {graphTag: $graphTag1, " + connection.getDestination().getKey() + ": $val2}) " + "SET r." + key + " = $value";
+        Value parameters = Values.parameters("graphTag1", graphTag, "val1", connection.getSource().getValue(),
+                "val2", connection.getDestination().getValue(), "cmdb", connection.getCmdb(), "description1", relationship.getDescription(),
+                "value", value);
+        session.run(cypher, parameters);
+    }
+
+    public  Value getRelationshipParameter(Session session, String graphTag, String realtionshipDescription,
+                                           Connection connection, String parameter) {
+
+        String getParameter = "MATCH (a:" + connection.getSource().getType() + " {graphTag: $graphTag1, "
+                + connection.getSource().getKey() + ": $val1})-[r:" + connection.getRelationshipType()
+                + " {graphTag: $graphTag1, sourceWorkspace: $cmdb, description: $description1}]->(b:"
+                + connection.getDestination().getType() + " {graphTag: $graphTag1, "
+                + connection.getDestination().getKey() + ": $val2}) RETURN r." + parameter + " AS parameter";
+        Value parameters = Values.parameters("graphTag1", graphTag, "val1",
+                connection.getSource().getValue(), "cmdb", connection.getCmdb(), "description1",
+                realtionshipDescription, "val2", connection.getDestination().getValue());
+        Result result = session.run(getParameter, parameters);
+        return result.next().get("parameter");
+    }
+
+    public  void setRelationshipParameter(Session session, String graphTag, String realtionshipDescription,
+                                          Connection connection, String parameter, String value) {
+        String setParameter = "MATCH (a:" + connection.getSource().getType() + " {graphTag: $graphTag1, "
+                + connection.getSource().getKey() + ": $val1})-[r:" + connection.getRelationshipType()
+                + " {graphTag: $graphTag1, sourceWorkspace: $cmdb, description: $description1}]->(b:"
+                + connection.getDestination().getType() + " {graphTag: $graphTag1, "
+                + connection.getDestination().getKey() + ": $val2}) SET r." + parameter + " = $parameter";
+        Value parameters = Values.parameters("graphTag1", graphTag, "val1",
+                connection.getSource().getValue(), "cmdb", connection.getCmdb(), "description1",
+                realtionshipDescription, "val2", connection.getDestination().getValue(), "parameter", value);
+        session.run(setParameter, parameters);
+    }
+
+    public Boolean checkIfRelationshipExists(Session session, String graphTag, Relationship relationship,
+                                             Connection connection) {
+        String query = "MATCH (a:" + connection.getSource().getType() + " {graphTag: $graphTag1, "
+                + connection.getSource().getKey() + ": $value1})-[r:" + connection.getRelationshipType()
+                + " {sourceWorkspace: $cmdb, description: $description1, graphTag: $graphTag1}]->(b:"
+                + connection.getDestination().getType() + " {graphTag: $graphTag1, "
+                + connection.getDestination().getKey() + ": $value2}) RETURN EXISTS((a)-->(b)) AS relationshipExists";
+        Value parameters = Values.parameters("graphTag1", graphTag, "value1", connection.getSource().getValue(),
+                "value2", connection.getDestination().getValue(), "cmdb", connection.getCmdb(),
+                "description1", relationship.getDescription());
+        Result result = session.run(query, parameters);
+        if (result.hasNext()) {
+            return true;
+        }
+        return false;
+    }
+
+    public Value buildSetRelationshipParameters(String graphTag, Relationship relationship, Connection connection) {
+        return Values.parameters("graphTag1", graphTag, "val1",
+                connection.getSource().getValue(), "cmdb", connection.getCmdb(), "description1",
+                relationship.getDescription(), "val2", connection.getDestination().getValue(), "endVersion1", null,
+                "tags1", relationship.getTags(), "url1", relationship.getUrl(), "technology1",
+                relationship.getTechnology(), "interactionStyle1", relationship.getInteractionStyle(), "level1",
+                connection.getLevel());
+    }
 }
