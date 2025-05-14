@@ -12,7 +12,6 @@ import ru.beeline.architecting_graph.exception.ValidationException;
 import ru.beeline.architecting_graph.model.GraphObject;
 import ru.beeline.architecting_graph.model.Pair;
 import ru.beeline.architecting_graph.repository.neo4j.BuildGraphQuery;
-import ru.beeline.architecting_graph.service.graph.CommonFunctions;
 
 import java.util.Set;
 
@@ -36,7 +35,7 @@ public class CompareVersions {
             if (!exists) {
                 throw new NotFoundException("Система не найдена");
             }
-            Value versionVal = CommonFunctions.getObjectParameter(session, "Global", systemGraphObject, "version");
+            Value versionVal = buildGraphQuery.getObjectParameter(session, "Global", systemGraphObject, "version");
             if (versionVal == null || versionVal.isNull()) {
                 throw new ValidationException("У данной системы отсутствует версионность");
             }

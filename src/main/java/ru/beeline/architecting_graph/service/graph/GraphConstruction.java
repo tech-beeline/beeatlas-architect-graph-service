@@ -19,6 +19,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ru.beeline.architecting_graph.model.Workspace;
 import ru.beeline.architecting_graph.config.RestConfig;
 
+import java.io.File;
+
 @Service
 public class GraphConstruction {
 
@@ -51,18 +53,15 @@ public class GraphConstruction {
     }
 
     public  ResponseEntity<String> graphConstruct(Long docId, RestConfig autorization, String GraphTag) {
-
         Driver driver = GraphDatabase.driver(autorization.getUri(),
                 AuthTokens.basic(autorization.getUser(), autorization.getPassword()));
 
         Session session;
-
         try {
             session = connectToDatabase(driver, autorization);
         } catch (ServiceUnavailableException e) {
             return ResponseEntity.badRequest().body("Нет подключения к БД");
         }
-
         String workspaceJson = null;
 
         try {
@@ -70,24 +69,38 @@ public class GraphConstruction {
         } catch (Exception e) {
             getWorkspaceJsonExceptions(e);
         }
-
         Workspace workspace;
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-
         try {
-            workspace = WorkspaceFunctions.getWorkspace(workspaceJson, objectMapper);
+            workspace = getWorkspace(workspaceJson, objectMapper);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Полученный workspace не валиден");
         }
-
         try {
             containerUpdateFunctions.createGraph(session, GraphTag, workspace);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Граф не построен");
         }
-
         driver.close();
         return ResponseEntity.status(HttpStatus.CREATED).body("Граф построен");
     }
+
+    public static Workspace getWorkspace(String json, ObjectMapper objectMapper) throws Exception {
+        Workspace workspace;
+        try {
+            workspace = objectMapper.readValue(json, Workspace.class);
+        } catch (Exception e) {
+            throw e;
+        }
+        return workspace;
+    }
+
+    public static Workspace getWorkspaceFileForTest(ObjectMapper objectMapper) throws Exception {
+        String FilePath = "workspace_RNC.json";
+        File file = new File(FilePath);
+        Workspace workspace = objectMapper.readValue(file, Workspace.class);
+        return workspace;
+    }
+
 }

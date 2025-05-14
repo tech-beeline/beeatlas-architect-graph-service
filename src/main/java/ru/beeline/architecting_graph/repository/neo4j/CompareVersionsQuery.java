@@ -5,8 +5,9 @@ import org.neo4j.driver.Session;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
 
-@Component
+@Repository
 public class CompareVersionsQuery {
 
     public Result getSystemRelationshipsOut(Session session, String cmdb) {
