@@ -4,15 +4,25 @@ import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import ru.beeline.architecting_graph.model.*;
+import ru.beeline.architecting_graph.repository.neo4j.BuildGraphQuery;
 
 import java.util.HashMap;
 import java.util.Map;
 
+@Service
 public class ContainerInstanceUpdateFunctions {
 
+    @Autowired
+    BuildGraphQuery buildGraphQuery;
+
+    @Autowired
+    CreateExternalObjects createExternalObjects;
+
     public static void setContainerInstanceProperties(Session session, String graphTag,
-            ContainerInstance containerInstance, String containerInstanceName) {
+                                                      ContainerInstance containerInstance, String containerInstanceName) {
         if (containerInstance.getProperties() != null) {
             for (Map.Entry<String, Object> entry : containerInstance.getProperties().entrySet()) {
                 String key = entry.getKey();
@@ -27,11 +37,11 @@ public class ContainerInstanceUpdateFunctions {
     }
 
     public static void setParametersForContainerInstance(Session session, String graphTag,
-            ContainerInstance containerInstance, GraphObject containerInstanceGraphObject, String curVersion) {
+                                                         ContainerInstance containerInstance, GraphObject containerInstanceGraphObject, String curVersion) {
 
         if (graphTag.equals("Global")
                 && CommonFunctions.getObjectParameter(session, graphTag, containerInstanceGraphObject,
-                        "startVersion").toString().equals("NULL")) {
+                "startVersion").toString().equals("NULL")) {
 
             CommonFunctions.setObjectParameter(session, graphTag, containerInstanceGraphObject, "startVersion",
                     curVersion);
@@ -60,9 +70,9 @@ public class ContainerInstanceUpdateFunctions {
         return null;
     }
 
-    public static void updateContainerInstance(Session session, String graphTag, Model model,
-            DeploymentNode deploymentNode, ContainerInstance containerInstance, String curVersion,
-            HashMap<String, GraphObject> objects) {
+    public void updateContainerInstance(Session session, String graphTag, Model model,
+                                        DeploymentNode deploymentNode, ContainerInstance containerInstance, String curVersion,
+                                        HashMap<String, GraphObject> objects) {
 
         String containerInstanceName = getContainerforContainerInstance(model, containerInstance.getContainerId());
 
@@ -75,7 +85,7 @@ public class ContainerInstanceUpdateFunctions {
         GraphObject containerInstanceGraphObject = new GraphObject("ContainerInstance", "name",
                 containerInstanceName);
 
-        if (!CommonFunctions.checkIfObjectExists(session, graphTag, containerInstanceGraphObject)) {
+        if (!buildGraphQuery.checkIfObjectExists(session, graphTag, containerInstanceGraphObject)) {
             CommonFunctions.createObject(session, graphTag, containerInstanceGraphObject);
         }
 
@@ -103,15 +113,15 @@ public class ContainerInstanceUpdateFunctions {
         }
     }
 
-    public static void updateContainerInstanceRelationships(Session session, String graphTag,
-                                                            DeploymentNode deploymentNode, String curVersion, String cmdb, Model model,
-                                                            HashMap<String, GraphObject> objects) {
+    public void updateContainerInstanceRelationships(Session session, String graphTag,
+                                                     DeploymentNode deploymentNode, String curVersion, String cmdb, Model model,
+                                                     HashMap<String, GraphObject> objects) {
 
         if (deploymentNode.getContainerInstances() != null) {
             for (ContainerInstance containerInstance : deploymentNode.getContainerInstances()) {
                 if (containerInstance.getRelationships() != null) {
                     for (Relationship relationship : containerInstance.getRelationships()) {
-                        RelationshipUpdateFunctions.updateDefaultRelationship(session, graphTag, relationship, model,
+                        createExternalObjects.updateDefaultRelationship(session, graphTag, relationship, model,
                                 curVersion, cmdb, "", objects);
                     }
                 }

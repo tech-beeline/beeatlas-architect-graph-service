@@ -4,15 +4,24 @@ import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.beeline.architecting_graph.model.*;
+import ru.beeline.architecting_graph.repository.neo4j.BuildGraphQuery;
 
 import java.util.HashMap;
 import java.util.Map;
+
 @Service
 public class ComponentUpdateFunctions {
 
-    public  void setComponentProperties(Session session, String graphTag, Component component) {
+    @Autowired
+    BuildGraphQuery buildGraphQuery;
+
+    @Autowired
+    CreateExternalObjects createExternalObjects;
+
+    public void setComponentProperties(Session session, String graphTag, Component component) {
         if (component.getProperties() != null) {
             for (Map.Entry<String, Object> entry : component.getProperties().entrySet()) {
                 String key = entry.getKey();
@@ -26,8 +35,8 @@ public class ComponentUpdateFunctions {
         }
     }
 
-    public  void setParametersForComponent(Session session, String graphTag, Component component,
-                                                 GraphObject componentGraphObject, String curVersion) {
+    public void setParametersForComponent(Session session, String graphTag, Component component,
+                                          GraphObject componentGraphObject, String curVersion) {
 
         if (graphTag.equals("Global")
                 && CommonFunctions.getObjectParameter(session, graphTag, componentGraphObject, "startVersion")
@@ -48,7 +57,7 @@ public class ComponentUpdateFunctions {
         setComponentProperties(session, graphTag, component);
     }
 
-    public  Integer getComponentNumberOfConnects(Session session, String graphTag, String componentExternalName) {
+    public Integer getComponentNumberOfConnects(Session session, String graphTag, String componentExternalName) {
         String findConnects = "MATCH (n:Component {graphTag: $graphTag1, external_name: $external_name1})-[r]-() "
                 + "RETURN count(r) AS numberOfRelationships";
         Value parameters = Values.parameters("graphTag1", graphTag, "external_name1", componentExternalName);
@@ -63,8 +72,8 @@ public class ComponentUpdateFunctions {
         return Integer.parseInt(numberOfRelationships);
     }
 
-    public  Boolean needComponentReplace(Session session, String graphTag, Component component,
-                                               GraphObject externalComponentGraphObject) {
+    public Boolean needComponentReplace(Session session, String graphTag, Component component,
+                                        GraphObject externalComponentGraphObject) {
 
         Integer numberOfRelationshipsFirst = getComponentNumberOfConnects(session, graphTag,
                 externalComponentGraphObject.getValue());
@@ -84,8 +93,8 @@ public class ComponentUpdateFunctions {
         return true;
     }
 
-    public  Boolean changeComponent(Session session, String graphTag, Component component,
-                                          GraphObject externalComponentGraphObject, String curVersion, HashMap<String, GraphObject> objects) {
+    public Boolean changeComponent(Session session, String graphTag, Component component,
+                                   GraphObject externalComponentGraphObject, String curVersion, HashMap<String, GraphObject> objects) {
 
         String startVersion = CommonFunctions
                 .getObjectParameter(session, graphTag, externalComponentGraphObject, "startVersion").toString();
@@ -106,8 +115,8 @@ public class ComponentUpdateFunctions {
         return true;
     }
 
-    public  void updateComponent(Session session, String graphTag, Component component, String curVersion,
-                                       HashMap<String, GraphObject> objects) {
+    public void updateComponent(Session session, String graphTag, Component component, String curVersion,
+                                HashMap<String, GraphObject> objects) {
 
         boolean externalExists = false;
         GraphObject externalComponentGraphObject = null;
@@ -118,7 +127,7 @@ public class ComponentUpdateFunctions {
             String componentExternalName = component.getProperties().get("external_name").toString();
             externalComponentGraphObject = new GraphObject("Component", "external_name",
                     componentExternalName);
-            externalExists = CommonFunctions.checkIfObjectExists(session, graphTag, externalComponentGraphObject);
+            externalExists = buildGraphQuery.checkIfObjectExists(session, graphTag, externalComponentGraphObject);
         }
 
         if (externalExists) {
@@ -131,7 +140,7 @@ public class ComponentUpdateFunctions {
         }
 
         GraphObject componentGraphObject = new GraphObject("Component", "name", component.getName());
-        boolean exists = CommonFunctions.checkIfObjectExists(session, graphTag, componentGraphObject);
+        boolean exists = buildGraphQuery.checkIfObjectExists(session, graphTag, componentGraphObject);
 
         if (!exists) {
             CommonFunctions.createObject(session, graphTag, componentGraphObject);
@@ -141,8 +150,8 @@ public class ComponentUpdateFunctions {
         setParametersForComponent(session, graphTag, component, componentGraphObject, curVersion);
     }
 
-    public  void updateComponents(Session session, String graphTag, Model model, Container container, String cmdb,
-                                        String curVersion, String containerExternalName, HashMap<String, GraphObject> objects) {
+    public void updateComponents(Session session, String graphTag, Model model, Container container, String cmdb,
+                                 String curVersion, String containerExternalName, HashMap<String, GraphObject> objects) {
 
         if (container.getComponents() != null) {
             for (Component component : container.getComponents()) {
@@ -158,13 +167,14 @@ public class ComponentUpdateFunctions {
 
                 updateComponent(session, graphTag, component, curVersion, objects);
 
-                RelationshipUpdateFunctions.updateChildRelationship(session, graphTag, model, curVersion,
+                createExternalObjects.updateChildRelationship(session, graphTag, model, curVersion,
                         container.getId(), component.getId(), cmdb, objects);
             }
         }
     }
-    public  void updateComponentRelationships(Session session, String graphTag, Model model, Container container,
-                                                    String cmdb, String curVersion, HashMap<String, GraphObject> objects) {
+
+    public void updateComponentRelationships(Session session, String graphTag, Model model, Container container,
+                                             String cmdb, String curVersion, HashMap<String, GraphObject> objects) {
 
         if (container.getComponents() != null) {
             for (Component component : container.getComponents()) {
@@ -172,7 +182,7 @@ public class ComponentUpdateFunctions {
                 if (component.getRelationships() != null) {
                     for (Relationship relationship : component.getRelationships()) {
                         if (relationship.getLinkedRelationshipId() == null) {
-                            RelationshipUpdateFunctions.updateDefaultRelationship(session, graphTag, relationship,
+                            createExternalObjects.updateDefaultRelationship(session, graphTag, relationship,
                                     model, curVersion, cmdb, "C3", objects);
                         }
                     }
@@ -181,8 +191,8 @@ public class ComponentUpdateFunctions {
         }
     }
 
-    public  void setComponentEndVersion(Session session, String graphTag, String containerName, String cmdb,
-                                              String curVersion) {
+    public void setComponentEndVersion(Session session, String graphTag, String containerName, String cmdb,
+                                       String curVersion) {
 
         String getComponents = "MATCH (n:Container {name: $name1, graphTag: $graphTag1})-[r:Child]->(m:Component) " +
                 "WHERE m.endVersion IS NULL RETURN m.name AS componentName";

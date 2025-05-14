@@ -4,28 +4,36 @@ import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
-import ru.beeline.architecting_graph.model.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import ru.beeline.architecting_graph.model.GraphObject;
+import ru.beeline.architecting_graph.model.InfrastructureNode;
+import ru.beeline.architecting_graph.repository.neo4j.BuildGraphQuery;
 
 import java.util.HashMap;
 import java.util.Map;
 
+@Component
 public class InfrastructureNodeUpdateFunctions {
+
+    @Autowired
+    BuildGraphQuery buildGraphQuery;
 
     public static void setInfrastructureNodeProperties(Session session, String graphTag,
                                                        InfrastructureNode infrastructureNode) {
 
-                if (infrastructureNode.getProperties() != null) {
-                        for (Map.Entry<String, Object> entry : infrastructureNode.getProperties().entrySet()) {
-                                String key = entry.getKey();
-                                key = key.replaceAll("[^a-zA-Z0-9]", "_");
-                                String setProperties = "MATCH (n:InfrastructureNode {graphTag: $graphTag1, name: $name1}) SET n."
-                                                + key + " = $value";
-                                Value parameters = Values.parameters("graphTag1", graphTag, "name1",
-                                                infrastructureNode.getName(), "value", entry.getValue());
-                                session.run(setProperties, parameters);
-                        }
-                }
+        if (infrastructureNode.getProperties() != null) {
+            for (Map.Entry<String, Object> entry : infrastructureNode.getProperties().entrySet()) {
+                String key = entry.getKey();
+                key = key.replaceAll("[^a-zA-Z0-9]", "_");
+                String setProperties = "MATCH (n:InfrastructureNode {graphTag: $graphTag1, name: $name1}) SET n."
+                        + key + " = $value";
+                Value parameters = Values.parameters("graphTag1", graphTag, "name1",
+                        infrastructureNode.getName(), "value", entry.getValue());
+                session.run(setProperties, parameters);
+            }
         }
+    }
 
     public static void setParametersForInfrastructureNode(Session session, String graphTag,
                                                           InfrastructureNode infrastructureNode, GraphObject infrastructureNodeGraphObject,
@@ -53,14 +61,14 @@ public class InfrastructureNodeUpdateFunctions {
         setInfrastructureNodeProperties(session, graphTag, infrastructureNode);
     }
 
-    public static void updateInfrastructureNode(Session session, String graphTag,
-                                                InfrastructureNode infrastructureNode, String curVersion,
-                                                HashMap<String, GraphObject> objects) {
+    public void updateInfrastructureNode(Session session, String graphTag,
+                                         InfrastructureNode infrastructureNode, String curVersion,
+                                         HashMap<String, GraphObject> objects) {
 
         GraphObject infrastructureNodeGraphObject = new GraphObject("InfrastructureNode", "name",
                 infrastructureNode.getName());
 
-        boolean exists = CommonFunctions.checkIfObjectExists(session, graphTag, infrastructureNodeGraphObject);
+        boolean exists = buildGraphQuery.checkIfObjectExists(session, graphTag, infrastructureNodeGraphObject);
         if (!exists) {
             CommonFunctions.createObject(session, graphTag, infrastructureNodeGraphObject);
         }
@@ -89,19 +97,5 @@ public class InfrastructureNodeUpdateFunctions {
         }
     }
 
-    public static void updateInfrastructureNodeRelationships(Session session, String graphTag,
-                                                             DeploymentNode deploymentNode, String curVersion, String cmdb, Model model,
-                                                             HashMap<String, GraphObject> objects) {
 
-        if (deploymentNode.getInfrastructureNodes() != null) {
-            for (InfrastructureNode infrastructureNode : deploymentNode.getInfrastructureNodes()) {
-                if (infrastructureNode.getRelationships() != null) {
-                    for (Relationship relationship : infrastructureNode.getRelationships()) {
-                        RelationshipUpdateFunctions.updateDefaultRelationship(session, graphTag, relationship, model,
-                                curVersion, cmdb, "", objects);
-                    }
-                }
-            }
-        }
-    }
 }

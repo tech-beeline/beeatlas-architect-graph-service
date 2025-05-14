@@ -4,8 +4,8 @@ import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
-import ru.beeline.architecting_graph.model.GraphObject;
 import ru.beeline.architecting_graph.model.Connection;
+import ru.beeline.architecting_graph.model.GraphObject;
 
 public class RelationshipEndVersionFunctions {
     public static GraphObject getGraphObject(Value graphNode) {
@@ -49,7 +49,7 @@ public class RelationshipEndVersionFunctions {
             String realtionshipDescription = connectValue.asRelationship().get("description").toString();
             realtionshipDescription = realtionshipDescription.substring(1, realtionshipDescription.length() - 1);
 
-            RelationshipUpdateFunctions.setRelationshipParameter(session, graphTag, realtionshipDescription, connection,
+            CreateExternalObjects.setRelationshipParameter(session, graphTag, realtionshipDescription, connection,
                     "endVersion", curVersion);
         }
     }

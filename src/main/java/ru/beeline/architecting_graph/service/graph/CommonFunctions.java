@@ -10,13 +10,6 @@ import ru.beeline.architecting_graph.model.GraphObject;
 @Slf4j
 public class CommonFunctions {
 
-    public static boolean checkIfObjectExists(Session session, String graphTag, GraphObject graphObject) {
-        String checkObjectExist = "MATCH (n:" + graphObject.getType() + " {" + graphObject.getKey()
-                + ": $value, graphTag: $graphTag1}) RETURN n";
-        Value parameters = Values.parameters("value", graphObject.getValue(), "graphTag1", graphTag);
-        Result result = session.run(checkObjectExist, parameters);
-        return result.hasNext();
-    }
 
     public static void createObject(Session session, String graphTag, GraphObject graphObject) {
         String createObject = "CREATE (n:" + graphObject.getType() + " {graphTag: $graphTag1, "
