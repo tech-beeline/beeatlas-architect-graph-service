@@ -5,8 +5,8 @@ import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
-import ru.beeline.architecting_graph.model.Component;
 import org.springframework.stereotype.Repository;
+import ru.beeline.architecting_graph.model.Component;
 import ru.beeline.architecting_graph.model.GraphObject;
 
 import java.util.ArrayList;
@@ -89,17 +89,32 @@ public class BuildGraphQuery {
         return Integer.parseInt(numberOfRelationships);
     }
 
-    public List<String> findComponentNamesWithNullEndVersion(Session session, String graphTag, String containerName) {
+    public Result findComponentNamesWithNullEndVersion(Session session, String graphTag, String containerName) {
         String cypher = "MATCH (n:Container {name: $name1, graphTag: $graphTag1})-[r:Child]->(m:Component) " +
                 "WHERE m.endVersion IS NULL RETURN m.name AS componentName";
         Value parameters = Values.parameters("graphTag1", graphTag, "name1", containerName);
-        Result result = session.run(cypher, parameters);
-        List<String> componentNames = new ArrayList<>();
-        while (result.hasNext()) {
-            String rawName = result.next().get("componentName").toString();
-            String cleanedName = rawName.substring(1, rawName.length() - 1); // удаление кавычек
-            componentNames.add(cleanedName);
-        }
-        return componentNames;
+        return session.run(cypher, parameters);
+    }
+
+    public void setProperty(Session session, String graphTag, String containerInstanceName, String key, Object value) {
+        String query = "MATCH (n:ContainerInstance {graphTag: $graphTag1, name: $val1}) SET n." + key + " = $value";
+        Value parameters = Values.parameters("graphTag1", graphTag, "val1", containerInstanceName, "value", value);
+        session.run(query, parameters);
+    }
+
+    public void updateContainerInstance(Session session, String graphTag, String name,
+                                        Integer instanceId, String tags) {
+        String query = "MATCH (n:ContainerInstance {graphTag: $graphTag1, name: $val1}) SET "
+                + "n.instanceId = $instanceId1, n.tags = $tags1, n.endVersion = $endVersion1";
+        Value parameters = Values.parameters("graphTag1", graphTag, "val1", name, "instanceId1", instanceId,
+                "tags1", tags, "endVersion1", null);
+        session.run(query, parameters);
+    }
+
+    public Result findContainerInstanceNamesWithNullEndVersion(Session session, String graphTag, String deploymentNodeName) {
+        String cypher = "MATCH (n:DeploymentNode {name: $name1, graphTag: $graphTag1})-[r:Child]->(m:ContainerInstance) " +
+                "WHERE m.endVersion IS NULL RETURN m.name AS containerInstanceName";
+        Value parameters = Values.parameters("graphTag1", graphTag, "name1", deploymentNodeName);
+        return session.run(cypher, parameters);
     }
 }

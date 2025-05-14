@@ -1,5 +1,6 @@
 package ru.beeline.architecting_graph.service.graph;
 
+import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.Value;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,7 +9,6 @@ import ru.beeline.architecting_graph.model.*;
 import ru.beeline.architecting_graph.repository.neo4j.BuildGraphQuery;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @Service
@@ -146,9 +146,11 @@ public class ComponentUpdateFunctions {
     }
 
     public void setComponentEndVersion(Session session, String graphTag, String containerName, String cmdb, String curVersion) {
-        List<String> componentNames = buildGraphQuery.findComponentNamesWithNullEndVersion(session, graphTag, containerName);
-        for (String componentName : componentNames) {
-            GraphObject componentGraphObject = new GraphObject("Component", "name", componentName);
+        Result result = buildGraphQuery.findComponentNamesWithNullEndVersion(session, graphTag, containerName);
+        while (result.hasNext()) {
+            String rawName = result.next().get("componentName").toString();
+            String cleanedName = rawName.substring(1, rawName.length() - 1);
+            GraphObject componentGraphObject = new GraphObject("Component", "name", cleanedName);
             buildGraphQuery.setObjectParameter(session, graphTag, componentGraphObject, "endVersion", curVersion);
         }
     }

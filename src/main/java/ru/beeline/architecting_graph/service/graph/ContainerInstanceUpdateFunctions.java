@@ -2,8 +2,6 @@ package ru.beeline.architecting_graph.service.graph;
 
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
-import org.neo4j.driver.Value;
-import org.neo4j.driver.Values;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.beeline.architecting_graph.model.*;
@@ -21,35 +19,32 @@ public class ContainerInstanceUpdateFunctions {
     @Autowired
     CreateExternalObjects createExternalObjects;
 
-    public static void setContainerInstanceProperties(Session session, String graphTag,
-                                                      ContainerInstance containerInstance, String containerInstanceName) {
+    public void setContainerInstanceProperties(Session session, String graphTag,
+                                               ContainerInstance containerInstance, String containerInstanceName) {
         if (containerInstance.getProperties() != null) {
             for (Map.Entry<String, Object> entry : containerInstance.getProperties().entrySet()) {
-                String key = entry.getKey();
-                key = key.replaceAll("[^a-zA-Z0-9]", "_");
-                String setProperties = "MATCH (n:ContainerInstance {graphTag: $graphTag1, name: $val1}) SET n." + key
-                        + " = $value";
-                Value parameters = Values.parameters("graphTag1", graphTag, "val1", containerInstanceName,
-                        "value", entry.getValue());
-                session.run(setProperties, parameters);
+                String key = entry.getKey().replaceAll("[^a-zA-Z0-9]", "_"); // 👉 оставить тут как бизнес-логику
+                buildGraphQuery.setProperty(session, graphTag, containerInstanceName, key, entry.getValue());
             }
         }
     }
 
-    public void setParametersForContainerInstance(Session session, String graphTag, ContainerInstance containerInstance,
-                                                  GraphObject containerInstanceGraphObject, String curVersion) {
+    public void setParametersForContainerInstance(Session session, String graphTag,
+                                                  ContainerInstance containerInstance,
+                                                  GraphObject containerInstanceGraphObject,
+                                                  String curVersion) {
+
         if (graphTag.equals("Global")
-                && buildGraphQuery.getObjectParameter(session, graphTag, containerInstanceGraphObject,
-                "startVersion").toString().equals("NULL")) {
-            buildGraphQuery.setObjectParameter(session, graphTag, containerInstanceGraphObject, "startVersion",
-                    curVersion);
+                && buildGraphQuery.getObjectParameter(session, graphTag, containerInstanceGraphObject, "startVersion")
+                .toString().equals("NULL")) {
+            buildGraphQuery.setObjectParameter(session, graphTag, containerInstanceGraphObject, "startVersion", curVersion);
         }
-        String updateNode = "MATCH (n:ContainerInstance {graphTag: $graphTag1, name: $val1}) SET "
-                + "n.instanceId = $instanceId1, n.tags = $tags1, n.endVersion = $endVersion1";
-        Value parameters = Values.parameters("graphTag1", graphTag, "val1", containerInstanceGraphObject.getValue(),
-                "instanceId1", containerInstance.getInstanceId(), "tags1", containerInstance.getTags(), "endVersion1",
-                null);
-        session.run(updateNode, parameters);
+
+        buildGraphQuery.updateContainerInstance(session, graphTag,
+                containerInstanceGraphObject.getValue(),
+                containerInstance.getInstanceId(),
+                containerInstance.getTags());
+
         setContainerInstanceProperties(session, graphTag, containerInstance, containerInstanceGraphObject.getValue());
     }
 
@@ -86,18 +81,12 @@ public class ContainerInstanceUpdateFunctions {
 
     public void setContainerInstanceEndVersion(Session session, String graphTag, String deploymentNodeName,
                                                String curVersion) {
-        String getContainerInstances = "MATCH (n:DeploymentNode "
-                + "{name: $name1, graphTag: $graphTag1})-[r:Child]->(m:ContainerInstance) "
-                + "WHERE m.endVersion IS NULL RETURN m.name AS containerInstanceName";
-        Value parameters = Values.parameters("graphTag1", graphTag, "name1", deploymentNodeName);
-        Result result = session.run(getContainerInstances, parameters);
+        Result result = buildGraphQuery.findContainerInstanceNamesWithNullEndVersion(session, graphTag, deploymentNodeName);
         while (result.hasNext()) {
-            String containerInstanceName = result.next().get("containerInstanceName").toString();
-            containerInstanceName = containerInstanceName.substring(1, containerInstanceName.length() - 1);
-            GraphObject containerInstanceGraphObject = new GraphObject("ContainerInstance", "name",
-                    containerInstanceName);
-            buildGraphQuery.setObjectParameter(session, graphTag, containerInstanceGraphObject, "endVersion",
-                    curVersion);
+            String rawName = result.next().get("containerInstanceName").toString();
+            String cleanedName = rawName.substring(1, rawName.length() - 1);
+            GraphObject containerInstanceGraphObject = new GraphObject("ContainerInstance", "name", cleanedName);
+            buildGraphQuery.setObjectParameter(session, graphTag, containerInstanceGraphObject, "endVersion", curVersion);
         }
     }
 
