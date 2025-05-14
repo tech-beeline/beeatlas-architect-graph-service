@@ -1,9 +1,6 @@
 package ru.beeline.architecting_graph.service.graph;
 
-import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
-import org.neo4j.driver.Value;
-import org.neo4j.driver.Values;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.beeline.architecting_graph.model.*;
@@ -160,19 +157,8 @@ public class CreateExternalObjects {
                     curVersion);
         }
         setRelationshipNumberOfConnects(session, graphTag, relationship, connection);
-        String setParameters = buildSetRelationshipQuery(connection);
-        Value parameters = buildGraphQuery.buildSetRelationshipParameters(graphTag, relationship, connection);
-        session.run(setParameters, parameters);
+        buildGraphQuery.buildSetRelationshipParameters(session, graphTag, relationship, connection);
         setRelationshipProperties(session, graphTag, relationship, connection);
-    }
-
-    private String buildSetRelationshipQuery(Connection connection) {
-        return "MATCH (a:" + connection.getSource().getType() + " {graphTag: $graphTag1, "
-                + connection.getSource().getKey() + ": $val1})-[r:" + connection.getRelationshipType()
-                + " {graphTag: $graphTag1, sourceWorkspace: $cmdb, description: $description1}]->(b:"
-                + connection.getDestination().getType() + " {graphTag: $graphTag1, "
-                + connection.getDestination().getKey() + ": $val2}) SET r.endVersion = $endVersion1, r.tags = $tags1,  "
-                + "r.url = $url1, r.technology = $technology1, r.interactionStyle = $interactionStyle1, r.level = $level1";
     }
 
     public void updateChildRelationship(Session session, String graphTag, Model model, String curVersion,
@@ -208,7 +194,6 @@ public class CreateExternalObjects {
         connection.setLevel(level);
         updateRelationship(session, graphTag, relationship, model, curVersion, connection, objects);
     }
-
 
 
     public void updateRelationship(Session session, String graphTag, Relationship relationship, Model model,

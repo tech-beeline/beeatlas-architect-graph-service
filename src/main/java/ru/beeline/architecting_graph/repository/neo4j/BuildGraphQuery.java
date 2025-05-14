@@ -189,8 +189,8 @@ public class BuildGraphQuery {
         session.run(cypher, parameters);
     }
 
-    public  Value getRelationshipParameter(Session session, String graphTag, String realtionshipDescription,
-                                           Connection connection, String parameter) {
+    public Value getRelationshipParameter(Session session, String graphTag, String realtionshipDescription,
+                                          Connection connection, String parameter) {
 
         String getParameter = "MATCH (a:" + connection.getSource().getType() + " {graphTag: $graphTag1, "
                 + connection.getSource().getKey() + ": $val1})-[r:" + connection.getRelationshipType()
@@ -204,8 +204,8 @@ public class BuildGraphQuery {
         return result.next().get("parameter");
     }
 
-    public  void setRelationshipParameter(Session session, String graphTag, String realtionshipDescription,
-                                          Connection connection, String parameter, String value) {
+    public void setRelationshipParameter(Session session, String graphTag, String realtionshipDescription,
+                                         Connection connection, String parameter, String value) {
         String setParameter = "MATCH (a:" + connection.getSource().getType() + " {graphTag: $graphTag1, "
                 + connection.getSource().getKey() + ": $val1})-[r:" + connection.getRelationshipType()
                 + " {graphTag: $graphTag1, sourceWorkspace: $cmdb, description: $description1}]->(b:"
@@ -234,12 +234,87 @@ public class BuildGraphQuery {
         return false;
     }
 
-    public Value buildSetRelationshipParameters(String graphTag, Relationship relationship, Connection connection) {
-        return Values.parameters("graphTag1", graphTag, "val1",
+    public void buildSetRelationshipParameters(Session session, String graphTag, Relationship relationship, Connection connection) {
+        String setParameters = "MATCH (a:" + connection.getSource().getType() + " {graphTag: $graphTag1, "
+                + connection.getSource().getKey() + ": $val1})-[r:" + connection.getRelationshipType()
+                + " {graphTag: $graphTag1, sourceWorkspace: $cmdb, description: $description1}]->(b:"
+                + connection.getDestination().getType() + " {graphTag: $graphTag1, "
+                + connection.getDestination().getKey() + ": $val2}) SET r.endVersion = $endVersion1, r.tags = $tags1,  "
+                + "r.url = $url1, r.technology = $technology1, r.interactionStyle = $interactionStyle1, r.level = $level1";
+        Value parameters = Values.parameters("graphTag1", graphTag, "val1",
                 connection.getSource().getValue(), "cmdb", connection.getCmdb(), "description1",
                 relationship.getDescription(), "val2", connection.getDestination().getValue(), "endVersion1", null,
                 "tags1", relationship.getTags(), "url1", relationship.getUrl(), "technology1",
                 relationship.getTechnology(), "interactionStyle1", relationship.getInteractionStyle(), "level1",
                 connection.getLevel());
+        session.run(setParameters, parameters);
+    }
+
+    public void setSystemParameters(Session session, String graphTag, String cmdb, SoftwareSystem softwareSystem, String version) {
+        String setParameters = "MATCH (n:SoftwareSystem {graphTag: $graphTag1, cmdb: $cmdb1}) "
+                + "SET n.name = $name1, n.description = $description1, n.tags = $tags1, n.url = $url1, "
+                + "n.group = $group1, n.version = $version1";
+        Value parameters = Values.parameters("graphTag1", graphTag, "cmdb1", cmdb, "name1",
+                softwareSystem.getName(), "description1", softwareSystem.getDescription(), "tags1",
+                softwareSystem.getTags(), "url1", softwareSystem.getUrl(), "group1", softwareSystem.getGroup(),
+                "version1", version);
+        session.run(setParameters, parameters);
+    }
+
+    public void updateSystemProperty(Session session, String graphTag, String cmdb, String key, Object value) {
+        String setProperty = "MATCH (n:SoftwareSystem {graphTag: $graphTag1, cmdb: $cmdb1}) SET n." + key + " = $value";
+        Value parameters = Values.parameters("graphTag1", graphTag, "cmdb1", cmdb, "value", value);
+        session.run(setProperty, parameters);
+    }
+
+    public void deleteLocalGraph(Session session) {
+        String deleteLocalGraph = "MATCH (n) WHERE n.graphTag = \"Local\" DETACH DELETE n";
+        session.run(deleteLocalGraph);
+    }
+
+    public Result getRelationships(Session session, String graphTag, String cmdb) {
+        String getRelationships = "MATCH (n)-[r {sourceWorkspace: $cmdb, graphTag: $graphTag1}]->(m) "
+                + "WHERE r.endVersion IS NULL RETURN n,m,r";
+        Value parameters = Values.parameters("graphTag1", graphTag, "cmdb", cmdb);
+        return session.run(getRelationships, parameters);
+    }
+
+    public Result getDeploymentNodeNames(Session session, String graphTag, String cmdb) {
+        String getDeploymentNode = "MATCH (n:SoftwareSystem {cmdb: $cmdb1, graphTag: $graphTag1})-[r:Child]->(m:DeploymentNode) "
+                + "WHERE m.endVersion IS NULL RETURN m.name as deploymentNodeName";
+        Value parameters = Values.parameters("graphTag1", graphTag, "cmdb1", cmdb);
+        return session.run(getDeploymentNode, parameters);
+    }
+
+    public Result getContainers(Session session, String graphTag, String cmdb) {
+        String getContainers = "MATCH (n:SoftwareSystem {cmdb: $cmdb1, graphTag: $graphTag1})-[r:Child]->(m:Container) "
+                + "WHERE m.endVersion IS NULL RETURN m.name AS containerName";
+        Value parameters = Values.parameters("graphTag1", graphTag, "cmdb1", cmdb);
+        return session.run(getContainers, parameters);
+    }
+
+    public Result getContainerRelationships(Session session, String graphTag, String containerExternalName) {
+        String findConnects = "MATCH (n:Container {graphTag: $graphTag1, external_name: $external_name1})-[r]-() "
+                + "RETURN count(r) AS numberOfRelationships";
+        Value parameters = Values.parameters("graphTag1", graphTag, "external_name1", containerExternalName);
+        return session.run(findConnects, parameters);
+    }
+
+    public void setContainerParameters(Session session, String graphTag, Container container,
+                                       GraphObject containerGraphObject, String curVersion) {
+        String setParameters = "MATCH (n:Container {graphTag: $graphTag1, " + containerGraphObject.getKey()
+                + ": $value}) "
+                + "SET n.description = $description1, n.technology = $technology1, n.tags = $tags1, "
+                + "n.url = $url1, n.group = $group1, n.endVersion = $endVersion1";
+        Value parameters = Values.parameters("graphTag1", graphTag, "value", containerGraphObject.getValue(),
+                "description1", container.getDescription(), "technology1", container.getTechnology(), "tags1",
+                container.getTags(), "url1", container.getUrl(), "group1", container.getGroup(), "endVersion1", null);
+        session.run(setParameters, parameters);
+    }
+
+    public void executeSetContainerProperties(Session session, String graphTag, String containerName, String key, Object value) {
+        String setProperties = "MATCH (n:Container {graphTag: $graphTag1, name: $name1}) SET n." + key + " = $value";
+        Value parameters = Values.parameters("graphTag1", graphTag, "name1", containerName, "value", value);
+        session.run(setProperties, parameters);
     }
 }

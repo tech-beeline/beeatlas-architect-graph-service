@@ -1,10 +1,12 @@
 package ru.beeline.architecting_graph.service.graph;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.neo4j.driver.AuthTokens;
-import org.neo4j.driver.GraphDatabase;
-import org.neo4j.driver.exceptions.ServiceUnavailableException;
-import org.neo4j.driver.Session;
 import org.neo4j.driver.Driver;
+import org.neo4j.driver.GraphDatabase;
+import org.neo4j.driver.Session;
+import org.neo4j.driver.exceptions.ServiceUnavailableException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -12,12 +14,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
-
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import ru.beeline.architecting_graph.model.Workspace;
 import ru.beeline.architecting_graph.config.RestConfig;
+import ru.beeline.architecting_graph.model.Workspace;
 
 import java.io.File;
 
@@ -52,7 +50,7 @@ public class GraphConstruction {
         }
     }
 
-    public  ResponseEntity<String> graphConstruct(Long docId, RestConfig autorization, String GraphTag) {
+    public ResponseEntity<String> graphConstruct(Long docId, RestConfig autorization, String GraphTag) {
         Driver driver = GraphDatabase.driver(autorization.getUri(),
                 AuthTokens.basic(autorization.getUser(), autorization.getPassword()));
 
