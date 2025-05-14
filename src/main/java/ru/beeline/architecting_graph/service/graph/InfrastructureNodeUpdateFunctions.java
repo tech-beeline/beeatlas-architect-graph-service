@@ -19,42 +19,29 @@ public class InfrastructureNodeUpdateFunctions {
     @Autowired
     BuildGraphQuery buildGraphQuery;
 
-    public static void setInfrastructureNodeProperties(Session session, String graphTag,
-                                                       InfrastructureNode infrastructureNode) {
+    public void setInfrastructureNodeProperties(Session session, String graphTag, InfrastructureNode infrastructureNode) {
         if (infrastructureNode.getProperties() != null) {
             for (Map.Entry<String, Object> entry : infrastructureNode.getProperties().entrySet()) {
-                String key = entry.getKey();
-                key = key.replaceAll("[^a-zA-Z0-9]", "_");
-                String setProperties = "MATCH (n:InfrastructureNode {graphTag: $graphTag1, name: $name1}) SET n."
-                        + key + " = $value";
-                Value parameters = Values.parameters("graphTag1", graphTag, "name1",
-                        infrastructureNode.getName(), "value", entry.getValue());
-                session.run(setProperties, parameters);
+                String rawKey = entry.getKey();
+                String cleanedKey = rawKey.replaceAll("[^a-zA-Z0-9]", "_");
+                buildGraphQuery.setInfrastructureNodeProperty(session, graphTag, infrastructureNode.getName(),
+                        cleanedKey, entry.getValue());
             }
         }
     }
 
-    public  void setParametersForInfrastructureNode(Session session, String graphTag,
-                                                          InfrastructureNode infrastructureNode, GraphObject infrastructureNodeGraphObject,
-                                                          String curVersion) {
-        if (graphTag.equals("Global")
-                && buildGraphQuery.getObjectParameter(session, graphTag, infrastructureNodeGraphObject,
-                "startVersion").toString().equals("NULL")) {
-            buildGraphQuery.setObjectParameter(session, graphTag, infrastructureNodeGraphObject,
-                    "startVersion",
-                    curVersion);
+    public void setParametersForInfrastructureNode(Session session, String graphTag, InfrastructureNode infrastructureNode,
+                                                   GraphObject infrastructureNodeGraphObject, String curVersion) {
+        if ("Global".equals(graphTag)
+                && buildGraphQuery.getObjectParameter(session, graphTag, infrastructureNodeGraphObject, "startVersion")
+                .toString().equals("NULL")) {
+            buildGraphQuery.setObjectParameter(session, graphTag, infrastructureNodeGraphObject, "startVersion", curVersion);
         }
-        String updateNode = "MATCH (n:InfrastructureNode {graphTag: $graphTag1, name: $name1}) "
-                + "SET n.description = $description1, n.technology = $technology1, n.tags = $tags1, "
-                + "n.url = $url1, n.endVersion = $endVersion1";
-        Value parameters = Values.parameters("graphTag1", graphTag, "name1", infrastructureNode.getName(),
-                "description1", infrastructureNode.getDescription(), "technology1",
-                infrastructureNode.getTechnology(),
-                "tags1", infrastructureNode.getTags(), "url1", infrastructureNode.getUrl(),
-                "endVersion1", null);
-        session.run(updateNode, parameters);
+        buildGraphQuery.updateInfrastructureNode(session, graphTag, infrastructureNode.getName(), infrastructureNode.getDescription(),
+                infrastructureNode.getTechnology(), infrastructureNode.getTags(), infrastructureNode.getUrl(), null);
         setInfrastructureNodeProperties(session, graphTag, infrastructureNode);
     }
+
 
     public void updateInfrastructureNode(Session session, String graphTag,
                                          InfrastructureNode infrastructureNode, String curVersion,
@@ -70,20 +57,14 @@ public class InfrastructureNodeUpdateFunctions {
                 curVersion);
     }
 
-    public  void setInfrastructureNodeEndVersion(Session session, String graphTag, String deploymentNodeName,
-                                                       String curVersion) {
-        String getInfrastructureNodes = "MATCH (n:DeploymentNode "
-                + "{name: $name1, graphTag: $graphTag1})-[r:Child]->(m:InfrastructureNode) "
-                + "WHERE m.endVersion IS NULL RETURN m.name AS infrastructureNodeName";
-        Value parameters = Values.parameters("graphTag1", graphTag, "name1", deploymentNodeName);
-        Result result = session.run(getInfrastructureNodes, parameters);
+    public void setInfrastructureNodeEndVersion(Session session, String graphTag, String deploymentNodeName,
+                                                String curVersion) {
+        Result result = buildGraphQuery.findInfrastructureNodesWithNullEndVersion(session, graphTag, deploymentNodeName);
         while (result.hasNext()) {
             String infrastructureNodeName = result.next().get("infrastructureNodeName").toString();
             infrastructureNodeName = infrastructureNodeName.substring(1, infrastructureNodeName.length() - 1);
-            GraphObject infrastructureNodeGraphObject = new GraphObject("InfrastructureNode", "name",
-                    infrastructureNodeName);
-            buildGraphQuery.setObjectParameter(session, graphTag, infrastructureNodeGraphObject, "endVersion",
-                    curVersion);
+            GraphObject infrastructureNodeGraphObject = new GraphObject("InfrastructureNode", "name", infrastructureNodeName);
+            buildGraphQuery.setObjectParameter(session, graphTag, infrastructureNodeGraphObject, "endVersion", curVersion);
         }
     }
 }

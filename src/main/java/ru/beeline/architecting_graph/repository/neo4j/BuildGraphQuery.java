@@ -7,6 +7,7 @@ import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
 import org.springframework.stereotype.Repository;
 import ru.beeline.architecting_graph.model.Component;
+import ru.beeline.architecting_graph.model.DeploymentNode;
 import ru.beeline.architecting_graph.model.GraphObject;
 
 import java.util.ArrayList;
@@ -117,4 +118,55 @@ public class BuildGraphQuery {
         Value parameters = Values.parameters("graphTag1", graphTag, "name1", deploymentNodeName);
         return session.run(cypher, parameters);
     }
+
+    public void setInfrastructureNodeProperty(Session session, String graphTag, String nodeName,
+                                              String propertyKey, Object propertyValue) {
+        String query = "MATCH (n:InfrastructureNode {graphTag: $graphTag1, name: $name1}) SET n." + propertyKey + " = $value";
+        Value parameters = Values.parameters("graphTag1", graphTag, "name1", nodeName, "value", propertyValue);
+        session.run(query, parameters);
+    }
+
+    public void updateInfrastructureNode(Session session, String graphTag, String name,
+                                         String description, String technology, String tags,
+                                         String url, String endVersion) {
+        String query = "MATCH (n:InfrastructureNode {graphTag: $graphTag1, name: $name1}) "
+                + "SET n.description = $description1, n.technology = $technology1, n.tags = $tags1, "
+                + "n.url = $url1, n.endVersion = $endVersion1";
+        Value parameters = Values.parameters(
+                "graphTag1", graphTag, "name1", name, "description1", description, "technology1", technology,
+                "tags1", tags, "url1", url, "endVersion1", endVersion);
+        session.run(query, parameters);
+    }
+
+    public Result findInfrastructureNodesWithNullEndVersion(Session session, String graphTag, String deploymentNodeName) {
+        String cypher = "MATCH (n:DeploymentNode {name: $name1, graphTag: $graphTag1})-[r:Child]->(m:InfrastructureNode) "
+                + "WHERE m.endVersion IS NULL RETURN m.name AS infrastructureNodeName";
+        Value parameters = Values.parameters("graphTag1", graphTag, "name1", deploymentNodeName);
+        return session.run(cypher, parameters);
+    }
+
+    public Result findChildDeploymentNodesWithNullEndVersion(Session session, String graphTag, String deploymentNodeName) {
+        String cypher = "MATCH (n:DeploymentNode {name: $name1, graphTag: $graphTag1})-[r:Child]->(m:DeploymentNode) "
+                + "WHERE m.endVersion IS NULL RETURN m.name AS childDeploymentNodeName";
+        Value parameters = Values.parameters("graphTag1", graphTag, "name1", deploymentNodeName);
+        return session.run(cypher, parameters);
+    }
+
+    public void updateDeploymentNode(Session session, String graphTag, DeploymentNode deploymentNode) {
+        String cypher = "MATCH (n:DeploymentNode {graphTag: $graphTag1, name: $name1}) "
+                + "SET n.description = $description1, n.technology = $technology1, n.instances = $instances1, "
+                + "n.tags = $tags1, n.url = $url1, n.endVersion = $endVersion1";
+        Value parameters = Values.parameters(
+                "graphTag1", graphTag, "name1", deploymentNode.getName(), "description1", deploymentNode.getDescription(),
+                "technology1", deploymentNode.getTechnology(), "instances1", deploymentNode.getInstances(),
+                "tags1", deploymentNode.getTags(), "url1", deploymentNode.getUrl(), "endVersion1", null);
+        session.run(cypher, parameters);
+    }
+
+    public void setDeploymentNodeProperty(Session session, String graphTag, String name, String propertyKey, Object value) {
+        String cypher = "MATCH (n:DeploymentNode {graphTag: $graphTag1, name: $name1}) SET n." + propertyKey + " = $value";
+        Value parameters = Values.parameters("graphTag1", graphTag, "name1", name, "value", value);
+        session.run(cypher, parameters);
+    }
+
 }

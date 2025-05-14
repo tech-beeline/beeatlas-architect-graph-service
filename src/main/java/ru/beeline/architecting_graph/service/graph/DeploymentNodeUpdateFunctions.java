@@ -27,39 +27,23 @@ public class DeploymentNodeUpdateFunctions {
     @Autowired
     CreateExternalObjects createExternalObjects;
 
-    public static void setDeploymentNodeProperties(Session session, String graphTag,
-                                                   DeploymentNode deploymentNode) {
+    public void setDeploymentNodeProperties(Session session, String graphTag, DeploymentNode deploymentNode) {
         if (deploymentNode.getProperties() != null) {
             for (Map.Entry<String, Object> entry : deploymentNode.getProperties().entrySet()) {
-                String key = entry.getKey();
-                key = key.replaceAll("[^a-zA-Z0-9]", "_");
-                String setProperties = "MATCH (n:DeploymentNode {graphTag: $graphTag1, name: $name1}) SET n."
-                        + key + " = $value";
-                Value parameters = Values.parameters("graphTag1", graphTag, "name1",
-                        deploymentNode.getName(), "value", entry.getValue());
-                session.run(setProperties, parameters);
+                String key = entry.getKey().replaceAll("[^a-zA-Z0-9]", "_");
+                buildGraphQuery.setDeploymentNodeProperty(session, graphTag, deploymentNode.getName(), key, entry.getValue());
             }
         }
     }
 
-    public void setParametersForDeploymentNode(Session session, String graphTag,
-                                               DeploymentNode deploymentNode, GraphObject deploymentNodeGraphObject, String curVersion) {
-        if (graphTag.equals("Global")
-                && buildGraphQuery.getObjectParameter(session, graphTag, deploymentNodeGraphObject,
-                "startVersion").toString().equals("NULL")) {
-
-            buildGraphQuery.setObjectParameter(session, graphTag, deploymentNodeGraphObject, "startVersion",
-                    curVersion);
+    public void setParametersForDeploymentNode(Session session, String graphTag, DeploymentNode deploymentNode,
+                                               GraphObject deploymentNodeGraphObject, String curVersion) {
+        if (graphTag.equals("Global") &&
+                buildGraphQuery.getObjectParameter(session, graphTag, deploymentNodeGraphObject, "startVersion")
+                        .toString().equals("NULL")) {
+            buildGraphQuery.setObjectParameter(session, graphTag, deploymentNodeGraphObject, "startVersion", curVersion);
         }
-        String updateNode = "MATCH (n:DeploymentNode {graphTag: $graphTag1, name: $name1}) "
-                + "SET n.description = $description1, n.technology = $technology1, n.instances = $instances1, "
-                + "n.tags = $tags1, n.url = $url1, n.endVersion = $endVersion1";
-        Value parameters = Values.parameters("graphTag1", graphTag, "name1", deploymentNode.getName(),
-                "description1", deploymentNode.getDescription(), "technology1",
-                deploymentNode.getTechnology(),
-                "instances1", deploymentNode.getInstances(), "tags1", deploymentNode.getTags(), "url1",
-                deploymentNode.getUrl(), "endVersion1", null);
-        session.run(updateNode, parameters);
+        buildGraphQuery.updateDeploymentNode(session, graphTag, deploymentNode);
         setDeploymentNodeProperties(session, graphTag, deploymentNode);
     }
 
@@ -144,7 +128,6 @@ public class DeploymentNodeUpdateFunctions {
         if (!exists) {
             buildGraphQuery.createObject(session, graphTag, deploymentNodeGraphObject);
         }
-
         objects.put(deploymentNode.getId(), deploymentNodeGraphObject);
         setParametersForDeploymentNode(session, graphTag, deploymentNode, deploymentNodeGraphObject, curVersion);
         createEnvironmentRelation(session, graphTag, deploymentNode.getEnvironment(), deploymentNode.getId(),
@@ -156,11 +139,7 @@ public class DeploymentNodeUpdateFunctions {
 
     public void setChildDeploymentNodeEndVersion(Session session, String graphTag, String deploymentNodeName,
                                                  String curVersion, String cmdb) {
-        String getChildDeploymentNodes = "MATCH (n:DeploymentNode "
-                + "{name: $name1, graphTag: $graphTag1})-[r:Child]->(m:DeploymentNode) "
-                + "WHERE m.endVersion IS NULL RETURN m.name AS childDeploymentNodeName";
-        Value parameters = Values.parameters("graphTag1", graphTag, "name1", deploymentNodeName);
-        Result result = session.run(getChildDeploymentNodes, parameters);
+        Result result = buildGraphQuery.findChildDeploymentNodesWithNullEndVersion(session, graphTag, deploymentNodeName);
         while (result.hasNext()) {
             String childDeploymentNodeName = result.next().get("childDeploymentNodeName").toString();
             childDeploymentNodeName = childDeploymentNodeName.substring(1, childDeploymentNodeName.length() - 1);
