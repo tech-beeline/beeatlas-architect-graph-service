@@ -11,8 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import ru.beeline.architecting_graph.config.RestConfig;
 import ru.beeline.architecting_graph.model.GraphObject;
+import ru.beeline.architecting_graph.repository.neo4j.BuildGraphQuery;
 import ru.beeline.architecting_graph.repository.neo4j.CreateDiagramsQuery;
-import ru.beeline.architecting_graph.service.graph.CommonFunctions;
 import ru.beeline.architecting_graph.service.graph.FunctionsForWorkingWithJson;
 import ru.beeline.architecting_graph.service.graph.GraphConstruction;
 
@@ -24,6 +24,9 @@ public class CreateDiagrams {
 
     @Autowired
     GetObjects getObjects;
+
+    @Autowired
+    BuildGraphQuery buildGraphQuery;
 
     public Boolean checkifContainerExists(Session session, String softwareSystemMnemonic,
                                           String containerMnemonic) {
@@ -52,7 +55,7 @@ public class CreateDiagrams {
 
         GraphObject systemGraphObject = new GraphObject("SoftwareSystem", "structurizr_dsl_identifier",
                 softwareSystemMnemonic);
-        boolean exists = CommonFunctions.checkIfObjectExists(session, "Global", systemGraphObject);
+        boolean exists = buildGraphQuery.checkIfObjectExists(session, "Global", systemGraphObject);
         if (exists) {
             if (containerMnemonic != null
                     && !checkifContainerExists(session, softwareSystemMnemonic, containerMnemonic)) {

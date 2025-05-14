@@ -1,12 +1,13 @@
 package ru.beeline.architecting_graph.service.graph;
 
+import org.neo4j.driver.Record;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.Value;
-import org.neo4j.driver.Values;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.beeline.architecting_graph.model.*;
+import ru.beeline.architecting_graph.repository.neo4j.BuildGraphQuery;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,44 +16,41 @@ import java.util.Map;
 public class ContainerUpdateFunctions {
 
     @Autowired
+    DeploymentNodeUpdateFunctions deploymentNodeUpdateFunctions;
+
+    @Autowired
     ComponentUpdateFunctions componentUpdateFunctions;
+
+    @Autowired
+    BuildGraphQuery buildGraphQuery;
+
+    @Autowired
+    CreateExternalObjects createExternalObjects;
 
     public void setContainerProperties(Session session, String graphTag, Container container) {
         if (container.getProperties() != null) {
             for (Map.Entry<String, Object> entry : container.getProperties().entrySet()) {
                 String key = entry.getKey();
                 key = key.replaceAll("[^a-zA-Z0-9]", "_");
-                String setProperties = "MATCH (n:Container {graphTag: $graphTag1, name: $name1}) SET n." + key
-                        + " = $value";
-                Value parameters = Values.parameters("graphTag1", graphTag, "name1", container.getName(),
-                        "value", entry.getValue());
-                session.run(setProperties, parameters);
+                buildGraphQuery.executeSetContainerProperties(session, graphTag, container.getName(), key, entry.getValue());
             }
         }
     }
 
     public void setParametersForContainer(Session session, String graphTag, Container container,
                                           GraphObject containerGraphObject, String curVersion) {
-
         if (graphTag.equals("Global")
-                && CommonFunctions.getObjectParameter(session, graphTag, containerGraphObject, "startVersion")
+                && buildGraphQuery.getObjectParameter(session, graphTag, containerGraphObject, "startVersion")
                 .toString().equals("NULL")) {
-            CommonFunctions.setObjectParameter(session, graphTag, containerGraphObject, "startVersion", curVersion);
+            buildGraphQuery.setObjectParameter(session, graphTag, containerGraphObject, "startVersion", curVersion);
         }
-        String setParameters = "MATCH (n:Container {graphTag: $graphTag1, " + containerGraphObject.getKey()
-                + ": $value}) " + "SET n.description = $description1, n.technology = $technology1, n.tags = $tags1, "
-                + "n.url = $url1, n.group = $group1, n.endVersion = $endVersion1";
-        Value parameters = Values.parameters("graphTag1", graphTag, "value", containerGraphObject.getValue(),
-                "description1", container.getDescription(), "technology1", container.getTechnology(), "tags1",
-                container.getTags(), "url1", container.getUrl(), "group1", container.getGroup(), "endVersion1", null);
-        session.run(setParameters, parameters);
+        buildGraphQuery.setContainerParameters(session, graphTag, container, containerGraphObject, curVersion);
         setContainerProperties(session, graphTag, container);
     }
+
+
     public Integer getContainerNumberOfConnects(Session session, String graphTag, String containerExternalName) {
-        String findConnects = "MATCH (n:Container {graphTag: $graphTag1, external_name: $external_name1})-[r]-() "
-                + "RETURN count(r) AS numberOfRelationships";
-        Value parameters = Values.parameters("graphTag1", graphTag, "external_name1", containerExternalName);
-        Result result = session.run(findConnects, parameters);
+        Result result = buildGraphQuery.getContainerRelationships(session, graphTag, containerExternalName);
         String numberOfRelationships = result.next().get("numberOfRelationships").toString();
         if (numberOfRelationships.equals("NULL")) {
             return 0;
@@ -60,40 +58,36 @@ public class ContainerUpdateFunctions {
         return Integer.parseInt(numberOfRelationships);
     }
 
+
     public Boolean needContainerReplace(Session session, String graphTag, Container container,
                                         GraphObject externalContainerGraphObject) {
         Integer numberOfRelationshipsFirst = getContainerNumberOfConnects(session, graphTag,
                 externalContainerGraphObject.getValue());
-        String source = CommonFunctions.getObjectParameter(session, graphTag, externalContainerGraphObject, "source")
+        String source = buildGraphQuery.getObjectParameter(session, graphTag, externalContainerGraphObject, "source")
                 .toString();
-
         Integer numberOfRelationshipsSecond = 0;
-
         if (container.getRelationships() != null) {
             numberOfRelationshipsSecond = container.getRelationships().size();
         }
-
         if (container.getComponents() != null) {
             numberOfRelationshipsSecond = numberOfRelationshipsSecond + container.getComponents().size();
         }
-
         if (numberOfRelationshipsFirst >= numberOfRelationshipsSecond || source.equals("\"landscape\"")) {
             return false;
         }
-
         return true;
     }
 
     public Boolean changeContainer(Session session, String graphTag, Container container,
                                    GraphObject externalContainerGraphObject, String curVersion, HashMap<String, GraphObject> objects) {
-        String startVersion = CommonFunctions
+        String startVersion = buildGraphQuery
                 .getObjectParameter(session, graphTag, externalContainerGraphObject, "startVersion").toString();
         if (startVersion.equals("NULL")) {
-            CommonFunctions.setObjectParameter(session, graphTag, externalContainerGraphObject, "name",
+            buildGraphQuery.setObjectParameter(session, graphTag, externalContainerGraphObject, "name",
                     container.getName());
             return true;
         }
-        String endVersion = CommonFunctions
+        String endVersion = buildGraphQuery
                 .getObjectParameter(session, graphTag, externalContainerGraphObject, "endVersion").toString();
         if (endVersion.equals("NULL")) {
             return needContainerReplace(session, graphTag, container, externalContainerGraphObject);
@@ -110,20 +104,20 @@ public class ContainerUpdateFunctions {
             String containerExternalName = container.getProperties().get("external_name").toString();
             externalContainerGraphObject = new GraphObject("Container", "external_name",
                     containerExternalName);
-            externalExists = CommonFunctions.checkIfObjectExists(session, graphTag, externalContainerGraphObject);
+            externalExists = buildGraphQuery.checkIfObjectExists(session, graphTag, externalContainerGraphObject);
         }
         if (externalExists) {
             if (changeContainer(session, graphTag, container, externalContainerGraphObject, curVersion, objects)) {
-                CommonFunctions.setObjectParameter(session, graphTag, externalContainerGraphObject, "external_name",
+                buildGraphQuery.setObjectParameter(session, graphTag, externalContainerGraphObject, "external_name",
                         null);
             } else {
                 container.getProperties().put("external_name", null);
             }
         }
         GraphObject containerGraphObject = new GraphObject("Container", "name", container.getName());
-        boolean exists = CommonFunctions.checkIfObjectExists(session, graphTag, containerGraphObject);
+        boolean exists = buildGraphQuery.checkIfObjectExists(session, graphTag, containerGraphObject);
         if (!exists) {
-            CommonFunctions.createObject(session, graphTag, containerGraphObject);
+            buildGraphQuery.createObject(session, graphTag, containerGraphObject);
         }
         objects.put(container.getId(), containerGraphObject);
         setParametersForContainer(session, graphTag, container, containerGraphObject, curVersion);
@@ -142,7 +136,7 @@ public class ContainerUpdateFunctions {
                     container.getProperties().put("external_name", containerExternalName);
                 }
                 updateContainer(session, graphTag, container, curVersion, objects);
-                RelationshipUpdateFunctions.updateChildRelationship(session, graphTag, model, curVersion,
+                createExternalObjects.updateChildRelationship(session, graphTag, model, curVersion,
                         softwareSystem.getId(), container.getId(), cmdb, objects);
                 componentUpdateFunctions.updateComponents(session, graphTag, model, container, cmdb, curVersion,
                         containerExternalName, objects);
@@ -151,19 +145,17 @@ public class ContainerUpdateFunctions {
     }
 
     public void setContainerEndVersion(Session session, String graphTag, String cmdb, String curVersion) {
-
-        String getContainers = "MATCH (n:SoftwareSystem {cmdb: $cmdb1, graphTag: $graphTag1})-[r:Child]->(m:Container) "
-                + "WHERE m.endVersion IS NULL RETURN m.name AS containerName";
-        Value parameters = Values.parameters("graphTag1", graphTag, "cmdb1", cmdb);
-        Result result = session.run(getContainers, parameters);
+        Result result = buildGraphQuery.getContainers(session, graphTag, cmdb);
         while (result.hasNext()) {
             String containerName = result.next().get("containerName").toString();
             containerName = containerName.substring(1, containerName.length() - 1);
+
             GraphObject containerGraphObject = new GraphObject("Container", "name", containerName);
-            CommonFunctions.setObjectParameter(session, graphTag, containerGraphObject, "endVersion", curVersion);
+            buildGraphQuery.setObjectParameter(session, graphTag, containerGraphObject, "endVersion", curVersion);
             componentUpdateFunctions.setComponentEndVersion(session, graphTag, containerName, cmdb, curVersion);
         }
     }
+
 
     public void updateContainerRelationships(Session session, String graphTag, Model model,
                                              SoftwareSystem softwareSystem, String cmdb, String curVersion, HashMap<String, GraphObject> objects) {
@@ -172,7 +164,7 @@ public class ContainerUpdateFunctions {
                 if (container.getRelationships() != null) {
                     for (Relationship relationship : container.getRelationships()) {
                         if (relationship.getLinkedRelationshipId() == null) {
-                            RelationshipUpdateFunctions.updateDefaultRelationship(session, graphTag, relationship,
+                            createExternalObjects.updateDefaultRelationship(session, graphTag, relationship,
                                     model, curVersion, cmdb, "C2", objects);
                         }
                     }
@@ -185,28 +177,52 @@ public class ContainerUpdateFunctions {
 
     public void setEndVersion(Session session, String graphTag, String cmdb, String curVersion) {
         setContainerEndVersion(session, graphTag, cmdb, curVersion);
-        String getDeploymentNode = "MATCH (n:SoftwareSystem {cmdb: $cmdb1, graphTag: $graphTag1})-[r:Child]->(m:DeploymentNode) "
-                + "WHERE m.endVersion IS NULL RETURN m.name as deploymentNodeName";
-        Value parameters = Values.parameters("graphTag1", graphTag, "cmdb1", cmdb);
-        Result result = session.run(getDeploymentNode, parameters);
+        Result result = buildGraphQuery.getDeploymentNodeNames(session, graphTag, cmdb);
         while (result.hasNext()) {
             String deploymentNodeName = result.next().get("deploymentNodeName").toString();
             deploymentNodeName = deploymentNodeName.substring(1, deploymentNodeName.length() - 1);
-            DeploymentNodeUpdateFunctions.setDeploymentNodeEndVersion(session, graphTag, deploymentNodeName,
+            deploymentNodeUpdateFunctions.setDeploymentNodeEndVersion(session, graphTag, deploymentNodeName,
                     curVersion, cmdb);
         }
-        RelationshipEndVersionFunctions.setRelationshipsEndVersion(session, graphTag, curVersion, cmdb);
+        setRelationshipsEndVersion(session, graphTag, curVersion, cmdb);
     }
 
-    public void deleteLocalGraph(Session session) {
-        String deleteLocalGraph = "MATCH (n) WHERE n.graphTag = \"Local\" DETACH DELETE n";
-        session.run(deleteLocalGraph);
+    public GraphObject getGraphObject(Value graphNode) {
+        String label = graphNode.asNode().labels().toString();
+        String type = label.substring(1, label.length() - 1);
+        String key = "name";
+        if (type.equals("SoftwareSystem")) {
+            key = "cmdb";
+        }
+        Object value = graphNode.asNode().asMap().get(key);
+        if (value == null) {
+            value = graphNode.asNode().asMap().get("external_name");
+        }
+        return new GraphObject(type, key, value.toString());
     }
+
+    public void setRelationshipsEndVersion(Session session, String graphTag, String curVersion, String cmdb) {
+        Result result = buildGraphQuery.getRelationships(session, graphTag, cmdb);
+        while (result.hasNext()) {
+            Record record = result.next();
+            Connection connection = new Connection();
+            connection.setSource(getGraphObject(record.get("n")));
+            connection.setDestination(getGraphObject(record.get("m")));
+            connection.setCmdb(cmdb);
+            Value connectValue = record.get("r");
+            connection.setRelationshipType(connectValue.asRelationship().type().toString());
+            String relationshipDescription = connectValue.asRelationship().get("description").toString();
+            relationshipDescription = relationshipDescription.substring(1, relationshipDescription.length() - 1);
+            buildGraphQuery.setRelationshipParameter(session, graphTag, relationshipDescription, connection,
+                    "endVersion", curVersion);
+        }
+    }
+
 
     public void createGraph(Session session, String graphTag, Workspace workspace) throws Exception {
         Model model = workspace.getModel();
         String cmdb = model.getProperties().get("workspace_cmdb").toString();
-        SoftwareSystem softwareSystem = ModelFunctions.getSoftwareSystem(model, cmdb);
+        SoftwareSystem softwareSystem = getSoftwareSystem(model, cmdb);
         HashMap<String, GraphObject> objects = new HashMap<>();
         String curVersion = null;
         if (graphTag.equals("Global")) {
@@ -214,102 +230,101 @@ public class ContainerUpdateFunctions {
             Integer prevVersion = Integer.parseInt(curVersion) - 1;
             setEndVersion(session, graphTag, cmdb, prevVersion.toString());
         } else {
-            deleteLocalGraph(session);
+            buildGraphQuery.deleteLocalGraph(session);
             updateSystem(session, graphTag, softwareSystem, cmdb, objects);
         }
-
         updateContainers(session, graphTag, model, softwareSystem, cmdb, curVersion, objects);
         updateSystemRelationships(session, graphTag, model, cmdb, curVersion,
                 objects);
-        DeploymentNodeUpdateFunctions.updateDeploymentNodes(session, graphTag, model, softwareSystem.getId(),
+        updateDeploymentNodes(session, graphTag, model, softwareSystem.getId(),
                 cmdb, curVersion, objects);
         if (model.getDeploymentNodes() != null) {
             for (DeploymentNode deploymentNode : model.getDeploymentNodes()) {
-                DeploymentNodeUpdateFunctions.updateDeploymentNodeRelationships(session, graphTag, deploymentNode,
+                deploymentNodeUpdateFunctions.updateDeploymentNodeRelationships(session, graphTag, deploymentNode,
                         curVersion, cmdb, model, objects);
             }
         }
-
     }
-    public static Integer getSystemVersion(Session session, String graphTag, GraphObject systemGraphObject) {
-        String version = CommonFunctions.getObjectParameter(session, graphTag, systemGraphObject, "version").toString();
+
+    public SoftwareSystem getSoftwareSystem(Model model, String cmdb) {
+        for (SoftwareSystem softwareSystem : model.getSoftwareSystems()) {
+            if (softwareSystem.getProperties() != null && softwareSystem.getProperties().get("cmdb") != null
+                    && softwareSystem.getProperties().get("cmdb").equals(cmdb)) {
+                return softwareSystem;
+            }
+        }
+        return null;
+    }
+
+    public void updateDeploymentNodes(Session session, String graphTag, Model model, String softwareSystemId,
+                                      String cmdb, String curVersion, HashMap<String, GraphObject> objects) {
+        if (model.getDeploymentNodes() != null) {
+            for (DeploymentNode deploymentNode : model.getDeploymentNodes()) {
+                deploymentNode.setName(deploymentNode.getName() + "." + cmdb.toString());
+                deploymentNodeUpdateFunctions.updateDeploymentNode(session, graphTag, deploymentNode, curVersion, cmdb, model,
+                        objects);
+                createExternalObjects.updateChildRelationship(session, graphTag, model,
+                        curVersion, softwareSystemId, deploymentNode.getId(), cmdb, objects);
+            }
+        }
+    }
+
+    public Integer getSystemVersion(Session session, String graphTag, GraphObject systemGraphObject) {
+        String version = buildGraphQuery.getObjectParameter(session, graphTag, systemGraphObject, "version").toString();
         if (version.equals("NULL")) {
             version = "0";
-            CommonFunctions.setObjectParameter(session, graphTag, systemGraphObject, "version", "0");
+            buildGraphQuery.setObjectParameter(session, graphTag, systemGraphObject, "version", "0");
         } else {
             version = version.substring(1, version.length() - 1);
         }
         return (Integer.parseInt(version) + 1);
     }
 
-    public static void setSystemProperties(Session session, String graphTag, SoftwareSystem softwareSystem,
-                                           String cmdb) {
+    public void setSystemProperties(Session session, String graphTag, SoftwareSystem softwareSystem, String cmdb) {
         if (softwareSystem.getProperties() != null) {
             for (Map.Entry<String, Object> entry : softwareSystem.getProperties().entrySet()) {
                 String key = entry.getKey();
                 key = key.replaceAll("[^a-zA-Z0-9]", "_");
-                String setProperties = "MATCH (n:SoftwareSystem {graphTag: $graphTag1, cmdb: $cmdb1}) SET n." + key
-                        + " = $value";
-                Value parameters = Values.parameters("graphTag1", graphTag, "cmdb1", cmdb,
-                        "value", entry.getValue());
-                session.run(setProperties, parameters);
+                buildGraphQuery.updateSystemProperty(session, graphTag, cmdb, key, entry.getValue());
             }
         }
     }
 
-    public static String setParametersForSystem(Session session, String graphTag, SoftwareSystem softwareSystem,
-                                                String cmdb, GraphObject systemGraphObject) {
-
+    public String setParametersForSystem(Session session, String graphTag, SoftwareSystem softwareSystem,
+                                         String cmdb, GraphObject systemGraphObject) {
         String version = null;
-
         if (graphTag.equals("Global")) {
             version = getSystemVersion(session, graphTag, systemGraphObject).toString();
         }
-
-        String setParameters = "MATCH (n:SoftwareSystem {graphTag: $graphTag1, cmdb: $cmdb1}) "
-                + "SET n.name = $name1, n.description = $description1, n.tags = $tags1, n.url = $url1, "
-                + "n.group = $group1, n.version = $version1";
-        Value parameters = Values.parameters("graphTag1", graphTag, "cmdb1", cmdb, "name1",
-                softwareSystem.getName(), "description1", softwareSystem.getDescription(), "tags1",
-                softwareSystem.getTags(), "url1", softwareSystem.getUrl(), "group1", softwareSystem.getGroup(),
-                "version1", version);
-        session.run(setParameters, parameters);
-
+        buildGraphQuery.setSystemParameters(session, graphTag, cmdb, softwareSystem, version);
         setSystemProperties(session, graphTag, softwareSystem, cmdb);
         return version;
     }
 
-    public static String updateSystem(Session session, String graphTag, SoftwareSystem softwareSystem, String cmdb,
-                                      HashMap<String, GraphObject> objects) {
 
+    public String updateSystem(Session session, String graphTag, SoftwareSystem softwareSystem, String cmdb,
+                               HashMap<String, GraphObject> objects) {
         GraphObject systemGraphObject = new GraphObject("SoftwareSystem", "cmdb", cmdb);
-
-        boolean exists = CommonFunctions.checkIfObjectExists(session, graphTag, systemGraphObject);
-
+        boolean exists = buildGraphQuery.checkIfObjectExists(session, graphTag, systemGraphObject);
         if (!exists) {
-            CommonFunctions.createObject(session, graphTag, systemGraphObject);
+            buildGraphQuery.createObject(session, graphTag, systemGraphObject);
         }
-
         objects.put(softwareSystem.getId(), systemGraphObject);
-
         return setParametersForSystem(session, graphTag, softwareSystem, cmdb, systemGraphObject);
     }
 
-    public  void updateSystemRelationships(Session session, String graphTag, Model model, String cmdb,
-                                           String curVersion, HashMap<String, GraphObject> objects) {
-
+    public void updateSystemRelationships(Session session, String graphTag, Model model, String cmdb,
+                                          String curVersion, HashMap<String, GraphObject> objects) {
         for (SoftwareSystem softwareSystem : model.getSoftwareSystems()) {
-
             if (softwareSystem.getRelationships() != null) {
                 for (Relationship relationship : softwareSystem.getRelationships()) {
                     if (relationship.getLinkedRelationshipId() == null) {
-                        RelationshipUpdateFunctions.updateDefaultRelationship(session, graphTag, relationship, model,
+                        createExternalObjects.updateDefaultRelationship(session, graphTag, relationship, model,
                                 curVersion, cmdb, "C1", objects);
                     }
                 }
             }
-
-          updateContainerRelationships(session, graphTag, model, softwareSystem, cmdb,
+            updateContainerRelationships(session, graphTag, model, softwareSystem, cmdb,
                     curVersion, objects);
         }
     }
