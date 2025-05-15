@@ -32,22 +32,22 @@ public class ContainerUpdateFunctions {
             for (Map.Entry<String, Object> entry : container.getProperties().entrySet()) {
                 String key = entry.getKey();
                 key = key.replaceAll("[^a-zA-Z0-9]", "_");
-                buildGraphQuery.executeSetContainerProperties(session, graphTag, container.getName(), key, entry.getValue());
+                buildGraphQuery.executeSetContainerProperties(session, graphTag, container.getName(), key,
+                        entry.getValue());
             }
         }
     }
 
     public void setParametersForContainer(Session session, String graphTag, Container container,
-                                          GraphObject containerGraphObject, String curVersion) {
+            GraphObject containerGraphObject, String curVersion) {
         if (graphTag.equals("Global")
                 && buildGraphQuery.getObjectParameter(session, graphTag, containerGraphObject, "startVersion")
-                .toString().equals("NULL")) {
+                        .toString().equals("NULL")) {
             buildGraphQuery.setObjectParameter(session, graphTag, containerGraphObject, "startVersion", curVersion);
         }
         buildGraphQuery.setContainerParameters(session, graphTag, container, containerGraphObject, curVersion);
         setContainerProperties(session, graphTag, container);
     }
-
 
     public Integer getContainerNumberOfConnects(Session session, String graphTag, String containerExternalName) {
         Result result = buildGraphQuery.getContainerRelationships(session, graphTag, containerExternalName);
@@ -58,9 +58,8 @@ public class ContainerUpdateFunctions {
         return Integer.parseInt(numberOfRelationships);
     }
 
-
     public Boolean needContainerReplace(Session session, String graphTag, Container container,
-                                        GraphObject externalContainerGraphObject) {
+            GraphObject externalContainerGraphObject) {
         Integer numberOfRelationshipsFirst = getContainerNumberOfConnects(session, graphTag,
                 externalContainerGraphObject.getValue());
         String source = buildGraphQuery.getObjectParameter(session, graphTag, externalContainerGraphObject, "source")
@@ -79,7 +78,7 @@ public class ContainerUpdateFunctions {
     }
 
     public Boolean changeContainer(Session session, String graphTag, Container container,
-                                   GraphObject externalContainerGraphObject, String curVersion, HashMap<String, GraphObject> objects) {
+            GraphObject externalContainerGraphObject, String curVersion, HashMap<String, GraphObject> objects) {
         String startVersion = buildGraphQuery
                 .getObjectParameter(session, graphTag, externalContainerGraphObject, "startVersion").toString();
         if (startVersion.equals("NULL")) {
@@ -96,7 +95,7 @@ public class ContainerUpdateFunctions {
     }
 
     public void updateContainer(Session session, String graphTag, Container container, String curVersion,
-                                HashMap<String, GraphObject> objects) {
+            HashMap<String, GraphObject> objects) {
         boolean externalExists = false;
         GraphObject externalContainerGraphObject = null;
         if (container.getProperties() != null && container.getProperties().containsKey("external_name")
@@ -124,7 +123,7 @@ public class ContainerUpdateFunctions {
     }
 
     public void updateContainers(Session session, String graphTag, Model model, SoftwareSystem softwareSystem,
-                                 String cmdb, String curVersion, HashMap<String, GraphObject> objects) {
+            String cmdb, String curVersion, HashMap<String, GraphObject> objects) {
         if (softwareSystem.getContainers() != null) {
             for (Container container : softwareSystem.getContainers()) {
                 container.setName(container.getName() + "." + cmdb.toString());
@@ -156,9 +155,8 @@ public class ContainerUpdateFunctions {
         }
     }
 
-
     public void updateContainerRelationships(Session session, String graphTag, Model model,
-                                             SoftwareSystem softwareSystem, String cmdb, String curVersion, HashMap<String, GraphObject> objects) {
+            SoftwareSystem softwareSystem, String cmdb, String curVersion, HashMap<String, GraphObject> objects) {
         if (softwareSystem.getContainers() != null) {
             for (Container container : softwareSystem.getContainers()) {
                 if (container.getRelationships() != null) {
@@ -218,7 +216,6 @@ public class ContainerUpdateFunctions {
         }
     }
 
-
     public void createGraph(Session session, String graphTag, Workspace workspace) throws Exception {
         Model model = workspace.getModel();
         String cmdb = model.getProperties().get("workspace_cmdb").toString();
@@ -257,11 +254,12 @@ public class ContainerUpdateFunctions {
     }
 
     public void updateDeploymentNodes(Session session, String graphTag, Model model, String softwareSystemId,
-                                      String cmdb, String curVersion, HashMap<String, GraphObject> objects) {
+            String cmdb, String curVersion, HashMap<String, GraphObject> objects) {
         if (model.getDeploymentNodes() != null) {
             for (DeploymentNode deploymentNode : model.getDeploymentNodes()) {
                 deploymentNode.setName(deploymentNode.getName() + "." + cmdb.toString());
-                deploymentNodeUpdateFunctions.updateDeploymentNode(session, graphTag, deploymentNode, curVersion, cmdb, model,
+                deploymentNodeUpdateFunctions.updateDeploymentNode(session, graphTag, deploymentNode, curVersion, cmdb,
+                        model,
                         objects);
                 createExternalObjects.updateChildRelationship(session, graphTag, model,
                         curVersion, softwareSystemId, deploymentNode.getId(), cmdb, objects);
@@ -291,7 +289,7 @@ public class ContainerUpdateFunctions {
     }
 
     public String setParametersForSystem(Session session, String graphTag, SoftwareSystem softwareSystem,
-                                         String cmdb, GraphObject systemGraphObject) {
+            String cmdb, GraphObject systemGraphObject) {
         String version = null;
         if (graphTag.equals("Global")) {
             version = getSystemVersion(session, graphTag, systemGraphObject).toString();
@@ -301,9 +299,8 @@ public class ContainerUpdateFunctions {
         return version;
     }
 
-
     public String updateSystem(Session session, String graphTag, SoftwareSystem softwareSystem, String cmdb,
-                               HashMap<String, GraphObject> objects) {
+            HashMap<String, GraphObject> objects) {
         GraphObject systemGraphObject = new GraphObject("SoftwareSystem", "cmdb", cmdb);
         boolean exists = buildGraphQuery.checkIfObjectExists(session, graphTag, systemGraphObject);
         if (!exists) {
@@ -314,7 +311,7 @@ public class ContainerUpdateFunctions {
     }
 
     public void updateSystemRelationships(Session session, String graphTag, Model model, String cmdb,
-                                          String curVersion, HashMap<String, GraphObject> objects) {
+            String curVersion, HashMap<String, GraphObject> objects) {
         for (SoftwareSystem softwareSystem : model.getSoftwareSystems()) {
             if (softwareSystem.getRelationships() != null) {
                 for (Relationship relationship : softwareSystem.getRelationships()) {

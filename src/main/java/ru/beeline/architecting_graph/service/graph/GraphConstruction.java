@@ -71,14 +71,15 @@ public class GraphConstruction {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         try {
-            workspace = getWorkspace(workspaceJson, objectMapper);
+            // workspace = getWorkspace(workspaceJson, objectMapper);
+            workspace = getWorkspaceFileForTest(objectMapper);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Полученный workspace не валиден");
         }
         try {
             containerUpdateFunctions.createGraph(session, GraphTag, workspace);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Граф не построен");
+            return ResponseEntity.badRequest().body("Граф не построен\n" + e.getMessage());
         }
         driver.close();
         return ResponseEntity.status(HttpStatus.CREATED).body("Граф построен");
