@@ -71,8 +71,8 @@ public class GraphConstruction {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         try {
-            // workspace = getWorkspace(workspaceJson, objectMapper);
-            workspace = getWorkspaceFileForTest(objectMapper);
+            workspace = getWorkspace(workspaceJson, objectMapper);
+            // workspace = getWorkspaceFileForTest(objectMapper);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Полученный workspace не валиден");
         }
