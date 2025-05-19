@@ -227,7 +227,8 @@ public class ContainerUpdateFunctions {
             Integer prevVersion = Integer.parseInt(curVersion) - 1;
             setEndVersion(session, graphTag, cmdb, prevVersion.toString());
         } else {
-            buildGraphQuery.deleteLocalGraph(session);
+            graphTag = "Local " + cmdb;
+            buildGraphQuery.deleteGraph(session, graphTag);
             updateSystem(session, graphTag, softwareSystem, cmdb, objects);
         }
         updateContainers(session, graphTag, model, softwareSystem, cmdb, curVersion, objects);
