@@ -3,9 +3,16 @@ package ru.beeline.architecting_graph.service.createDiagrams.ViewObjects;
 import java.util.List;
 import java.util.Map;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import ru.beeline.architecting_graph.model.AnimationStep;
 import ru.beeline.architecting_graph.model.Dimensions;
 
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class ComponentView {
 
     private String key;
@@ -21,110 +28,6 @@ public class ComponentView {
     private List<RelationshipView> relationships;
     private List<AnimationStep> animations;
     private Boolean externalContainerBoundariesVisible;
-
-    public String getKey() {
-        return key;
-    }
-
-    public void setKey(String key) {
-        this.key = key;
-    }
-
-    public Integer getOrder() {
-        return order;
-    }
-
-    public void setOrder(Integer order) {
-        this.order = order;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public Map<String, Object> getProperties() {
-        return properties;
-    }
-
-    public void setProperties(Map<String, Object> properties) {
-        this.properties = properties;
-    }
-
-    public String getContainerId() {
-        return containerId;
-    }
-
-    public void setContainerId(String containerId) {
-        this.containerId = containerId;
-    }
-
-    public PaperSize getPaperSize() {
-        return paperSize;
-    }
-
-    public void setPaperSize(PaperSize paperSize) {
-        this.paperSize = paperSize;
-    }
-
-    public Dimensions getDimensions() {
-        return dimensions;
-    }
-
-    public void setDimensions(Dimensions dimensions) {
-        this.dimensions = dimensions;
-    }
-
-    public AutomaticLayout getAutomaticLayout() {
-        return automaticLayout;
-    }
-
-    public void setAutomaticLayout(AutomaticLayout automaticLayout) {
-        this.automaticLayout = automaticLayout;
-    }
-
-    public List<ElementView> getElements() {
-        return elements;
-    }
-
-    public void setElements(List<ElementView> elements) {
-        this.elements = elements;
-    }
-
-    public List<RelationshipView> getRelationships() {
-        return relationships;
-    }
-
-    public void setRelationships(List<RelationshipView> relationships) {
-        this.relationships = relationships;
-    }
-
-    public List<AnimationStep> getAnimations() {
-        return animations;
-    }
-
-    public void setAnimations(List<AnimationStep> animations) {
-        this.animations = animations;
-    }
-
-    public Boolean getExternalContainerBoundariesVisible() {
-        return externalContainerBoundariesVisible;
-    }
-
-    public void setExternalContainerBoundariesVisible(Boolean externalContainerBoundariesVisible) {
-        this.externalContainerBoundariesVisible = externalContainerBoundariesVisible;
-    }
 
     public enum PaperSize {
         A6_Portrait, A6_Landscape,

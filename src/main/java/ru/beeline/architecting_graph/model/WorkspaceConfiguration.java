@@ -3,7 +3,6 @@ package ru.beeline.architecting_graph.model;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import ru.beeline.architecting_graph.model.User;
 
 import java.util.List;
 

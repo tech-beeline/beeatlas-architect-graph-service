@@ -15,6 +15,7 @@ import ru.beeline.architecting_graph.repository.neo4j.BuildGraphQuery;
 import ru.beeline.architecting_graph.repository.neo4j.CreateDiagramsQuery;
 import ru.beeline.architecting_graph.service.graph.FunctionsForWorkingWithJson;
 import ru.beeline.architecting_graph.service.graph.GraphConstruction;
+import ru.beeline.architecting_graph.model.Workspace;;
 
 @Service
 public class CreateDiagrams {
@@ -23,13 +24,13 @@ public class CreateDiagrams {
     CreateDiagramsQuery createDiagramsQuery;
 
     @Autowired
-    GetObjects getObjects;
+    GetView getView;
 
     @Autowired
     BuildGraphQuery buildGraphQuery;
 
     public Boolean checkifContainerExists(Session session, String softwareSystemMnemonic,
-                                          String containerMnemonic) {
+            String containerMnemonic) {
         Result result = createDiagramsQuery.checkIfContainerExists(session, softwareSystemMnemonic, containerMnemonic);
         return result.hasNext();
     }
@@ -39,8 +40,8 @@ public class CreateDiagrams {
         return result.hasNext();
     }
 
-    public  ResponseEntity<String> createDiagramm(RestConfig autorization, String softwareSystemMnemonic,
-                                                        String containerMnemonic, String environment) {
+    public ResponseEntity<String> createDiagramm(RestConfig autorization, String softwareSystemMnemonic,
+            String containerMnemonic, String environment) {
 
         Driver driver = GraphDatabase.driver(autorization.getUri(),
                 AuthTokens.basic(autorization.getUser(), autorization.getPassword()));
@@ -57,23 +58,36 @@ public class CreateDiagrams {
                 softwareSystemMnemonic);
         boolean exists = buildGraphQuery.checkIfObjectExists(session, "Global", systemGraphObject);
         if (exists) {
-            if (containerMnemonic != null
-                    && !checkifContainerExists(session, softwareSystemMnemonic, containerMnemonic)) {
-                driver.close();
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Контейнер не найден");
-            }
-            if (environment != null
-                    && !checkIfEnvironmentExists(session, environment)) {
-                driver.close();
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Окружение не найдено");
-            }
+
+            Workspace workspace = null;
+
             try {
-                String json = objectMapper.writerWithDefaultPrettyPrinter()
-                        .writeValueAsString(
-                                getObjects.GetWorkspace(softwareSystemMnemonic, containerMnemonic, environment,
-                                        autorization.getUri(), autorization.getUser(), autorization.getPassword()));
+                if (containerMnemonic == null && environment == null) {
+
+                    workspace = getView.GetContextView(session, softwareSystemMnemonic, autorization.getUri(),
+                            autorization.getUser(), autorization.getPassword());
+                } else if (containerMnemonic != null) {
+                    if (!checkifContainerExists(session, softwareSystemMnemonic, containerMnemonic)) {
+                        driver.close();
+                        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Контейнер не найден");
+                    }
+
+                    workspace = getView.GetComponentView(session, softwareSystemMnemonic, containerMnemonic,
+                            autorization.getUri(), autorization.getUser(), autorization.getPassword());
+                } else if (environment != null) {
+                    if (!checkIfEnvironmentExists(session, environment)) {
+                        driver.close();
+                        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Окружение не найдено");
+                    }
+
+                    workspace = getView.GetDeploymentView(session, softwareSystemMnemonic, environment,
+                            autorization.getUri(), autorization.getUser(), autorization.getPassword());
+                }
+
+                String json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(workspace);
                 json = FunctionsForWorkingWithJson.changeJson(json, autorization);
                 return ResponseEntity.status(200).contentType(MediaType.APPLICATION_JSON).body(json);
+
             } catch (Exception e) {
                 driver.close();
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)

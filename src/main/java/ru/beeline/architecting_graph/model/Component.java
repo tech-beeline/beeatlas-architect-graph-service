@@ -6,9 +6,6 @@ import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import ru.beeline.architecting_graph.model.Relationship;
-import ru.beeline.architecting_graph.model.Documentation;
-import ru.beeline.architecting_graph.model.Perspective;
 
 @Data
 @AllArgsConstructor

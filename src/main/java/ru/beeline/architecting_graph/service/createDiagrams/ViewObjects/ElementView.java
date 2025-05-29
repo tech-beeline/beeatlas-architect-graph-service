@@ -1,32 +1,23 @@
 package ru.beeline.architecting_graph.service.createDiagrams.ViewObjects;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class ElementView {
 
     private String id;
     private Integer x;
     private Integer y;
 
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public Integer getX() {
-        return x;
-    }
-
-    public void setX(Integer x) {
-        this.x = x;
-    }
-
-    public Integer getY() {
-        return y;
-    }
-
-    public void setY(Integer y) {
-        this.y = y;
+    public ElementView createWithId(String id) {
+        ElementView elementView = new ElementView();
+        elementView.setId(id);
+        elementView.setX(0);
+        elementView.setY(0);
+        return elementView;
     }
 }

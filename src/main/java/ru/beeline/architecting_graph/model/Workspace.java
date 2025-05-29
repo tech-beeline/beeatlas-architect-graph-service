@@ -6,9 +6,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import ru.beeline.architecting_graph.service.createDiagrams.ViewObjects.Views;
-import ru.beeline.architecting_graph.model.Model;
-import ru.beeline.architecting_graph.model.Documentation;
-import ru.beeline.architecting_graph.model.WorkspaceConfiguration;
 
 @Data
 @AllArgsConstructor
