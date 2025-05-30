@@ -35,7 +35,7 @@ public class GraphController {
         this.autorization = autorization;
     }
 
-    @PostMapping("/graph/{docId}")
+    @PostMapping("/graph/local/{docId}")
     public ResponseEntity<String> LocalGraph(@PathVariable("docId") Long docId) {
         return graphConstruction.graphConstruct(docId, autorization, "Local");
     }
