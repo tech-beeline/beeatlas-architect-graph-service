@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
 import ru.beeline.architecting_graph.config.RestConfig;
 import ru.beeline.architecting_graph.service.compareVersions.CompareVersions;
 import ru.beeline.architecting_graph.service.createDiagrams.CreateDiagrams;
@@ -34,7 +35,6 @@ public class GraphController {
         this.autorization = autorization;
     }
 
-    @PostMapping("/graph/local/{docId}")
     public ResponseEntity<String> LocalGraph(@PathVariable("docId") Long docId) {
         return graphConstruction.graphConstruct(docId, autorization, "Local");
     }

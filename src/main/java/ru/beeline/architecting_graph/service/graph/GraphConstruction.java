@@ -9,7 +9,6 @@ import org.neo4j.driver.Session;
 import org.neo4j.driver.exceptions.ServiceUnavailableException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
@@ -33,17 +32,17 @@ public class GraphConstruction {
     }
 
     public static ResponseEntity<String> getWorkspaceJsonExceptions(Exception e) {
-        if (e.getClass() == HttpClientErrorException.class) {
+        if (e instanceof HttpClientErrorException) {
             HttpClientErrorException httpException = (HttpClientErrorException) e;
-            HttpStatusCode statusCode = httpException.getStatusCode();
-            if (statusCode.value() == 404) {
+            HttpStatus statusCode = httpException.getStatusCode();
+            if (statusCode == HttpStatus.NOT_FOUND) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Документ не найден");
-            } else if (statusCode.value() == 400) {
+            } else if (statusCode == HttpStatus.BAD_REQUEST) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Полученный workspace не валиден");
             } else {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Доступ запрещен ");
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Доступ запрещен");
             }
-        } else if (e.getClass() == HttpServerErrorException.class) {
+        } else if (e instanceof HttpServerErrorException) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body("Ошибка при загрузке документа");
         } else {
             return ResponseEntity.status(520).body("Неизвестная ошибка" + '\n' + e.getMessage());

@@ -5,8 +5,8 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.4.2</version>
-		<relativePath/> <!-- lookup parent from repository -->
+		<version>2.7.3</version>
+		<relativePath/>
 	</parent>
 	<groupId>ru.beeline</groupId>
 	<artifactId>architecting_graph</artifactId>
@@ -34,7 +34,16 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
-
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-ui</artifactId>
+			<version>1.6.14</version>
+		</dependency>
+		<dependency>
+			<groupId>io.swagger</groupId>
+			<artifactId>swagger-annotations</artifactId>
+			<version>1.6.9</version>
+		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
@@ -43,7 +52,7 @@
 		<dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.18.2</version> <!-- Укажите актуальную версию -->
+            <version>2.12.3</version>
         </dependency>
 		<dependency>
 			<groupId>org.projectlombok</groupId>
@@ -53,7 +62,7 @@
         <dependency>
             <groupId>org.neo4j.driver</groupId>
             <artifactId>neo4j-java-driver</artifactId>
-            <version>5.12.0</version> <!-- Убедитесь, что используется актуальная версия -->
+            <version>5.12.0</version>
         </dependency>
 	</dependencies>
 
