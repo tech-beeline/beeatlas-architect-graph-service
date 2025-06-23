@@ -1,10 +1,7 @@
 package ru.beeline.architecting_graph.service.graph;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Driver;
-import org.neo4j.driver.GraphDatabase;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.exceptions.ServiceUnavailableException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,8 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.server.ResponseStatusException;
 import ru.beeline.architecting_graph.client.DocumentClient;
-import ru.beeline.architecting_graph.config.RestConfig;
 import ru.beeline.architecting_graph.model.Workspace;
 
 import java.io.File;
@@ -23,79 +20,63 @@ import java.io.File;
 public class GraphConstruction {
 
     @Autowired
+    private Driver driver;
+
+    @Autowired
     DocumentClient documentClient;
 
     @Autowired
     ContainerUpdateFunctions containerUpdateFunctions;
 
-    public static Session connectToDatabase(Driver driver, RestConfig autorization) throws ServiceUnavailableException {
-        Session session = driver.session();
-        String query = "MATCH (n) RETURN n";
-        session.run(query);
-        return session;
-    }
+    @Autowired
+    ObjectMapper objectMapper;
 
-    public static ResponseEntity<String> getWorkspaceJsonExceptions(Exception e) {
-        if (e instanceof HttpClientErrorException) {
-            HttpClientErrorException httpException = (HttpClientErrorException) e;
-            HttpStatus statusCode = httpException.getStatusCode();
-            if (statusCode == HttpStatus.NOT_FOUND) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Документ не найден");
-            } else if (statusCode == HttpStatus.BAD_REQUEST) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Полученный workspace не валиден");
-            } else {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Доступ запрещен");
+    public ResponseEntity<String> graphConstruct(Long docId, String graphTag) {
+        try (Session session = driver.session()) {
+            session.run("RETURN 1");
+            String workspaceJson = getWorkspaceJson(docId);
+            if (workspaceJson == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Документ не найден");
             }
-        } else if (e instanceof HttpServerErrorException) {
-            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body("Ошибка при загрузке документа");
-        } else {
-            return ResponseEntity.status(520).body("Неизвестная ошибка" + '\n' + e.getMessage());
-        }
-    }
+            Workspace workspace;
+            try {
+                workspace = objectMapper.readValue(workspaceJson, Workspace.class);
+            } catch (Exception e) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Полученный workspace не валиден");
+            }
+            try {
+                containerUpdateFunctions.createGraph(session, graphTag, workspace);
+            } catch (Exception e) {
+                return ResponseEntity.badRequest().body("Граф не построен\n" + e.getMessage());
+            }
+            return ResponseEntity.status(HttpStatus.CREATED).body("Граф построен");
 
-    public ResponseEntity<String> graphConstruct(Long docId, RestConfig autorization, String GraphTag) {
-        Driver driver = GraphDatabase.driver(autorization.getUri(),
-                AuthTokens.basic(autorization.getUser(), autorization.getPassword()));
-
-        Session session;
-        try {
-            session = connectToDatabase(driver, autorization);
         } catch (ServiceUnavailableException e) {
             return ResponseEntity.badRequest().body("Нет подключения к БД");
         }
-        String workspaceJson = null;
-
-        try {
-            workspaceJson = documentClient.getDocument(docId);
-        } catch (Exception e) {
-            getWorkspaceJsonExceptions(e);
-        }
-        Workspace workspace;
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        try {
-            workspace = getWorkspace(workspaceJson, objectMapper);
-            // workspace = getWorkspaceFileForTest(objectMapper);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Полученный workspace не валиден");
-        }
-        try {
-            containerUpdateFunctions.createGraph(session, GraphTag, workspace);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Граф не построен\n" + e.getMessage());
-        }
-        driver.close();
-        return ResponseEntity.status(HttpStatus.CREATED).body("Граф построен");
     }
 
-    public static Workspace getWorkspace(String json, ObjectMapper objectMapper) throws Exception {
-        Workspace workspace;
+    private String getWorkspaceJson(Long docId) {
         try {
-            workspace = objectMapper.readValue(json, Workspace.class);
+            return documentClient.getDocument(docId);
+        } catch (HttpClientErrorException e) {
+            return handleClientError(e);
+        } catch (HttpServerErrorException e) {
+            return null;
         } catch (Exception e) {
-            throw e;
+            return null;
         }
-        return workspace;
+    }
+
+    private String handleClientError(HttpClientErrorException e) {
+        HttpStatus status = e.getStatusCode();
+        if (status == HttpStatus.NOT_FOUND) {
+            return null;
+        } else if (status == HttpStatus.BAD_REQUEST) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Полученный workspace не валиден");
+        } else {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Доступ запрещен");
+        }
     }
 
     public static Workspace getWorkspaceFileForTest(ObjectMapper objectMapper) throws Exception {
@@ -104,5 +85,4 @@ public class GraphConstruction {
         Workspace workspace = objectMapper.readValue(file, Workspace.class);
         return workspace;
     }
-
 }
