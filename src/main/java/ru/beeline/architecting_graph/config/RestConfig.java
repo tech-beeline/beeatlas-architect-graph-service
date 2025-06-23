@@ -15,12 +15,6 @@ public class RestConfig {
     @Value("${spring.neo4j.authentication.password}")
     private String password;
 
-    @Value("${spring.services.documents.url}")
-    private String docUrl;
-
-    @Value("${spring.services.graphviz.url}")
-    private String graphvizUrl;
-
     public String getUri() {
         return uri.strip();
     }
@@ -33,11 +27,4 @@ public class RestConfig {
         return password;
     }
 
-    public String getDocUrl() {
-        return docUrl.strip();
-    }
-
-    public String getGraphvizUrl() {
-        return graphvizUrl.strip();
-    }
 }

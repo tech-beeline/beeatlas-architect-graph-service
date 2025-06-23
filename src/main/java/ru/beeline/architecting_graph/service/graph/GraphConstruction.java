@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
+import ru.beeline.architecting_graph.client.DocumentClient;
 import ru.beeline.architecting_graph.config.RestConfig;
 import ru.beeline.architecting_graph.model.Workspace;
 
@@ -20,6 +21,9 @@ import java.io.File;
 
 @Service
 public class GraphConstruction {
+
+    @Autowired
+    DocumentClient documentClient;
 
     @Autowired
     ContainerUpdateFunctions containerUpdateFunctions;
@@ -62,7 +66,7 @@ public class GraphConstruction {
         String workspaceJson = null;
 
         try {
-            workspaceJson = FunctionsForWorkingWithJson.getJson(docId, autorization);
+            workspaceJson = documentClient.getDocument(docId);
         } catch (Exception e) {
             getWorkspaceJsonExceptions(e);
         }
