@@ -9,11 +9,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import ru.beeline.architecting_graph.client.StructurizrClient;
 import ru.beeline.architecting_graph.config.RestConfig;
 import ru.beeline.architecting_graph.model.GraphObject;
 import ru.beeline.architecting_graph.repository.neo4j.BuildGraphQuery;
 import ru.beeline.architecting_graph.repository.neo4j.CreateDiagramsQuery;
-import ru.beeline.architecting_graph.service.graph.FunctionsForWorkingWithJson;
 import ru.beeline.architecting_graph.service.graph.GraphConstruction;
 import ru.beeline.architecting_graph.model.Workspace;;
 
@@ -28,6 +28,9 @@ public class CreateDiagrams {
 
     @Autowired
     BuildGraphQuery buildGraphQuery;
+
+    @Autowired
+    StructurizrClient structurizrClient;
 
     public Boolean checkifContainerExists(Session session, String softwareSystemMnemonic,
             String containerMnemonic) {
@@ -58,12 +61,9 @@ public class CreateDiagrams {
                 softwareSystemMnemonic);
         boolean exists = buildGraphQuery.checkIfObjectExists(session, "Global", systemGraphObject);
         if (exists) {
-
             Workspace workspace = null;
-
             try {
                 if (containerMnemonic == null && environment == null) {
-
                     workspace = getView.GetContextView(session, softwareSystemMnemonic, autorization.getUri(),
                             autorization.getUser(), autorization.getPassword());
                 } else if (containerMnemonic != null) {
@@ -71,7 +71,6 @@ public class CreateDiagrams {
                         driver.close();
                         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Контейнер не найден");
                     }
-
                     workspace = getView.GetComponentView(session, softwareSystemMnemonic, containerMnemonic,
                             autorization.getUri(), autorization.getUser(), autorization.getPassword());
                 } else if (environment != null) {
@@ -79,15 +78,12 @@ public class CreateDiagrams {
                         driver.close();
                         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Окружение не найдено");
                     }
-
                     workspace = getView.GetDeploymentView(session, softwareSystemMnemonic, environment,
                             autorization.getUri(), autorization.getUser(), autorization.getPassword());
                 }
-
                 String json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(workspace);
-                json = FunctionsForWorkingWithJson.changeJson(json, autorization);
+                json = structurizrClient.changeJson(json);
                 return ResponseEntity.status(200).contentType(MediaType.APPLICATION_JSON).body(json);
-
             } catch (Exception e) {
                 driver.close();
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)

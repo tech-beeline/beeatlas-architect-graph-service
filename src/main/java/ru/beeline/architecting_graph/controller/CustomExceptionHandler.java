@@ -7,6 +7,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import ru.beeline.architecting_graph.exception.DocumentServerException;
 import ru.beeline.architecting_graph.exception.NotFoundException;
 import ru.beeline.architecting_graph.exception.ValidationException;
 
@@ -30,6 +31,15 @@ public class CustomExceptionHandler {
 
     @ExceptionHandler(ServiceUnavailableException.class)
     public ResponseEntity<Object> handleException(ServiceUnavailableException e) {
+        log.error(e.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.SERVICE_UNAVAILABLE)
+                .header("content-type", MediaType.APPLICATION_JSON_VALUE)
+                .body(e.getMessage());
+    }
+
+    @ExceptionHandler(DocumentServerException.class)
+    public ResponseEntity<Object> handleException(DocumentServerException e) {
         log.error(e.getMessage());
         return ResponseEntity
                 .status(HttpStatus.SERVICE_UNAVAILABLE)
