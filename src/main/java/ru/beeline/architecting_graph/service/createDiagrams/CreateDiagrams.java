@@ -2,7 +2,9 @@ package ru.beeline.architecting_graph.service.createDiagrams;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.neo4j.driver.*;
+import org.neo4j.driver.Driver;
+import org.neo4j.driver.Result;
+import org.neo4j.driver.Session;
 import org.neo4j.driver.exceptions.ServiceUnavailableException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -12,10 +14,11 @@ import org.springframework.stereotype.Service;
 import ru.beeline.architecting_graph.client.StructurizrClient;
 import ru.beeline.architecting_graph.config.RestConfig;
 import ru.beeline.architecting_graph.model.GraphObject;
+import ru.beeline.architecting_graph.model.Workspace;
 import ru.beeline.architecting_graph.repository.neo4j.BuildGraphQuery;
 import ru.beeline.architecting_graph.repository.neo4j.CreateDiagramsQuery;
-import ru.beeline.architecting_graph.service.graph.GraphConstruction;
-import ru.beeline.architecting_graph.model.Workspace;;
+
+;
 
 @Service
 public class CreateDiagrams {
@@ -32,8 +35,11 @@ public class CreateDiagrams {
     @Autowired
     StructurizrClient structurizrClient;
 
+    @Autowired
+    private Driver driver;
+
     public Boolean checkifContainerExists(Session session, String softwareSystemMnemonic,
-            String containerMnemonic) {
+                                          String containerMnemonic) {
         Result result = createDiagramsQuery.checkIfContainerExists(session, softwareSystemMnemonic, containerMnemonic);
         return result.hasNext();
     }
@@ -44,38 +50,34 @@ public class CreateDiagrams {
     }
 
     public ResponseEntity<String> createDiagramm(RestConfig autorization, String softwareSystemMnemonic,
-            String containerMnemonic, String environment) {
-
-        Driver driver = GraphDatabase.driver(autorization.getUri(),
-                AuthTokens.basic(autorization.getUser(), autorization.getPassword()));
-        Session session;
-        try {
-            session = GraphConstruction.connectToDatabase(driver, autorization);
-        } catch (ServiceUnavailableException e) {
-            return ResponseEntity.badRequest().body("Нет подключения к БД");
-        }
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-
-        GraphObject systemGraphObject = new GraphObject("SoftwareSystem", "structurizr_dsl_identifier",
-                softwareSystemMnemonic);
-        boolean exists = buildGraphQuery.checkIfObjectExists(session, "Global", systemGraphObject);
-        if (exists) {
-            Workspace workspace = null;
+                                                 String containerMnemonic, String environment) {
+        try (Session session = driver.session()) {
+            session.run("RETURN 1");
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+            GraphObject systemGraphObject = new GraphObject(
+                    "SoftwareSystem",
+                    "structurizr_dsl_identifier",
+                    softwareSystemMnemonic
+            );
+            boolean exists = buildGraphQuery.checkIfObjectExists(session, "Global", systemGraphObject);
+            if (!exists) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Система не найдена");
+            }
+            Workspace workspace;
             try {
                 if (containerMnemonic == null && environment == null) {
-                    workspace = getView.GetContextView(session, softwareSystemMnemonic, autorization.getUri(),
-                            autorization.getUser(), autorization.getPassword());
+                    workspace = getView.GetContextView(session, softwareSystemMnemonic,
+                            autorization.getUri(), autorization.getUser(), autorization.getPassword());
+
                 } else if (containerMnemonic != null) {
                     if (!checkifContainerExists(session, softwareSystemMnemonic, containerMnemonic)) {
-                        driver.close();
                         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Контейнер не найден");
                     }
                     workspace = getView.GetComponentView(session, softwareSystemMnemonic, containerMnemonic,
                             autorization.getUri(), autorization.getUser(), autorization.getPassword());
-                } else if (environment != null) {
+                } else {
                     if (!checkIfEnvironmentExists(session, environment)) {
-                        driver.close();
                         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Окружение не найдено");
                     }
                     workspace = getView.GetDeploymentView(session, softwareSystemMnemonic, environment,
@@ -83,14 +85,15 @@ public class CreateDiagrams {
                 }
                 String json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(workspace);
                 json = structurizrClient.changeJson(json);
-                return ResponseEntity.status(200).contentType(MediaType.APPLICATION_JSON).body(json);
+                return ResponseEntity.ok()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(json);
             } catch (Exception e) {
-                driver.close();
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body("Ошибка при сериализации" + '\n' + e.getMessage());
+                        .body("Ошибка при сериализации\n" + e.getMessage());
             }
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Система не найдена");
+        } catch (ServiceUnavailableException e) {
+            return ResponseEntity.badRequest().body("Нет подключения к БД");
         }
     }
 }
