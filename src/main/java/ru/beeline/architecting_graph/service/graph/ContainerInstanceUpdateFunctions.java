@@ -29,22 +29,15 @@ public class ContainerInstanceUpdateFunctions {
         }
     }
 
-    public void setParametersForContainerInstance(Session session, String graphTag,
-                                                  ContainerInstance containerInstance,
-                                                  GraphObject containerInstanceGraphObject,
-                                                  String curVersion) {
-
+    public void setParametersForContainerInstance(Session session, String graphTag, ContainerInstance containerInstance,
+                                                  GraphObject containerInstanceGraphObject, String curVersion) {
         if (graphTag.equals("Global")
                 && buildGraphQuery.getObjectParameter(session, graphTag, containerInstanceGraphObject, "startVersion")
                 .toString().equals("NULL")) {
             buildGraphQuery.setObjectParameter(session, graphTag, containerInstanceGraphObject, "startVersion", curVersion);
         }
-
-        buildGraphQuery.updateContainerInstance(session, graphTag,
-                containerInstanceGraphObject.getValue(),
-                containerInstance.getInstanceId(),
-                containerInstance.getTags());
-
+        buildGraphQuery.updateContainerInstance(session, graphTag, containerInstanceGraphObject.getValue(),
+                containerInstance.getInstanceId(), containerInstance.getTags());
         setContainerInstanceProperties(session, graphTag, containerInstance, containerInstanceGraphObject.getValue());
     }
 
@@ -61,9 +54,8 @@ public class ContainerInstanceUpdateFunctions {
         return null;
     }
 
-    public void updateContainerInstance(Session session, String graphTag, Model model,
-                                        DeploymentNode deploymentNode, ContainerInstance containerInstance, String curVersion,
-                                        HashMap<String, GraphObject> objects) {
+    public void updateContainerInstance(Session session, String graphTag, Model model, DeploymentNode deploymentNode,
+                                        ContainerInstance containerInstance, String curVersion, HashMap<String, GraphObject> objects) {
         String containerInstanceName = getContainerforContainerInstance(model, containerInstance.getContainerId());
         if (containerInstanceName == null) {
             return;
@@ -75,12 +67,10 @@ public class ContainerInstanceUpdateFunctions {
             buildGraphQuery.createObject(session, graphTag, containerInstanceGraphObject);
         }
         objects.put(containerInstance.getId(), containerInstanceGraphObject);
-        setParametersForContainerInstance(session, graphTag, containerInstance, containerInstanceGraphObject,
-                curVersion);
+        setParametersForContainerInstance(session, graphTag, containerInstance, containerInstanceGraphObject, curVersion);
     }
 
-    public void setContainerInstanceEndVersion(Session session, String graphTag, String deploymentNodeName,
-                                               String curVersion) {
+    public void setContainerInstanceEndVersion(Session session, String graphTag, String deploymentNodeName, String curVersion) {
         Result result = buildGraphQuery.findContainerInstanceNamesWithNullEndVersion(session, graphTag, deploymentNodeName);
         while (result.hasNext()) {
             String rawName = result.next().get("containerInstanceName").toString();
@@ -90,9 +80,8 @@ public class ContainerInstanceUpdateFunctions {
         }
     }
 
-    public void updateContainerInstanceRelationships(Session session, String graphTag,
-                                                     DeploymentNode deploymentNode, String curVersion, String cmdb, Model model,
-                                                     HashMap<String, GraphObject> objects) {
+    public void updateContainerInstanceRelationships(Session session, String graphTag, DeploymentNode deploymentNode, String curVersion,
+                                                     String cmdb, Model model, HashMap<String, GraphObject> objects) {
         if (deploymentNode.getContainerInstances() != null) {
             for (ContainerInstance containerInstance : deploymentNode.getContainerInstances()) {
                 if (containerInstance.getRelationships() != null) {

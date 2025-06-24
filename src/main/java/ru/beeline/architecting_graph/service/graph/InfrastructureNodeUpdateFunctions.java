@@ -41,8 +41,7 @@ public class InfrastructureNodeUpdateFunctions {
     }
 
 
-    public void updateInfrastructureNode(Session session, String graphTag,
-                                         InfrastructureNode infrastructureNode, String curVersion,
+    public void updateInfrastructureNode(Session session, String graphTag, InfrastructureNode infrastructureNode, String curVersion,
                                          HashMap<String, GraphObject> objects) {
         GraphObject infrastructureNodeGraphObject = new GraphObject("InfrastructureNode", "name",
                 infrastructureNode.getName());
@@ -55,8 +54,7 @@ public class InfrastructureNodeUpdateFunctions {
                 curVersion);
     }
 
-    public void setInfrastructureNodeEndVersion(Session session, String graphTag, String deploymentNodeName,
-                                                String curVersion) {
+    public void setInfrastructureNodeEndVersion(Session session, String graphTag, String deploymentNodeName, String curVersion) {
         Result result = buildGraphQuery.findInfrastructureNodesWithNullEndVersion(session, graphTag, deploymentNodeName);
         while (result.hasNext()) {
             String infrastructureNodeName = result.next().get("infrastructureNodeName").toString();
