@@ -17,7 +17,7 @@ import java.util.Set;
 
 @Slf4j
 @Service
-public class CompareVersions {
+public class CompareVersionsService {
 
     @Autowired
     private Driver driver;

@@ -17,7 +17,7 @@ import ru.beeline.architecting_graph.model.Workspace;
 import java.io.File;
 
 @Service
-public class GraphConstruction {
+public class GraphConstructionService {
 
     @Autowired
     private Driver driver;

@@ -21,7 +21,7 @@ public class GetElements {
     @Autowired
     private Driver driver;
 
-    private static Object convertValue(Value value) {
+    private Object convertValue(Value value) {
         switch (value.type().name()) {
             case "NODE":
                 Map<String, Object> nodeMap = new HashMap<>();

@@ -70,9 +70,7 @@ public class CreateExternalObjects {
 
     public void createExternalObject(Session session, String graphTag, Model model, String curVersion,
                                      String objectId, HashMap<String, GraphObject> objects) {
-
         for (SoftwareSystem softwareSystem : model.getSoftwareSystems()) {
-
             if (softwareSystem.getProperties() == null || !softwareSystem.getProperties().containsKey("cmdb")) {
                 continue;
             }

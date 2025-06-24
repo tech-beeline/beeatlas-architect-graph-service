@@ -1,4 +1,4 @@
-package ru.beeline.architecting_graph.service.createDiagrams.ViewObjects;
+package ru.beeline.architecting_graph.model.ViewObjects;
 
 import java.util.List;
 import java.util.Map;
@@ -13,21 +13,21 @@ import ru.beeline.architecting_graph.model.Dimensions;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ComponentView {
+public class DeploymentView {
 
     private String key;
     private Integer order;
     private String title;
     private String description;
     private Map<String, Object> properties;
-    private String containerId;
+    private String softwareSystemId;
+    private String environment;
     private PaperSize paperSize;
     private Dimensions dimensions;
     private AutomaticLayout automaticLayout;
     private List<ElementView> elements;
     private List<RelationshipView> relationships;
     private List<AnimationStep> animations;
-    private Boolean externalContainerBoundariesVisible;
 
     public enum PaperSize {
         A6_Portrait, A6_Landscape,
