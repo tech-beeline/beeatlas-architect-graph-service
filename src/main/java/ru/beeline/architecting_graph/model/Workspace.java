@@ -5,7 +5,7 @@ import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import ru.beeline.architecting_graph.service.createDiagrams.ViewObjects.Views;
+import ru.beeline.architecting_graph.model.ViewObjects.Views;
 
 @Data
 @AllArgsConstructor

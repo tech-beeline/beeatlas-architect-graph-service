@@ -6,23 +6,23 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.beeline.architecting_graph.config.RestConfig;
-import ru.beeline.architecting_graph.service.compareVersions.CompareVersions;
+import ru.beeline.architecting_graph.service.compareVersions.CompareVersionsService;
 import ru.beeline.architecting_graph.service.createDiagrams.CreateDiagrams;
 import ru.beeline.architecting_graph.service.getElements.GetElements;
-import ru.beeline.architecting_graph.service.graph.GraphConstruction;
+import ru.beeline.architecting_graph.service.graph.GraphConstructionService;
 
 @RestController
 @RequestMapping("/api/v1")
 public class GraphController {
 
     @Autowired
-    CompareVersions compareVersions;
+    CompareVersionsService compareVersionService;
 
     @Autowired
     CreateDiagrams createDiagrams;
 
     @Autowired
-    GraphConstruction graphConstruction;
+    GraphConstructionService graphConstructionService;
 
     @Autowired
     GetElements getElements;
@@ -36,13 +36,13 @@ public class GraphController {
     @PostMapping("/graph/local/{docId}")
     @Operation(summary = "Пересоздание локального графа, используя документ, в котором описывается система (все вершины и связи помечаются graphTag: Local)")
     public ResponseEntity<String> LocalGraph(@PathVariable("docId") Long docId) {
-        return graphConstruction.graphConstruct(docId, "Local");
+        return graphConstructionService.graphConstruct(docId, "Local");
     }
 
     @PostMapping("/graph/{docId}")
     @Operation(summary = "Добавление системы из указанного документа в глобальный граф (все вершины и связи помечаются graphTag: Global)")
     public ResponseEntity<String> GlobalGraph(@PathVariable("docId") Long docId) {
-        return graphConstruction.graphConstruct(docId, "Global");
+        return graphConstructionService.graphConstruct(docId, "Global");
     }
 
     @GetMapping("/context/{softwareSystemMnemonic}/{containerMnemonic}")
@@ -73,14 +73,14 @@ public class GraphController {
                                                   @PathVariable Integer firstVersion,
                                                   @PathVariable(required = false) Integer secondVersion) {
         return ResponseEntity.status(HttpStatus.OK)
-                .body(compareVersions.compareVersion(cmdb, firstVersion, secondVersion));
+                .body(compareVersionService.compareVersion(cmdb, firstVersion, secondVersion));
     }
 
     @GetMapping("/diff/{cmdb}/{firstVersion}")
     @Operation(summary = "Сравнение указанной версии системы с текущей (последней/актуальной)")
     public ResponseEntity<String> compareWithCur(@PathVariable String cmdb,
                                                  @PathVariable Integer firstVersion) {
-        return ResponseEntity.status(HttpStatus.OK).body(compareVersions.compareVersion(cmdb, firstVersion, null));
+        return ResponseEntity.status(HttpStatus.OK).body(compareVersionService.compareVersion(cmdb, firstVersion, null));
     }
 
     @GetMapping("/elements")

@@ -1,4 +1,4 @@
-package ru.beeline.architecting_graph.service.createDiagrams.ViewObjects;
+package ru.beeline.architecting_graph.model.ViewObjects;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

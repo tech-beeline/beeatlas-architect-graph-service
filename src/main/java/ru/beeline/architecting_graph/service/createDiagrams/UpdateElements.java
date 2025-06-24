@@ -11,7 +11,7 @@ import ru.beeline.architecting_graph.model.DiagramParameters;
 import ru.beeline.architecting_graph.model.Model;
 import ru.beeline.architecting_graph.model.SoftwareSystem;
 import ru.beeline.architecting_graph.model.Workspace;
-import ru.beeline.architecting_graph.service.createDiagrams.ViewObjects.Views;
+import ru.beeline.architecting_graph.model.ViewObjects.Views;
 
 @Service
 public class UpdateElements {

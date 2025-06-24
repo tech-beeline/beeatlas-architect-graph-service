@@ -6,9 +6,9 @@ import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import ru.beeline.architecting_graph.service.createDiagrams.ViewObjects.AutomaticLayout;
-import ru.beeline.architecting_graph.service.createDiagrams.ViewObjects.ElementView;
-import ru.beeline.architecting_graph.service.createDiagrams.ViewObjects.RelationshipView;
+import ru.beeline.architecting_graph.model.ViewObjects.AutomaticLayout;
+import ru.beeline.architecting_graph.model.ViewObjects.ElementView;
+import ru.beeline.architecting_graph.model.ViewObjects.RelationshipView;
 
 @Data
 @AllArgsConstructor

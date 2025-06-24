@@ -32,7 +32,6 @@ public class CreateElements {
 
     public DiagramParameters createNewDiagramParameters(Session session, String softwareSystemMnemonic, String uri,
             String user, String password) {
-
         DiagramParameters diagramParameters = new DiagramParameters();
         diagramParameters.setLastObjectId(2L);
         diagramParameters.setObjectMap(new HashMap<>());
@@ -330,9 +329,7 @@ public class CreateElements {
 
     public void getInfrastructureNodes(Session session, String deploymentNodeDSLIdentifier, String environment,
             DiagramParameters diagramParameters) {
-
         Result result = createDiagramsQuery.getInfrastructureNodes(session, deploymentNodeDSLIdentifier);
-
         while (result.hasNext()) {
             org.neo4j.driver.Record record = result.next();
             getInfrastructureNode(session, record.get("m").asNode(), environment, diagramParameters);
@@ -341,9 +338,7 @@ public class CreateElements {
 
     public void getContainerInstances(Session session, String deploymentNodeDSLIdentifier, String environment,
             DiagramParameters diagramParameters) {
-
         Result result = createDiagramsQuery.getContainerInstances(session, deploymentNodeDSLIdentifier);
-
         while (result.hasNext()) {
             org.neo4j.driver.Record record = result.next();
             getContainerInstance(session, record.get("m").asNode(), environment, diagramParameters);
@@ -352,9 +347,7 @@ public class CreateElements {
 
     public void getChildDeploymentNodes(Session session, String deploymentNodeDSLIdentifier, String environment,
             DiagramParameters diagramParameters) {
-
         Result result = createDiagramsQuery.getChildDeploymentNodes(session, deploymentNodeDSLIdentifier);
-
         while (result.hasNext()) {
             org.neo4j.driver.Record record = result.next();
             getDeploymentNode(session, record.get("m").asNode(), environment, diagramParameters);
@@ -363,20 +356,16 @@ public class CreateElements {
 
     public void getDeploymentNode(Session session, Node node, String environment,
             DiagramParameters diagramParameters) {
-
         DeploymentNode deploymentNode = new DeploymentNode();
         deploymentNode.setId(String.valueOf(diagramParameters.getLastObjectId()));
         deploymentNode.setProperties(new HashMap<>());
         setDeploymentNodeProperties(node, deploymentNode);
-
         String deploymentNodeDSLIdentifier = deploymentNode.getProperties().get("structurizr_dsl_identifier")
                 .toString();
         setDeploymentNodeEnvironment(session, deploymentNodeDSLIdentifier, deploymentNode);
-
         if (!deploymentNode.getEnvironment().equals(environment)) {
             return;
         }
-
         diagramParameters.getObjectMap().put(deploymentNodeDSLIdentifier, diagramParameters.getLastObjectId());
         diagramParameters.setLastObjectId(diagramParameters.getLastObjectId() + 1);
         getInfrastructureNodes(session, deploymentNodeDSLIdentifier, environment, diagramParameters);
@@ -387,13 +376,10 @@ public class CreateElements {
 
     public void setDeploymentNodeRelationships(Session session, DeploymentNode deploymentNode,
             String deploymentNodeDSLIdentifier, DiagramParameters diagramParameters) {
-
         deploymentNode.setRelationships(new ArrayList<>());
         Result result = createDiagramsQuery.getDeploymentNodeRelationships(session, deploymentNodeDSLIdentifier);
-
         while (result.hasNext()) {
             org.neo4j.driver.Record record = result.next();
-
             String destinationDSLIdentifier = record.get("m.structurizr_dsl_identifier").asString();
             String destinationId = diagramParameters.getObjectMap().get(destinationDSLIdentifier).toString();
             Relationship relationship = getRelationship(record.get("r").asRelationship(), deploymentNode.getId(),
