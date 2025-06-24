@@ -26,5 +26,5 @@ public class DeploymentNode {
     private List<ContainerInstance> containerInstances;
     private Map<String, Object> properties;
     private List<Perspective> perspectives;
-    private List<Relationship> relationships;
+    private List<RelationshipEntity> relationships;
 }

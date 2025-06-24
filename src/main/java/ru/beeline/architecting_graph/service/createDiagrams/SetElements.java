@@ -26,7 +26,7 @@ public class SetElements {
         return automaticLayout;
     }
 
-    public void setContextViewRelationships1(String systemId, Relationship relationship, SystemContextView systemContextView,
+    public void setContextViewRelationships1(String systemId, RelationshipEntity relationship, SystemContextView systemContextView,
                                              DiagramParameters diagramParameters) {
         if (systemId.equals(relationship.getDestinationId())) {
             RelationshipView contextRelationshipView = relationshipView.createWithId(relationship.getId());
@@ -48,7 +48,7 @@ public class SetElements {
         }
     }
 
-    public void setContextViewRelationships(String systemId, Relationship relationship, SystemContextView systemContextView,
+    public void setContextViewRelationships(String systemId, RelationshipEntity relationship, SystemContextView systemContextView,
                                             DiagramParameters diagramParameters) {
         if (systemId.equals(relationship.getSourceId()) || systemId.equals(relationship.getDestinationId())) {
             RelationshipView contextRelationshipView = relationshipView.createWithId(relationship.getId());
@@ -82,7 +82,7 @@ public class SetElements {
                 systemContextView.getElements().add(systemElementView);
                 diagramParameters.getViewObjects().add(system.getId());
             }
-            for (Relationship relationship : currentSystem.getRelationships()) {
+            for (RelationshipEntity relationship : currentSystem.getRelationships()) {
                 setContextViewRelationships(system.getId(), relationship, systemContextView, diagramParameters);
             }
         }
@@ -90,7 +90,7 @@ public class SetElements {
         workspace.getViews().setSystemContextViews(systemContextViews);
     }
 
-    public void setContainerViewDirectRelationships(ContainerView containerView, Relationship relationship,
+    public void setContainerViewDirectRelationships(ContainerView containerView, RelationshipEntity relationship,
                                                     DiagramParameters diagramParameters) {
         RelationshipView containerRelationshipView = relationshipView.createWithId(relationship.getId());
         containerView.getRelationships().add(containerRelationshipView);
@@ -110,7 +110,7 @@ public class SetElements {
                 diagramParameters.getViewObjects().add(container.getId());
             }
             containersId.add(container.getId());
-            for (Relationship relationship : container.getRelationships()) {
+            for (RelationshipEntity relationship : container.getRelationships()) {
                 setContainerViewDirectRelationships(containerView, relationship, diagramParameters);
             }
         }
@@ -121,7 +121,7 @@ public class SetElements {
                                                      DiagramParameters diagramParameters) {
         for (Map.Entry<String, SoftwareSystem> entry : diagramParameters.getCreatedSystems().entrySet()) {
             SoftwareSystem currentSystem = entry.getValue();
-            for (Relationship relationship : currentSystem.getRelationships()) {
+            for (RelationshipEntity relationship : currentSystem.getRelationships()) {
                 if (containersId.contains(relationship.getDestinationId())) {
                     RelationshipView containerRelationshipView = relationshipView.createWithId(relationship.getId());
                     containerView.getRelationships().add(containerRelationshipView);
@@ -155,7 +155,7 @@ public class SetElements {
         workspace.getViews().setContainerViews(containerViews);
     }
 
-    public void setComponentViewDirectRelationships(ComponentView componentView, Relationship relationship,
+    public void setComponentViewDirectRelationships(ComponentView componentView, RelationshipEntity relationship,
                                                     DiagramParameters diagramParameters) {
         RelationshipView componentRelationshipsView = relationshipView.createWithId(relationship.getId());
         componentView.getRelationships().add(componentRelationshipsView);
@@ -175,7 +175,7 @@ public class SetElements {
                 diagramParameters.getViewObjects().add(component.getId());
             }
             componentsId.add(component.getId());
-            for (Relationship relationship : component.getRelationships()) {
+            for (RelationshipEntity relationship : component.getRelationships()) {
                 setComponentViewDirectRelationships(componentView, relationship, diagramParameters);
             }
         }
@@ -185,7 +185,7 @@ public class SetElements {
                                                      DiagramParameters diagramParameters) {
         for (Map.Entry<String, SoftwareSystem> entry : diagramParameters.getCreatedSystems().entrySet()) {
             SoftwareSystem currentSystem = entry.getValue();
-            for (Relationship relationship : currentSystem.getRelationships()) {
+            for (RelationshipEntity relationship : currentSystem.getRelationships()) {
                 if (componentsId.contains(relationship.getDestinationId())) {
                     RelationshipView componentRelationshipView = relationshipView.createWithId(relationship.getId());
                     componentView.getRelationships().add(componentRelationshipView);
@@ -218,7 +218,7 @@ public class SetElements {
         workspace.getViews().setComponentViews(componentViews);
     }
 
-    public void setDeploymentViewRealtionships(Relationship relationship, DeploymentView deploymentView,
+    public void setDeploymentViewRealtionships(RelationshipEntity relationship, DeploymentView deploymentView,
                                                DiagramParameters diagramParameters) {
         if (!diagramParameters.getViewObjects().contains(relationship.getId())) {
             RelationshipView elementRelationshipView = relationshipView.createWithId(relationship.getId());
@@ -239,7 +239,7 @@ public class SetElements {
             deploymentView.getElements().add(deploymentNodeElementView);
             diagramParameters.getViewObjects().add(deploymentNodeElementView.getId());
         }
-        for (Relationship relationship : deploymentNode.getRelationships()) {
+        for (RelationshipEntity relationship : deploymentNode.getRelationships()) {
             setDeploymentViewRealtionships(relationship, deploymentView, diagramParameters);
         }
     }
@@ -252,7 +252,7 @@ public class SetElements {
                 deploymentView.getElements().add(infrastructureNodeElementView);
                 diagramParameters.getViewObjects().add(infrastructureNodeElementView.getId());
             }
-            for (Relationship relationship : infrastructureNode.getRelationships()) {
+            for (RelationshipEntity relationship : infrastructureNode.getRelationships()) {
                 setDeploymentViewRealtionships(relationship, deploymentView, diagramParameters);
             }
         }
@@ -266,7 +266,7 @@ public class SetElements {
                 deploymentView.getElements().add(containerInstanceElementView);
                 diagramParameters.getViewObjects().add(containerInstanceElementView.getId());
             }
-            for (Relationship relationship : containerInstance.getRelationships()) {
+            for (RelationshipEntity relationship : containerInstance.getRelationships()) {
                 setDeploymentViewRealtionships(relationship, deploymentView, diagramParameters);
             }
         }

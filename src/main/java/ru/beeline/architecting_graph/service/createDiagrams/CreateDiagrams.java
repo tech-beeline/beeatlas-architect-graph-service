@@ -12,7 +12,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import ru.beeline.architecting_graph.client.StructurizrClient;
-import ru.beeline.architecting_graph.config.RestConfig;
 import ru.beeline.architecting_graph.model.GraphObject;
 import ru.beeline.architecting_graph.model.Workspace;
 import ru.beeline.architecting_graph.repository.neo4j.BuildGraphQuery;
@@ -49,8 +48,7 @@ public class CreateDiagrams {
         return result.hasNext();
     }
 
-    public ResponseEntity<String> createDiagramm(RestConfig autorization, String softwareSystemMnemonic,
-                                                 String containerMnemonic, String environment) {
+    public ResponseEntity<String> createDiagramm(String softwareSystemMnemonic, String containerMnemonic, String environment) {
         try (Session session = driver.session()) {
             session.run("RETURN 1");
             ObjectMapper objectMapper = new ObjectMapper();
@@ -67,21 +65,17 @@ public class CreateDiagrams {
             Workspace workspace;
             try {
                 if (containerMnemonic == null && environment == null) {
-                    workspace = getView.GetContextView(session, softwareSystemMnemonic,
-                            autorization.getUri(), autorization.getUser(), autorization.getPassword());
-
+                    workspace = getView.GetContextView(session, softwareSystemMnemonic);
                 } else if (containerMnemonic != null) {
                     if (!checkifContainerExists(session, softwareSystemMnemonic, containerMnemonic)) {
                         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Контейнер не найден");
                     }
-                    workspace = getView.GetComponentView(session, softwareSystemMnemonic, containerMnemonic,
-                            autorization.getUri(), autorization.getUser(), autorization.getPassword());
+                    workspace = getView.GetComponentView(session, softwareSystemMnemonic, containerMnemonic);
                 } else {
                     if (!checkIfEnvironmentExists(session, environment)) {
                         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Окружение не найдено");
                     }
-                    workspace = getView.GetDeploymentView(session, softwareSystemMnemonic, environment,
-                            autorization.getUri(), autorization.getUser(), autorization.getPassword());
+                    workspace = getView.GetDeploymentView(session, softwareSystemMnemonic, environment);
                 }
                 String json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(workspace);
                 json = structurizrClient.changeJson(json);

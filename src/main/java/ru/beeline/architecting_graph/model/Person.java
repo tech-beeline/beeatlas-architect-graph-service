@@ -21,7 +21,7 @@ public class Person {
     private String group;
     private Map<String, Object> properties;
     private List<Perspective> perspectives;
-    private List<Relationship> relationships;
+    private List<RelationshipEntity> relationships;
 
     public enum Location {
         External,

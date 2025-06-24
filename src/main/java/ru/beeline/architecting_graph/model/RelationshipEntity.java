@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Relationship {
+public class RelationshipEntity {
 
     private String id;
     private String description;

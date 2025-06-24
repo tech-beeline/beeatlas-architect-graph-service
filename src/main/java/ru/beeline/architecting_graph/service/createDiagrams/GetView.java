@@ -18,11 +18,10 @@ public class GetView {
         @Autowired
         SetElements setElements;
 
-        public Workspace GetContextView(Session session, String softwareSystemMnemonic, String uri, String user,
-                        String password) {
+        public Workspace GetContextView(Session session, String softwareSystemMnemonic) {
 
                 DiagramParameters diagramParameters = createElements.createNewDiagramParameters(session,
-                                softwareSystemMnemonic, uri, user, password);
+                                softwareSystemMnemonic);
 
                 createElements.createContextView(session, diagramParameters.getSystem(), softwareSystemMnemonic,
                                 diagramParameters);
@@ -38,11 +37,10 @@ public class GetView {
                 return diagramParameters.getWorkspace();
         }
 
-        public Workspace GetComponentView(Session session, String softwareSystemMnemonic, String containerMnemonic,
-                        String uri, String user, String password) {
+        public Workspace GetComponentView(Session session, String softwareSystemMnemonic, String containerMnemonic) {
 
                 DiagramParameters diagramParameters = createElements.createNewDiagramParameters(session,
-                                softwareSystemMnemonic, uri, user, password);
+                                softwareSystemMnemonic);
 
                 createElements.createComponentView(session, softwareSystemMnemonic, containerMnemonic,
                                 diagramParameters.getSystem(), diagramParameters);
@@ -55,11 +53,10 @@ public class GetView {
                 return diagramParameters.getWorkspace();
         }
 
-        public Workspace GetDeploymentView(Session session, String softwareSystemMnemonic, String environment,
-                        String uri, String user, String password) {
+        public Workspace GetDeploymentView(Session session, String softwareSystemMnemonic, String environment) {
 
                 DiagramParameters diagramParameters = createElements.createNewDiagramParameters(session,
-                                softwareSystemMnemonic, uri, user, password);
+                                softwareSystemMnemonic);
 
                 createElements.createDeploymentView(session, softwareSystemMnemonic, environment,
                                 diagramParameters.getModel(), diagramParameters);

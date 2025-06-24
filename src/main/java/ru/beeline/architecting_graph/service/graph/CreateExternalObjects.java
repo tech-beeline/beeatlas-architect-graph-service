@@ -115,11 +115,11 @@ public class CreateExternalObjects {
         }
     }
 
-    public void createRelationship(Session session, String graphTag, Relationship relationship, Connection connection) {
+    public void createRelationship(Session session, String graphTag, RelationshipEntity relationship, Connection connection) {
         buildGraphQuery.createRelationshipQuery(session, graphTag, relationship, connection);
     }
 
-    public void setRelationshipProperties(Session session, String graphTag, Relationship relationship, Connection connection) {
+    public void setRelationshipProperties(Session session, String graphTag, RelationshipEntity relationship, Connection connection) {
         if (relationship.getProperties() != null) {
             for (Map.Entry<String, Object> entry : relationship.getProperties().entrySet()) {
                 String sanitizedKey = entry.getKey().replaceAll("[^a-zA-Z0-9]", "_");
@@ -128,7 +128,7 @@ public class CreateExternalObjects {
         }
     }
 
-    public void setRelationshipNumberOfConnects(Session session, String graphTag, Relationship relationship,
+    public void setRelationshipNumberOfConnects(Session session, String graphTag, RelationshipEntity relationship,
                                                 Connection connection) {
         if (relationship.getDescription().equals("None")) {
             String numberOfConnects = buildGraphQuery.getRelationshipParameter(session, graphTag, "None", connection,
@@ -147,7 +147,7 @@ public class CreateExternalObjects {
         }
     }
 
-    public void setParametersForRelationship(Session session, String graphTag, Relationship relationship,
+    public void setParametersForRelationship(Session session, String graphTag, RelationshipEntity relationship,
                                              Connection connection, String curVersion) {
         if (graphTag.equals("Global") && buildGraphQuery.getRelationshipParameter(session, graphTag, relationship.getDescription(),
                 connection, "startVersion").toString().equals("NULL")) {
@@ -161,7 +161,7 @@ public class CreateExternalObjects {
 
     public void updateChildRelationship(Session session, String graphTag, Model model, String curVersion,
                                         String sourceId, String destinationId, String cmdb, HashMap<String, GraphObject> objects) {
-        Relationship relationship = new Relationship();
+        RelationshipEntity relationship = new RelationshipEntity();
         relationship.setSourceId(sourceId);
         relationship.setDestinationId(destinationId);
         relationship.setDescription("Child");
@@ -174,7 +174,7 @@ public class CreateExternalObjects {
     public void updateDeployRelationship(Session session, String graphTag, Model model, String curVersion,
                                          String sourceId, String destinationId, String cmdb, HashMap<String, GraphObject> objects) {
 
-        Relationship relationship = new Relationship();
+        RelationshipEntity relationship = new RelationshipEntity();
         relationship.setSourceId(sourceId);
         relationship.setDestinationId(destinationId);
         relationship.setDescription("Deploy");
@@ -184,7 +184,7 @@ public class CreateExternalObjects {
         updateRelationship(session, graphTag, relationship, model, curVersion, connection, objects);
     }
 
-    public void updateDefaultRelationship(Session session, String graphTag, Relationship relationship, Model model,
+    public void updateDefaultRelationship(Session session, String graphTag, RelationshipEntity relationship, Model model,
                                           String curVersion, String cmdb, String level, HashMap<String, GraphObject> objects) {
         Connection connection = new Connection();
         connection.setRelationshipType("Relationship");
@@ -194,7 +194,7 @@ public class CreateExternalObjects {
     }
 
 
-    public void updateRelationship(Session session, String graphTag, Relationship relationship, Model model,
+    public void updateRelationship(Session session, String graphTag, RelationshipEntity relationship, Model model,
                                    String curVersion, Connection connection, HashMap<String, GraphObject> objects) {
         if (!objects.containsKey(relationship.getSourceId())) {
             createExternalObject(session, graphTag, model, curVersion, relationship.getSourceId(),

@@ -180,7 +180,7 @@ public class BuildGraphQuery {
                 session.run(cypher, parameters);
         }
 
-        public void createRelationshipQuery(Session session, String graphTag, Relationship relationship,
+        public void createRelationshipQuery(Session session, String graphTag, RelationshipEntity relationship,
                         Connection connection) {
                 String cypher = "MATCH (a:" + connection.getSource().getType() + " {graphTag: $graphTag1, "
                                 + connection.getSource().getKey() + ": $value1}), (b:"
@@ -196,7 +196,7 @@ public class BuildGraphQuery {
         }
 
         public void setRelationshipProperty(Session session, String graphTag, String key, Object value,
-                        Relationship relationship,
+                        RelationshipEntity relationship,
                         Connection connection) {
                 String cypher = "MATCH (a:" + connection.getSource().getType() + " {graphTag: $graphTag1, "
                                 + connection.getSource().getKey()
@@ -243,7 +243,7 @@ public class BuildGraphQuery {
                 session.run(setParameter, parameters);
         }
 
-        public Boolean checkIfRelationshipExists(Session session, String graphTag, Relationship relationship,
+        public Boolean checkIfRelationshipExists(Session session, String graphTag, RelationshipEntity relationship,
                         Connection connection) {
                 String query = "MATCH (a:" + connection.getSource().getType() + " {graphTag: $graphTag1, "
                                 + connection.getSource().getKey() + ": $value1})-[r:" + connection.getRelationshipType()
@@ -261,7 +261,7 @@ public class BuildGraphQuery {
                 return false;
         }
 
-        public void buildSetRelationshipParameters(Session session, String graphTag, Relationship relationship,
+        public void buildSetRelationshipParameters(Session session, String graphTag, RelationshipEntity relationship,
                         Connection connection) {
                 String setParameters = "MATCH (a:" + connection.getSource().getType() + " {graphTag: $graphTag1, "
                                 + connection.getSource().getKey() + ": $val1})-[r:" + connection.getRelationshipType()

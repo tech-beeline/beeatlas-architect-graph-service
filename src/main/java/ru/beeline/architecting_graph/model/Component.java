@@ -21,6 +21,6 @@ public class Component {
     private String group;
     private Map<String, Object> properties;
     private List<Perspective> perspectives;
-    private List<Relationship> relationships;
+    private List<RelationshipEntity> relationships;
     private Documentation documentation;
 }

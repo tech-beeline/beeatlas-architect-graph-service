@@ -4,8 +4,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import ru.beeline.architecting_graph.config.RestConfig;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import ru.beeline.architecting_graph.service.compareVersions.CompareVersionsService;
 import ru.beeline.architecting_graph.service.createDiagrams.CreateDiagrams;
 import ru.beeline.architecting_graph.service.getElements.GetElements;
@@ -27,12 +31,6 @@ public class GraphController {
     @Autowired
     GetElements getElements;
 
-    private final RestConfig autorization;
-
-    public GraphController(RestConfig autorization) {
-        this.autorization = autorization;
-    }
-
     @PostMapping("/graph/local/{docId}")
     @Operation(summary = "Пересоздание локального графа, используя документ, в котором описывается система (все вершины и связи помечаются graphTag: Local)")
     public ResponseEntity<String> LocalGraph(@PathVariable("docId") Long docId) {
@@ -50,7 +48,7 @@ public class GraphController {
     public ResponseEntity<String> getC4Diagramm(@PathVariable String softwareSystemMnemonic,
                                                 @PathVariable(required = false) String containerMnemonic) {
 
-        return createDiagrams.createDiagramm(autorization, softwareSystemMnemonic, containerMnemonic, null);
+        return createDiagrams.createDiagramm(softwareSystemMnemonic, containerMnemonic, null);
     }
 
     @GetMapping("/context/{softwareSystemMnemonic}")
@@ -64,7 +62,7 @@ public class GraphController {
     public ResponseEntity<String> getDeploymentDiagramm(@PathVariable String environment,
                                                         @PathVariable String softwareSystemMnemonic) {
 
-        return createDiagrams.createDiagramm(autorization, softwareSystemMnemonic, null, environment);
+        return createDiagrams.createDiagramm(softwareSystemMnemonic, null, environment);
     }
 
     @GetMapping("/diff/{cmdb}/{firstVersion}/{secondVersion}")
