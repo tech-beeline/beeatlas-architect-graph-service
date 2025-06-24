@@ -19,7 +19,7 @@ public class SoftwareSystemInstance {
     private String tags;
     private Map<String, Object> properties;
     private List<Perspective> perspectives;
-    private List<Relationship> relationships;
+    private List<RelationshipEntity> relationships;
     private List<HttpHealthCheck> healthChecks;
 
 }

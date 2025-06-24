@@ -169,7 +169,7 @@ public class DeploymentNodeUpdateFunctions {
                                                   DeploymentNode deploymentNode, String curVersion, String cmdb, Model model,
                                                   HashMap<String, GraphObject> objects) {
         if (deploymentNode.getRelationships() != null) {
-            for (Relationship relationship : deploymentNode.getRelationships()) {
+            for (RelationshipEntity relationship : deploymentNode.getRelationships()) {
                 createExternalObjects.updateDefaultRelationship(session, graphTag, relationship, model, curVersion,
                         cmdb, "", objects);
             }
@@ -187,7 +187,7 @@ public class DeploymentNodeUpdateFunctions {
         if (deploymentNode.getInfrastructureNodes() != null) {
             for (InfrastructureNode infrastructureNode : deploymentNode.getInfrastructureNodes()) {
                 if (infrastructureNode.getRelationships() != null) {
-                    for (Relationship relationship : infrastructureNode.getRelationships()) {
+                    for (RelationshipEntity relationship : infrastructureNode.getRelationships()) {
                         createExternalObjects.updateDefaultRelationship(session, graphTag, relationship, model,
                                 curVersion, cmdb, "", objects);
                     }

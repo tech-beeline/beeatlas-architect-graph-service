@@ -21,5 +21,5 @@ public class InfrastructureNode {
     private String url;
     private Map<String, Object> properties;
     private List<Perspective> perspectives;
-    private List<Relationship> relationships;
+    private List<RelationshipEntity> relationships;
 }

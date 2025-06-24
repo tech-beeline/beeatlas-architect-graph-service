@@ -230,7 +230,7 @@ public class ContainerUpdateFunctions {
         if (softwareSystem.getContainers() != null) {
             for (Container container : softwareSystem.getContainers()) {
                 if (container.getRelationships() != null) {
-                    for (Relationship relationship : container.getRelationships()) {
+                    for (RelationshipEntity relationship : container.getRelationships()) {
                         if (relationship.getLinkedRelationshipId() == null) {
                             createExternalObjects.updateDefaultRelationship(session, graphTag, relationship,
                                     model, curVersion, cmdb, "C2", objects);
@@ -325,7 +325,7 @@ public class ContainerUpdateFunctions {
                                           String curVersion, HashMap<String, GraphObject> objects) {
         for (SoftwareSystem softwareSystem : model.getSoftwareSystems()) {
             if (softwareSystem.getRelationships() != null) {
-                for (Relationship relationship : softwareSystem.getRelationships()) {
+                for (RelationshipEntity relationship : softwareSystem.getRelationships()) {
                     if (relationship.getLinkedRelationshipId() == null) {
                         createExternalObjects.updateDefaultRelationship(session, graphTag, relationship, model,
                                 curVersion, cmdb, "C1", objects);

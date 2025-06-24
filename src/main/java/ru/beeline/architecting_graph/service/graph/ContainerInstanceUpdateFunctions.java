@@ -96,7 +96,7 @@ public class ContainerInstanceUpdateFunctions {
         if (deploymentNode.getContainerInstances() != null) {
             for (ContainerInstance containerInstance : deploymentNode.getContainerInstances()) {
                 if (containerInstance.getRelationships() != null) {
-                    for (Relationship relationship : containerInstance.getRelationships()) {
+                    for (RelationshipEntity relationship : containerInstance.getRelationships()) {
                         createExternalObjects.updateDefaultRelationship(session, graphTag, relationship, model,
                                 curVersion, cmdb, "", objects);
                     }
