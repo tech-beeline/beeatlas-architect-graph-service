@@ -36,18 +36,16 @@ public class DeploymentNodeUpdateFunctions {
 
     public void setParametersForDeploymentNode(Session session, String graphTag, DeploymentNode deploymentNode,
                                                GraphObject deploymentNodeGraphObject, String curVersion) {
-        if (graphTag.equals("Global") &&
-                buildGraphQuery.getObjectParameter(session, graphTag, deploymentNodeGraphObject, "startVersion")
-                        .toString().equals("NULL")) {
+        if (graphTag.equals("Global") && buildGraphQuery.getObjectParameter(session, graphTag, deploymentNodeGraphObject,
+                "startVersion").toString().equals("NULL")) {
             buildGraphQuery.setObjectParameter(session, graphTag, deploymentNodeGraphObject, "startVersion", curVersion);
         }
         buildGraphQuery.updateDeploymentNode(session, graphTag, deploymentNode);
         setDeploymentNodeProperties(session, graphTag, deploymentNode);
     }
 
-    public void createEnvironmentRelation(Session session, String graphTag, String environment,
-                                          String NodeId, String curVersion, String cmdb, Model model,
-                                          HashMap<String, GraphObject> objects) {
+    public void createEnvironmentRelation(Session session, String graphTag, String environment, String NodeId, String curVersion,
+                                          String cmdb, Model model, HashMap<String, GraphObject> objects) {
         updateEnvironment(session, graphTag, environment, objects);
         createExternalObjects.updateChildRelationship(session, graphTag, model, curVersion, environment,
                 NodeId,
@@ -65,38 +63,33 @@ public class DeploymentNodeUpdateFunctions {
         }
     }
 
-    public void updateChildInfrastructureNodes(Session session, String graphTag,
-                                               DeploymentNode deploymentNode,
+    public void updateChildInfrastructureNodes(Session session, String graphTag, DeploymentNode deploymentNode,
                                                String curVersion, String cmdb, Model model, HashMap<String, GraphObject> objects) {
         if (deploymentNode.getInfrastructureNodes() != null) {
             for (InfrastructureNode infrastructureNode : deploymentNode.getInfrastructureNodes()) {
 
                 infrastructureNode.setName(infrastructureNode.getName() + "."
                         + deploymentNode.getName().toString());
-                infrastructureNodeUpdateFunctions.updateInfrastructureNode(session, graphTag,
-                        infrastructureNode, curVersion,
+                infrastructureNodeUpdateFunctions.updateInfrastructureNode(session, graphTag, infrastructureNode, curVersion,
                         objects);
-                createExternalObjects.updateChildRelationship(session, graphTag, model,
-                        curVersion,
+                createExternalObjects.updateChildRelationship(session, graphTag, model, curVersion,
                         deploymentNode.getId(), infrastructureNode.getId(), cmdb, objects);
-                createEnvironmentRelation(session, graphTag, infrastructureNode.getEnvironment(),
-                        infrastructureNode.getId(), curVersion, cmdb, model, objects);
+                createEnvironmentRelation(session, graphTag, infrastructureNode.getEnvironment(), infrastructureNode.getId(),
+                        curVersion, cmdb, model, objects);
             }
         }
     }
 
-    public void updateChildContainerInstances(Session session, String graphTag,
-                                              DeploymentNode deploymentNode, String curVersion, String cmdb, Model model,
-                                              HashMap<String, GraphObject> objects) {
+    public void updateChildContainerInstances(Session session, String graphTag, DeploymentNode deploymentNode, String curVersion,
+                                              String cmdb, Model model, HashMap<String, GraphObject> objects) {
         if (deploymentNode.getContainerInstances() != null) {
             for (ContainerInstance containerInstance : deploymentNode.getContainerInstances()) {
                 containerInstanceUpdateFunctions.updateContainerInstance(session, graphTag, model, deploymentNode,
                         containerInstance, curVersion, objects);
                 createExternalObjects.updateDeployRelationship(session, graphTag, model, curVersion,
                         containerInstance.getContainerId(), containerInstance.getId(), cmdb, objects);
-                createExternalObjects.updateChildRelationship(session, graphTag, model,
-                        curVersion,
-                        deploymentNode.getId(), containerInstance.getId(), cmdb, objects);
+                createExternalObjects.updateChildRelationship(session, graphTag, model, curVersion, deploymentNode.getId(),
+                        containerInstance.getId(), cmdb, objects);
                 createEnvironmentRelation(session, graphTag, containerInstance.getEnvironment(), containerInstance.getId(),
                         curVersion, cmdb, model, objects);
             }
@@ -105,13 +98,10 @@ public class DeploymentNodeUpdateFunctions {
 
     public void updateChildDeploymentNodes(Session session, String graphTag, DeploymentNode deploymentNode,
                                            String curVersion, String cmdb, Model model, HashMap<String, GraphObject> objects) {
-
         if (deploymentNode.getChildren() != null) {
             for (DeploymentNode childDeploymentNode : deploymentNode.getChildren()) {
-                childDeploymentNode.setName(childDeploymentNode.getName() + "."
-                        + deploymentNode.getName().toString());
-                updateDeploymentNode(session, graphTag, childDeploymentNode, curVersion, cmdb, model,
-                        objects);
+                childDeploymentNode.setName(childDeploymentNode.getName() + "." + deploymentNode.getName().toString());
+                updateDeploymentNode(session, graphTag, childDeploymentNode, curVersion, cmdb, model, objects);
                 createExternalObjects.updateChildRelationship(session, graphTag, model, curVersion, deploymentNode.getId(),
                         childDeploymentNode.getId(), cmdb, objects);
             }
@@ -120,8 +110,7 @@ public class DeploymentNodeUpdateFunctions {
 
     public void updateDeploymentNode(Session session, String graphTag, DeploymentNode deploymentNode,
                                      String curVersion, String cmdb, Model model, HashMap<String, GraphObject> objects) {
-        GraphObject deploymentNodeGraphObject = new GraphObject("DeploymentNode", "name",
-                deploymentNode.getName());
+        GraphObject deploymentNodeGraphObject = new GraphObject("DeploymentNode", "name", deploymentNode.getName());
         boolean exists = buildGraphQuery.checkIfObjectExists(session, graphTag, deploymentNodeGraphObject);
         if (!exists) {
             buildGraphQuery.createObject(session, graphTag, deploymentNodeGraphObject);
@@ -147,17 +136,15 @@ public class DeploymentNodeUpdateFunctions {
 
     public void setDeploymentNodeEndVersion(Session session, String graphTag, String deploymentNodeName,
                                             String curVersion, String cmdb) {
-        GraphObject deploymentNodeGraphObject = new GraphObject("DeploymentNode", "name",
-                deploymentNodeName);
+        GraphObject deploymentNodeGraphObject = new GraphObject("DeploymentNode", "name", deploymentNodeName);
         buildGraphQuery.setObjectParameter(session, graphTag, deploymentNodeGraphObject, "endVersion", curVersion);
         infrastructureNodeUpdateFunctions.setInfrastructureNodeEndVersion(session, graphTag, deploymentNodeName, curVersion);
         containerInstanceUpdateFunctions.setContainerInstanceEndVersion(session, graphTag, deploymentNodeName, curVersion);
         setChildDeploymentNodeEndVersion(session, graphTag, deploymentNodeName, curVersion, cmdb);
     }
 
-    public void updateChildDeploymentNodeRelationships(Session session, String graphTag,
-                                                       DeploymentNode deploymentNode, String curVersion, String cmdb, Model model,
-                                                       HashMap<String, GraphObject> objects) {
+    public void updateChildDeploymentNodeRelationships(Session session, String graphTag, DeploymentNode deploymentNode,
+                                                       String curVersion, String cmdb, Model model, HashMap<String, GraphObject> objects) {
         if (deploymentNode.getChildren() != null) {
             for (DeploymentNode childDeploymentNode : deploymentNode.getChildren()) {
                 updateDeploymentNodeRelationships(session, graphTag, childDeploymentNode, curVersion, cmdb, model, objects);
@@ -165,16 +152,13 @@ public class DeploymentNodeUpdateFunctions {
         }
     }
 
-    public void updateDeploymentNodeRelationships(Session session, String graphTag,
-                                                  DeploymentNode deploymentNode, String curVersion, String cmdb, Model model,
-                                                  HashMap<String, GraphObject> objects) {
+    public void updateDeploymentNodeRelationships(Session session, String graphTag, DeploymentNode deploymentNode, String curVersion,
+                                                  String cmdb, Model model, HashMap<String, GraphObject> objects) {
         if (deploymentNode.getRelationships() != null) {
             for (RelationshipEntity relationship : deploymentNode.getRelationships()) {
-                createExternalObjects.updateDefaultRelationship(session, graphTag, relationship, model, curVersion,
-                        cmdb, "", objects);
+                createExternalObjects.updateDefaultRelationship(session, graphTag, relationship, model, curVersion, cmdb, "", objects);
             }
         }
-
         updateInfrastructureNodeRelationships(session, graphTag, deploymentNode, curVersion, cmdb, model, objects);
         containerInstanceUpdateFunctions.updateContainerInstanceRelationships(session, graphTag, deploymentNode,
                 curVersion, cmdb, model, objects);
@@ -183,13 +167,12 @@ public class DeploymentNodeUpdateFunctions {
 
     public void updateInfrastructureNodeRelationships(Session session, String graphTag, DeploymentNode deploymentNode,
                                                       String curVersion, String cmdb, Model model, HashMap<String, GraphObject> objects) {
-
         if (deploymentNode.getInfrastructureNodes() != null) {
             for (InfrastructureNode infrastructureNode : deploymentNode.getInfrastructureNodes()) {
                 if (infrastructureNode.getRelationships() != null) {
                     for (RelationshipEntity relationship : infrastructureNode.getRelationships()) {
-                        createExternalObjects.updateDefaultRelationship(session, graphTag, relationship, model,
-                                curVersion, cmdb, "", objects);
+                        createExternalObjects.updateDefaultRelationship(session, graphTag, relationship, model, curVersion,
+                                cmdb, "", objects);
                     }
                 }
             }

@@ -193,7 +193,6 @@ public class CreateExternalObjects {
         updateRelationship(session, graphTag, relationship, model, curVersion, connection, objects);
     }
 
-
     public void updateRelationship(Session session, String graphTag, RelationshipEntity relationship, Model model,
                                    String curVersion, Connection connection, HashMap<String, GraphObject> objects) {
         if (!objects.containsKey(relationship.getSourceId())) {

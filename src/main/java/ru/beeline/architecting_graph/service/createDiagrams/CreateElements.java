@@ -173,8 +173,7 @@ public class CreateElements {
         return false;
     }
 
-    public RelationshipEntity getRelationship(Relationship relation, String source, String destination,
-                                              DiagramParameters diagramParameters) {
+    public RelationshipEntity getRelationship(Relationship relation, String source, String destination, DiagramParameters diagramParameters) {
         RelationshipEntity relationship = new RelationshipEntity();
         relationship.setProperties(new HashMap<>());
         relationship.setSourceId(source);
@@ -200,14 +199,12 @@ public class CreateElements {
         }
     }
 
-    public void setInfrastructureNodeEnvironment(Session session, String infrastructureNodeDSLIdentifier,
-                                                 InfrastructureNode infrastructureNode) {
+    public void setInfrastructureNodeEnvironment(Session session, String infrastructureNodeDSLIdentifier, InfrastructureNode infrastructureNode) {
         Result result = createDiagramsQuery.getInfrastructureNodeEnvironment(session, infrastructureNodeDSLIdentifier);
         infrastructureNode.setEnvironment(result.next().get("n.name").asString());
     }
 
-    public void getInfrastructureNode(Session session, Node node, String environment,
-                                      DiagramParameters diagramParameters) {
+    public void getInfrastructureNode(Session session, Node node, String environment, DiagramParameters diagramParameters) {
         InfrastructureNode infrastructureNode = new InfrastructureNode();
         infrastructureNode.setProperties(new HashMap<>());
         infrastructureNode.setRelationships(new ArrayList<>());
@@ -249,17 +246,14 @@ public class CreateElements {
         containerInstance.setContainerId(diagramParameters.getObjectMap().get(containerDSLIdentifier).toString());
     }
 
-    public void getContainerInstance(Session session, Node node, String environment,
-                                     DiagramParameters diagramParameters) {
+    public void getContainerInstance(Session session, Node node, String environment, DiagramParameters diagramParameters) {
         ContainerInstance containerInstance = new ContainerInstance();
         containerInstance.setProperties(new HashMap<>());
         containerInstance.setRelationships(new ArrayList<>());
         containerInstance.setId(String.valueOf(diagramParameters.getLastObjectId()));
         setContainerInstanceProperties(node, containerInstance);
-        String containerInstanceDSLIdentifier = containerInstance.getProperties().get("structurizr_dsl_identifier")
-                .toString();
+        String containerInstanceDSLIdentifier = containerInstance.getProperties().get("structurizr_dsl_identifier").toString();
         setContainerInstanceEnvironment(session, containerInstanceDSLIdentifier, containerInstance);
-
         if (!containerInstance.getEnvironment().equals(environment)) {
             return;
         }
@@ -281,8 +275,7 @@ public class CreateElements {
         }
     }
 
-    public void setDeploymentNodeEnvironment(Session session, String deploymentNodeDSLIdentifier,
-                                             DeploymentNode deploymentNode) {
+    public void setDeploymentNodeEnvironment(Session session, String deploymentNodeDSLIdentifier, DeploymentNode deploymentNode) {
         Result result = createDiagramsQuery.getDeploymentNodeEnvironment(session, deploymentNodeDSLIdentifier);
         deploymentNode.setEnvironment(result.next().get("n.name").asString());
     }
@@ -314,14 +307,12 @@ public class CreateElements {
         }
     }
 
-    public void getDeploymentNode(Session session, Node node, String environment,
-                                  DiagramParameters diagramParameters) {
+    public void getDeploymentNode(Session session, Node node, String environment, DiagramParameters diagramParameters) {
         DeploymentNode deploymentNode = new DeploymentNode();
         deploymentNode.setId(String.valueOf(diagramParameters.getLastObjectId()));
         deploymentNode.setProperties(new HashMap<>());
         setDeploymentNodeProperties(node, deploymentNode);
-        String deploymentNodeDSLIdentifier = deploymentNode.getProperties().get("structurizr_dsl_identifier")
-                .toString();
+        String deploymentNodeDSLIdentifier = deploymentNode.getProperties().get("structurizr_dsl_identifier").toString();
         setDeploymentNodeEnvironment(session, deploymentNodeDSLIdentifier, deploymentNode);
         if (!deploymentNode.getEnvironment().equals(environment)) {
             return;
@@ -352,11 +343,9 @@ public class CreateElements {
 
     public void getInfrastructureNodeRelationships(Session session, InfrastructureNode infrastructureNode,
                                                    String infrastructureNodeDSLIdentifier, DiagramParameters diagramParameters) {
-        Result result = createDiagramsQuery.getInfrastructureNodeRelationships(session,
-                infrastructureNodeDSLIdentifier);
+        Result result = createDiagramsQuery.getInfrastructureNodeRelationships(session, infrastructureNodeDSLIdentifier);
         while (result.hasNext()) {
             Record record = result.next();
-
             String destinationDSLIdentifier = record.get("m.structurizr_dsl_identifier").asString();
             String destinationId = diagramParameters.getObjectMap().get(destinationDSLIdentifier).toString();
             RelationshipEntity relationship = getRelationship(record.get("r").asRelationship(), infrastructureNode.getId(),
@@ -367,17 +356,15 @@ public class CreateElements {
         }
     }
 
-    public void setInfrastructureNodes(Session session, DeploymentNode deploymentNode,
-                                       String deploymentNodeDSLIdentifier, DiagramParameters diagramParameters) {
+    public void setInfrastructureNodes(Session session, DeploymentNode deploymentNode, String deploymentNodeDSLIdentifier,
+                                       DiagramParameters diagramParameters) {
         deploymentNode.setInfrastructureNodes(new ArrayList<>());
         Result result = createDiagramsQuery.getInfrastructureNodes(session, deploymentNodeDSLIdentifier);
         while (result.hasNext()) {
             Record record = result.next();
             String infrastructureNodeDSLIdentifier = record.get("m.structurizr_dsl_identifier").asString();
-            InfrastructureNode infrastructureNode = diagramParameters.getCreatedInfrastructureNodes()
-                    .get(infrastructureNodeDSLIdentifier);
-            getInfrastructureNodeRelationships(session, infrastructureNode, infrastructureNodeDSLIdentifier,
-                    diagramParameters);
+            InfrastructureNode infrastructureNode = diagramParameters.getCreatedInfrastructureNodes().get(infrastructureNodeDSLIdentifier);
+            getInfrastructureNodeRelationships(session, infrastructureNode, infrastructureNodeDSLIdentifier, diagramParameters);
             deploymentNode.getInfrastructureNodes().add(infrastructureNode);
         }
     }
@@ -404,10 +391,8 @@ public class CreateElements {
         while (result.hasNext()) {
             Record record = result.next();
             String containerInstanceDSLIdentifier = record.get("m.structurizr_dsl_identifier").asString();
-            ContainerInstance containerInstance = diagramParameters.getCreatedContainerInstances()
-                    .get(containerInstanceDSLIdentifier);
-            getContainerInstanceRelationships(session, containerInstance, containerInstanceDSLIdentifier,
-                    diagramParameters);
+            ContainerInstance containerInstance = diagramParameters.getCreatedContainerInstances().get(containerInstanceDSLIdentifier);
+            getContainerInstanceRelationships(session, containerInstance, containerInstanceDSLIdentifier, diagramParameters);
             deploymentNode.getContainerInstances().add(containerInstance);
         }
     }
@@ -420,15 +405,12 @@ public class CreateElements {
             Record record = result.next();
             String childDeploymentNodeDSLIdentifier = record.get("m.structurizr_dsl_identifier").asString();
             deploymentNode.getChildren().add(getDeploymentNodeRelationships(session,
-                    diagramParameters.getCreatedDeploymentNodes().get(childDeploymentNodeDSLIdentifier),
-                    diagramParameters));
+                    diagramParameters.getCreatedDeploymentNodes().get(childDeploymentNodeDSLIdentifier), diagramParameters));
         }
     }
 
-    public DeploymentNode getDeploymentNodeRelationships(Session session, DeploymentNode deploymentNode,
-                                                         DiagramParameters diagramParameters) {
-        String deploymentNodeDSLIdentifier = deploymentNode.getProperties().get("structurizr_dsl_identifier")
-                .toString();
+    public DeploymentNode getDeploymentNodeRelationships(Session session, DeploymentNode deploymentNode, DiagramParameters diagramParameters) {
+        String deploymentNodeDSLIdentifier = deploymentNode.getProperties().get("structurizr_dsl_identifier").toString();
         setDeploymentNodeRelationships(session, deploymentNode, deploymentNodeDSLIdentifier, diagramParameters);
         setInfrastructureNodes(session, deploymentNode, deploymentNodeDSLIdentifier, diagramParameters);
         setContainerInstances(session, deploymentNode, deploymentNodeDSLIdentifier, diagramParameters);
@@ -445,11 +427,9 @@ public class CreateElements {
         }
     }
 
-    public SoftwareSystem getExternalSystem(Session session, Node node, String nodeDSLIdentifier,
-                                            DiagramParameters diagramParameters) {
+    public SoftwareSystem getExternalSystem(Session session, Node node, String nodeDSLIdentifier, DiagramParameters diagramParameters) {
         String label = node.labels().toString();
         label = label.substring(1, label.length() - 1);
-
         switch (label) {
             case "SoftwareSystem":
                 if (!diagramParameters.getObjectMap().containsKey(nodeDSLIdentifier)) {
@@ -478,8 +458,7 @@ public class CreateElements {
         if (!destinationSystemId.equals(system.getId())) {
             RelationshipEntity relationship = getRelationship(relation, sourceId, destinationSystemId, diagramParameters);
             if (needAddingToSystem) {
-                RelationshipEntity systemRelationship = getRelationship(relation, system.getId(), destinationSystemId,
-                        diagramParameters);
+                RelationshipEntity systemRelationship = getRelationship(relation, system.getId(), destinationSystemId, diagramParameters);
                 if (systemRelationship != null) {
                     system.getRelationships().add(systemRelationship);
                 }
@@ -507,8 +486,7 @@ public class CreateElements {
             Node destinationNode = record.get("m").asNode();
             Relationship relation = record.get("r").asRelationship();
             String destinationDSLIdentifier = record.get("m.structurizr_dsl_identifier").asString();
-            String destinationSystemId = getExternalSystem(session, destinationNode, destinationDSLIdentifier,
-                    diagramParameters).getId();
+            String destinationSystemId = getExternalSystem(session, destinationNode, destinationDSLIdentifier, diagramParameters).getId();
             RelationshipEntity relationship = addDirectRelationship(component.getId(), system, container, destinationSystemId,
                     destinationDSLIdentifier, relation, needAddingToSystem, needAddingToContainer, diagramParameters);
             if (relationship != null) {
@@ -552,8 +530,7 @@ public class CreateElements {
                     .contains(diagramParameters.getObjectMap().get(sourceDSLIdentifier).toString())) {
                 continue;
             }
-            SoftwareSystem sourceSystem = getExternalSystem(session, sourceNode, sourceDSLIdentifier,
-                    diagramParameters);
+            SoftwareSystem sourceSystem = getExternalSystem(session, sourceNode, sourceDSLIdentifier, diagramParameters);
             addReverseRelationship(sourceSystem, component.getId(), systemId, containerId, sourceDSLIdentifier,
                     relation, needAddingToSystem, needAddingToContainer, diagramParameters);
         }
@@ -602,10 +579,8 @@ public class CreateElements {
             Node destinationNode = record.get("m").asNode();
             Relationship relation = record.get("r").asRelationship();
             String destinationDSLIdentifier = record.get("m.structurizr_dsl_identifier").asString();
-            String destinationSystemId = getExternalSystem(session, destinationNode, destinationDSLIdentifier,
-                    diagramParameters).getId();
-            RelationshipEntity relationship = getRelationship(relation, system.getId(), destinationSystemId,
-                    diagramParameters);
+            String destinationSystemId = getExternalSystem(session, destinationNode, destinationDSLIdentifier, diagramParameters).getId();
+            RelationshipEntity relationship = getRelationship(relation, system.getId(), destinationSystemId, diagramParameters);
             if (relationship != null) {
                 system.getRelationships().add(relationship);
             }
@@ -622,11 +597,9 @@ public class CreateElements {
             String sourceDSLIdentifier = record.get("m.structurizr_dsl_identifier").asString();
             if (diagramParameters.getObjectMap().containsKey(sourceDSLIdentifier) && diagramParameters.getSystemChilds()
                     .contains(diagramParameters.getObjectMap().get(sourceDSLIdentifier).toString())) {
-
                 continue;
             }
-            SoftwareSystem sourceSystem = getExternalSystem(session, sourceNode, sourceDSLIdentifier,
-                    diagramParameters);
+            SoftwareSystem sourceSystem = getExternalSystem(session, sourceNode, sourceDSLIdentifier, diagramParameters);
             addReverseRelationship(sourceSystem, system.getId(), system.getId(), null, sourceDSLIdentifier, relation,
                     false, false, diagramParameters);
         }
@@ -680,18 +653,15 @@ public class CreateElements {
             Record record = result.next();
             String containerDSLIndentifier = record.get("m.structurizr_dsl_identifier").asString();
             Container container = diagramParameters.getCreatedContainers().get(containerDSLIndentifier);
-            getDirectContainerRelationships(session, container, system, containerDSLIndentifier, needAddingToSystem,
-                    diagramParameters);
-            getReverseContainerRelationships(session, container, system, containerDSLIndentifier, needAddingToSystem,
-                    diagramParameters);
+            getDirectContainerRelationships(session, container, system, containerDSLIndentifier, needAddingToSystem, diagramParameters);
+            getReverseContainerRelationships(session, container, system, containerDSLIndentifier, needAddingToSystem, diagramParameters);
             getComponentRelationships(session, containerDSLIndentifier, system, container, needAddingToSystem, true,
                     diagramParameters);
             diagramParameters.getCreatedContainers().put(containerDSLIndentifier, container);
         }
     }
 
-    public void createContextView(Session session, SoftwareSystem system, String softwareSystemMnemonic,
-                                  DiagramParameters diagramParameters) {
+    public void createContextView(Session session, SoftwareSystem system, String softwareSystemMnemonic, DiagramParameters diagramParameters) {
         getContainers(session, softwareSystemMnemonic, diagramParameters);
         getSystemRelationships(session, system, softwareSystemMnemonic, diagramParameters);
         getContainerRelationships(session, system, softwareSystemMnemonic, true, diagramParameters);
@@ -715,8 +685,7 @@ public class CreateElements {
         while (result.hasNext()) {
             Record record = result.next();
             String deploymentNodeDSLIdentifier = record.get("m.structurizr_dsl_identifier").asString();
-            DeploymentNode deploymentNode = diagramParameters.getCreatedDeploymentNodes()
-                    .get(deploymentNodeDSLIdentifier);
+            DeploymentNode deploymentNode = diagramParameters.getCreatedDeploymentNodes().get(deploymentNodeDSLIdentifier);
             if (deploymentNode != null) {
                 model.getDeploymentNodes()
                         .add(getDeploymentNodeRelationships(session, deploymentNode, diagramParameters));
