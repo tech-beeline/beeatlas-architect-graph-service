@@ -4,6 +4,8 @@ import org.neo4j.driver.Record;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.types.Node;
+import org.springframework.beans.BeanWrapper;
+import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.beeline.architecting_graph.model.DeploymentNode;
@@ -88,8 +90,9 @@ public class NodesBuilder {
     }
 
     public void getDeploymentNode(Session session, Node node, String environment, DiagramParameters diagramParameters) {
+        Long id = diagramParameters.getLastObjectId();
         DeploymentNode deploymentNode = new DeploymentNode();
-        deploymentNode.setId(String.valueOf(diagramParameters.getLastObjectId()));
+        deploymentNode.setId(String.valueOf(id));
         deploymentNode.setProperties(new HashMap<>());
         setDeploymentNodeProperties(node, deploymentNode);
         String deploymentNodeDSLIdentifier = deploymentNode.getProperties().get("structurizr_dsl_identifier").toString();
@@ -97,8 +100,8 @@ public class NodesBuilder {
         if (!deploymentNode.getEnvironment().equals(environment)) {
             return;
         }
-        diagramParameters.getObjectMap().put(deploymentNodeDSLIdentifier, diagramParameters.getLastObjectId());
-        diagramParameters.setLastObjectId(diagramParameters.getLastObjectId() + 1);
+        diagramParameters.getObjectMap().put(deploymentNodeDSLIdentifier, id);
+        diagramParameters.setLastObjectId(id + 1);
         getInfrastructureNodes(session, deploymentNodeDSLIdentifier, environment, diagramParameters);
         containerComponentBuilder.getContainerInstances(session, deploymentNodeDSLIdentifier, environment, diagramParameters);
         getChildDeploymentNodes(session, deploymentNodeDSLIdentifier, environment, diagramParameters);
@@ -131,13 +134,13 @@ public class NodesBuilder {
     }
 
     public void setDeploymentNodeProperties(Node node, DeploymentNode deploymentNode) {
+        BeanWrapper wrapper = new BeanWrapperImpl(deploymentNode);
         for (String key : node.keys()) {
-            try {
-                Field field = DeploymentNode.class.getDeclaredField(key);
-                field.setAccessible(true);
-                field.set(deploymentNode, node.get(key).asObject());
-            } catch (Exception e) {
-                deploymentNode.getProperties().put(key, node.get(key).asObject());
+            Object value = node.get(key).asObject();
+            if (wrapper.isWritableProperty(key)) {
+                wrapper.setPropertyValue(key, value);
+            } else {
+                deploymentNode.getProperties().put(key, value);
             }
         }
     }
