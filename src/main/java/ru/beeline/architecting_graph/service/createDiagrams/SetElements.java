@@ -26,28 +26,6 @@ public class SetElements {
         return automaticLayout;
     }
 
-    public void setContextViewRelationships1(String systemId, RelationshipEntity relationship, SystemContextView systemContextView,
-                                             DiagramParameters diagramParameters) {
-        if (systemId.equals(relationship.getDestinationId())) {
-            RelationshipView contextRelationshipView = relationshipView.createWithId(relationship.getId());
-            systemContextView.getRelationships().add(contextRelationshipView);
-            if (!diagramParameters.getViewObjects().contains(relationship.getSourceId())) {
-                ElementView sourceElementView = elementView.createWithId(relationship.getSourceId());
-                systemContextView.getElements().add(sourceElementView);
-                diagramParameters.getViewObjects().add(relationship.getSourceId());
-            }
-        }
-        if (systemId.equals(relationship.getSourceId())) {
-            RelationshipView contextRelationshipView = relationshipView.createWithId(relationship.getId());
-            systemContextView.getRelationships().add(contextRelationshipView);
-            if (!diagramParameters.getViewObjects().contains(relationship.getDestinationId())) {
-                ElementView sourceElementView = elementView.createWithId(relationship.getDestinationId());
-                systemContextView.getElements().add(sourceElementView);
-                diagramParameters.getViewObjects().add(relationship.getDestinationId());
-            }
-        }
-    }
-
     public void setContextViewRelationships(String systemId, RelationshipEntity relationship, SystemContextView systemContextView,
                                             DiagramParameters diagramParameters) {
         if (systemId.equals(relationship.getSourceId()) || systemId.equals(relationship.getDestinationId())) {
