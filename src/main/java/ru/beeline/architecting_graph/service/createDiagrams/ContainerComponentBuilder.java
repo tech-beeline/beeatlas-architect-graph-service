@@ -9,7 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.beeline.architecting_graph.model.*;
 import ru.beeline.architecting_graph.repository.neo4j.CreateDiagramsQuery;
-
+import org.springframework.beans.BeanWrapper;
+import org.springframework.beans.BeanWrapperImpl;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,13 +36,13 @@ public class ContainerComponentBuilder {
     }
 
     public void setContainerProperties(Node node, Container container) {
+        BeanWrapper wrapper = new BeanWrapperImpl(container);
         for (String key : node.keys()) {
-            try {
-                Field field = Container.class.getDeclaredField(key);
-                field.setAccessible(true);
-                field.set(container, node.get(key).asObject());
-            } catch (Exception e) {
-                container.getProperties().put(key, node.get(key).asObject());
+            Object value = node.get(key).asObject();
+            if (wrapper.isWritableProperty(key)) {
+                wrapper.setPropertyValue(key, value);
+            } else {
+                container.getProperties().put(key, value);
             }
         }
     }
@@ -92,16 +93,17 @@ public class ContainerComponentBuilder {
     }
 
     public Container getContainer(Session session, Node node, DiagramParameters diagramParameters) {
+        Long id = diagramParameters.getLastObjectId();
         Container container = new Container();
         container.setProperties(new HashMap<>());
         container.setRelationships(new ArrayList<>());
         container.setComponents(new ArrayList<>());
-        container.setId(String.valueOf(diagramParameters.getLastObjectId()));
+        container.setId(String.valueOf(id));
         setContainerProperties(node, container);
         String containerDSLIdentifier = container.getProperties().get("structurizr_dsl_identifier").toString();
         diagramParameters.getObjectMap().put(containerDSLIdentifier, diagramParameters.getLastObjectId());
         diagramParameters.getCreatedContainers().put(containerDSLIdentifier, container);
-        diagramParameters.setLastObjectId(diagramParameters.getLastObjectId() + 1);
+        diagramParameters.setLastObjectId(id + 1);
         addContainerToSystem(session, container, diagramParameters);
         return container;
     }
@@ -223,10 +225,11 @@ public class ContainerComponentBuilder {
     }
 
     public void getContainerInstance(Session session, Node node, String environment, DiagramParameters diagramParameters) {
+        Long id = diagramParameters.getLastObjectId();
         ContainerInstance containerInstance = new ContainerInstance();
         containerInstance.setProperties(new HashMap<>());
         containerInstance.setRelationships(new ArrayList<>());
-        containerInstance.setId(String.valueOf(diagramParameters.getLastObjectId()));
+        containerInstance.setId(String.valueOf(id));
         setContainerInstanceProperties(node, containerInstance);
         String containerInstanceDSLIdentifier = containerInstance.getProperties().get("structurizr_dsl_identifier").toString();
         setContainerInstanceEnvironment(session, containerInstanceDSLIdentifier, containerInstance);
@@ -234,8 +237,8 @@ public class ContainerComponentBuilder {
             return;
         }
         setContainerInstanceContainerId(session, containerInstanceDSLIdentifier, containerInstance, diagramParameters);
-        diagramParameters.getObjectMap().put(containerInstanceDSLIdentifier, diagramParameters.getLastObjectId());
-        diagramParameters.setLastObjectId(diagramParameters.getLastObjectId() + 1);
+        diagramParameters.getObjectMap().put(containerInstanceDSLIdentifier, id);
+        diagramParameters.setLastObjectId(id + 1);
         diagramParameters.getCreatedContainerInstances().put(containerInstanceDSLIdentifier, containerInstance);
     }
 
