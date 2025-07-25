@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>ru.beeline</groupId>
 	<artifactId>architecting_graph</artifactId>
-	<version>0.0.2-SNAPSHOT</version>
+	<version>0.0.3</version>
 	<name>architecting_graph</name>
 	<url/>
 	<licenses>
@@ -33,6 +33,19 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-amqp</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-redis</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>net.minidev</groupId>
+			<artifactId>json-smart</artifactId>
+			<version>2.4.9</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springdoc</groupId>

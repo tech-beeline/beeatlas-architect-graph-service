@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import ru.beeline.architecting_graph.dto.TaskCacheDTO;
 import ru.beeline.architecting_graph.service.compareVersions.CompareVersionsService;
 import ru.beeline.architecting_graph.service.createDiagrams.CreateDiagrams;
 import ru.beeline.architecting_graph.service.getElements.GetElements;
@@ -30,6 +31,14 @@ public class GraphController {
 
     @Autowired
     GetElements getElements;
+
+    @GetMapping("/graph/{graph-type}/task/{task-id}")
+    @Operation(summary = "Получение статуса графа по taskKey и типу графа")
+    public ResponseEntity<TaskCacheDTO> getGraphByTask(
+            @PathVariable("graph-type") String graphType,
+            @PathVariable("task-id") String taskId) {
+        return graphConstructionService.getGraphByTask(graphType, taskId);
+    }
 
     @PostMapping("/graph/local/{docId}")
     @Operation(summary = "Пересоздание локального графа, используя документ, в котором описывается система (все вершины и связи помечаются graphTag: Local)")

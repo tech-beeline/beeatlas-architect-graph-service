@@ -1,10 +1,12 @@
 package ru.beeline.architecting_graph.service.graph;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.exceptions.ServiceUnavailableException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -12,10 +14,12 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.server.ResponseStatusException;
 import ru.beeline.architecting_graph.client.DocumentClient;
+import ru.beeline.architecting_graph.dto.TaskCacheDTO;
 import ru.beeline.architecting_graph.model.Workspace;
 
 import java.io.File;
 
+@Slf4j
 @Service
 public class GraphConstructionService {
 
@@ -27,6 +31,9 @@ public class GraphConstructionService {
 
     @Autowired
     ContainerUpdateFunctions containerUpdateFunctions;
+
+    @Autowired
+    RedisTemplate<String, TaskCacheDTO> redisTemplate;
 
     @Autowired
     ObjectMapper objectMapper;
@@ -84,5 +91,23 @@ public class GraphConstructionService {
         File file = new File(FilePath);
         Workspace workspace = objectMapper.readValue(file, Workspace.class);
         return workspace;
+    }
+
+    public ResponseEntity<TaskCacheDTO> getGraphByTask(String graphType, String taskId) {
+        String redisKey = "graph:" + taskId;
+
+        TaskCacheDTO existingDto = redisTemplate.opsForValue().get(redisKey);
+
+        if (existingDto == null) {
+            log.warn("No cache entry for taskId: {}", taskId);
+            return ResponseEntity.notFound().build();
+        }
+
+        if (!graphType.equalsIgnoreCase(existingDto.getType())) {
+            log.warn("Cache entry type '{}' does not match requested graphType '{}'", existingDto.getType(), graphType);
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(existingDto);
     }
 }
