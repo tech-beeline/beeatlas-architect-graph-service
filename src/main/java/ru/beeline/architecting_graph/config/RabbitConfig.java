@@ -60,10 +60,6 @@ public class RabbitConfig {
         return BindingBuilder.bind(queue).to(directExchange).with(routingName);
     }
 
-    @Bean
-    public Binding descriptionQualityBinding(Queue descriptionQualityQueue, FanoutExchange techRecalcFanoutExchange) {
-        return BindingBuilder.bind(descriptionQualityQueue).to(techRecalcFanoutExchange);
-    }
 
     @Bean
     public CachingConnectionFactory connectionFactory() {
