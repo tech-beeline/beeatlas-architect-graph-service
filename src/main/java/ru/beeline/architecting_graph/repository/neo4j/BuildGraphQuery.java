@@ -31,7 +31,6 @@ public class BuildGraphQuery {
                         String parameter) {
                 String getParameter = "MATCH (n:" + graphObject.getType() + " {graphTag: $graphTag1, "
                                 + graphObject.getKey() + ": $value}) " + "RETURN n." + parameter + " AS parameter";
-                log.info(getParameter);
                 Value parameters = Values.parameters("graphTag1", graphTag, "value", graphObject.getValue());
                 Result result = session.run(getParameter, parameters);
                 return result.next().get("parameter");
