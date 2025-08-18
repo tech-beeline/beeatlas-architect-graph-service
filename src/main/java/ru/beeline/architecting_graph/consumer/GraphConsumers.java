@@ -139,7 +139,7 @@ public class GraphConsumers {
 
                 redisTemplate.opsForValue().set(redisKey, newCache, Duration.ofHours(24));
                 try {
-                    if (graphConstructionService.graphConstruct(docId, "global").getStatusCode().is2xxSuccessful()) {
+                    if (graphConstructionService.graphConstruct(docId, "Global").getStatusCode().is2xxSuccessful()) {
 
                         newCache.setStatus("DONE");
                         redisTemplate.opsForValue().set(redisKey, newCache, Duration.ofHours(24));
