@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import ru.beeline.architecting_graph.dto.TaskCacheDTO;
 
@@ -23,10 +24,10 @@ public class RedisConfig {
         mapper.registerModule(new JavaTimeModule());
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
-        GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer(mapper);
-
-        template.setKeySerializer(new StringRedisSerializer());
+        Jackson2JsonRedisSerializer<TaskCacheDTO> serializer = new Jackson2JsonRedisSerializer<>(TaskCacheDTO.class);
+        serializer.setObjectMapper(mapper);
         template.setValueSerializer(serializer);
+        template.setKeySerializer(new StringRedisSerializer());
 
         return template;
     }
