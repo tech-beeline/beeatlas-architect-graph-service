@@ -9,6 +9,8 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import ru.beeline.architecting_graph.dto.TaskCacheDTO;
 import ru.beeline.architecting_graph.service.RabbitService;
@@ -83,7 +85,8 @@ public class GraphConsumers {
 
                 redisTemplate.opsForValue().set(redisKey, newCache, Duration.ofHours(24));
                 try {
-                    if (graphConstructionService.graphConstruct(docId, "Local").getStatusCode().is2xxSuccessful()) {
+                    ResponseEntity<String> result = graphConstructionService.graphConstruct(docId, "Local");
+                    if (result.getStatusCode().is2xxSuccessful()) {
 
                         newCache.setStatus("DONE");
                         redisTemplate.opsForValue().set(redisKey, newCache, Duration.ofHours(24));
@@ -92,6 +95,8 @@ public class GraphConsumers {
                         item.put("taskKey", taskKey);
                         item.put("status", "DONE");
                         rabbitService.sendMessage("result_local_graph", objectMapper.writeValueAsString(item));
+                    } else {
+                        throw new RuntimeException(result.getBody());
                     }
                 } catch (Exception e) {
                     log.error("Error building graph for taskKey={}, docId={}: {}", taskKey, docId, e);
@@ -103,11 +108,13 @@ public class GraphConsumers {
                     item.put("taskKey", taskKey);
                     item.put("status", "ERROR");
                     rabbitService.sendMessage("result_local_graph", objectMapper.writeValueAsString(item));
+                    ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Документ не найден");
                 }
             } else {
                 log.error("Message does not match the required format");
             }
         } catch (Exception e) {
+
             log.error("Internal server Error: {}", e.getMessage(), e);
         }
     }
