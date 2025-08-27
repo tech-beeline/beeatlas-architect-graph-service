@@ -94,7 +94,7 @@ public class GraphConstructionService {
     }
 
     public ResponseEntity<TaskCacheDTO> getGraphByTask(String graphType, String taskId) {
-        String redisKey = "graph:taskKey:" + taskId;
+        String redisKey = "graph:" + taskId;
 
         TaskCacheDTO existingDto = redisTemplate.opsForValue().get(redisKey);
 
