@@ -135,7 +135,6 @@ public class CreateExternalObjects {
                     "numberOfConnects").toString();
             String endVersionRelationship = buildGraphQuery.getRelationshipParameter(session, graphTag, "None", connection,
                     "endVersion").toString();
-            System.out.println(endVersionRelationship);
             if (numberOfConnects.equals("NULL") || !endVersionRelationship.equals("NULL")) {
                 numberOfConnects = "0";
             } else {

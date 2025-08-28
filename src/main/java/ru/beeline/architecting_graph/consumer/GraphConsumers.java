@@ -66,8 +66,9 @@ public class GraphConsumers {
             if (jsonNode.has("taskKey") && jsonNode.has("docId")) {
                 String taskKey = jsonNode.get("taskKey").asText();
                 Long docId = jsonNode.get("docId").asLong();
-                Long id = redisTemplate.opsForValue().increment("global:taskCacheId", 1);
-                String redisKey = "graph:" + id.toString();
+
+                String redisKey = "graph:" + taskKey;
+
                 TaskCacheDTO existingDto = redisTemplate.opsForValue().get(redisKey);
                 if (existingDto != null && "local".equalsIgnoreCase(existingDto.getType()) && taskKey.equals(existingDto.getTaskKey())) {
                     log.info("Record with taskKey={} and type=local already exists, skipping processing", taskKey);
@@ -127,8 +128,7 @@ public class GraphConsumers {
                 String taskKey = jsonNode.get("taskKey").asText();
                 Long docId = jsonNode.get("docId").asLong();
 
-                Long id = redisTemplate.opsForValue().increment("global:taskCacheId", 1);
-                String redisKey = "graph:" + id.toString();
+                String redisKey = "graph:" + taskKey;
 
                 TaskCacheDTO existingDto = redisTemplate.opsForValue().get(redisKey);
                 if (existingDto != null && "global".equalsIgnoreCase(existingDto.getType()) && taskKey.equals(existingDto.getTaskKey())) {
