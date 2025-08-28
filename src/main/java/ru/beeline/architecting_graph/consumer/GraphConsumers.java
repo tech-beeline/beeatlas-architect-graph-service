@@ -87,7 +87,6 @@ public class GraphConsumers {
                 try {
                     ResponseEntity<String> result = graphConstructionService.graphConstruct(docId, "Local");
                     if (result.getStatusCode().is2xxSuccessful()) {
-
                         newCache.setStatus("DONE");
                         redisTemplate.opsForValue().set(redisKey, newCache, Duration.ofHours(24));
 
@@ -96,10 +95,12 @@ public class GraphConsumers {
                         item.put("status", "DONE");
                         rabbitService.sendMessage("result_local_graph", objectMapper.writeValueAsString(item));
                     } else {
+                        log.info("graph construct StatusCode is " + result.getStatusCode());
                         throw new RuntimeException(result.getBody());
                     }
                 } catch (Exception e) {
                     log.error("Error building graph for taskKey={}, docId={}: {}", taskKey, docId, e);
+                    log.info(e.getMessage());
 
                     newCache.setStatus("ERROR");
                     redisTemplate.opsForValue().set(redisKey, newCache, Duration.ofHours(24));
@@ -114,7 +115,6 @@ public class GraphConsumers {
                 log.error("Message does not match the required format");
             }
         } catch (Exception e) {
-
             log.error("Internal server Error: {}", e.getMessage(), e);
         }
     }
