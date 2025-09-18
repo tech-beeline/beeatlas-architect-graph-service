@@ -43,22 +43,27 @@ public class GraphConstructionService {
             session.run("RETURN 1");
             String workspaceJson = getWorkspaceJson(docId);
             if (workspaceJson == null) {
+                log.info("Документ не найден");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Документ не найден");
             }
             Workspace workspace;
             try {
                 workspace = objectMapper.readValue(workspaceJson, Workspace.class);
             } catch (Exception e) {
+                log.info("Полученный workspace не валиден: " + e.getMessage());
+                log.info("workspaceJson is: " + workspaceJson);
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Полученный workspace не валиден");
             }
             try {
                 containerUpdateFunctions.createGraph(session, graphTag, workspace);
             } catch (Exception e) {
+                log.info("Граф не построен: " + e.getMessage());
                 return ResponseEntity.badRequest().body("Граф не построен\n" + e.getMessage());
             }
             return ResponseEntity.status(HttpStatus.CREATED).body("Граф построен");
 
         } catch (ServiceUnavailableException e) {
+            log.info("Нет подключения к БД: " + e.getMessage());
             return ResponseEntity.badRequest().body("Нет подключения к БД");
         }
     }
