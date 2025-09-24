@@ -4,17 +4,16 @@ import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import ru.beeline.architecting_graph.dto.ProductInfluenceDTO;
 import ru.beeline.architecting_graph.dto.TaskCacheDTO;
 import ru.beeline.architecting_graph.service.compareVersions.CompareVersionsService;
 import ru.beeline.architecting_graph.service.createDiagrams.CreateDiagrams;
 import ru.beeline.architecting_graph.service.getElements.GetElements;
 import ru.beeline.architecting_graph.service.graph.GraphConstructionService;
+import ru.beeline.architecting_graph.service.graph.ProductInfluenceService;
+
+import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -30,13 +29,15 @@ public class GraphController {
     GraphConstructionService graphConstructionService;
 
     @Autowired
+    ProductInfluenceService productInfluenceService;
+
+    @Autowired
     GetElements getElements;
 
     @GetMapping("/graph/{graph-type}/task/{task-id}")
     @Operation(summary = "Получение статуса графа по taskKey и типу графа")
-    public ResponseEntity<TaskCacheDTO> getGraphByTask(
-            @PathVariable("graph-type") String graphType,
-            @PathVariable("task-id") String taskId) {
+    public ResponseEntity<TaskCacheDTO> getGraphByTask(@PathVariable("graph-type") String graphType,
+                                                       @PathVariable("task-id") String taskId) {
         return graphConstructionService.getGraphByTask(graphType, taskId);
     }
 
@@ -66,6 +67,18 @@ public class GraphController {
         return getC4Diagramm(softwareSystemMnemonic, null);
     }
 
+    @GetMapping("/product/{cmdb}/influence")
+    @Operation(summary = "Метод для получения связанных систем")
+    public ResponseEntity<ProductInfluenceDTO> getInfluence(@PathVariable String cmdb) {
+        try {
+            return ResponseEntity.ok(productInfluenceService.getRelatedSystems(cmdb));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
     @GetMapping("/deployment/{environment}/{softwareSystemMnemonic}")
     @Operation(summary = "Генерация json с описанием deploymentView")
     public ResponseEntity<String> getDeploymentDiagramm(@PathVariable String environment,
@@ -85,9 +98,9 @@ public class GraphController {
 
     @GetMapping("/diff/{cmdb}/{firstVersion}")
     @Operation(summary = "Сравнение указанной версии системы с текущей (последней/актуальной)")
-    public ResponseEntity<String> compareWithCur(@PathVariable String cmdb,
-                                                 @PathVariable Integer firstVersion) {
-        return ResponseEntity.status(HttpStatus.OK).body(compareVersionService.compareVersion(cmdb, firstVersion, null));
+    public ResponseEntity<String> compareWithCur(@PathVariable String cmdb, @PathVariable Integer firstVersion) {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(compareVersionService.compareVersion(cmdb, firstVersion, null));
     }
 
     @GetMapping("/elements")

@@ -1,10 +1,13 @@
 package ru.beeline.architecting_graph.repository.neo4j;
 
+import org.neo4j.driver.Record;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 
 @Repository
 public class CompareVersionsQuery {
@@ -131,4 +134,27 @@ public class CompareVersionsQuery {
         return session.run(query, params);
     }
 
+    public boolean productExists(Session session, String cmdb) {
+        String query = "MATCH (p:SoftwareSystem {graphTag: 'Global', cmdb: $cmdb}) RETURN p LIMIT 1";
+        Record productRecord = session.run(query, Values.parameters("cmdb", cmdb)).single();
+        return productRecord != null;
+    }
+
+    public List<String> getDependentSystems(Session session, String cmdb) {
+        String query = "MATCH (p:SoftwareSystem {graphTag: 'Global', cmdb: $cmdb})-[r:Relationship]->(dependent:SoftwareSystem) " +
+                "RETURN collect(dependent.cmdb) AS dependentSystems";
+        return session.run(query, Values.parameters("cmdb", cmdb))
+                .single()
+                .get("dependentSystems")
+                .asList(Value::asString);
+    }
+
+    public List<String> getInfluencingSystems(Session session, String cmdb) {
+        String query = "MATCH (influencing:SoftwareSystem)-[r:Relationship]->(p:SoftwareSystem {graphTag: 'Global', cmdb: $cmdb}) " +
+                "RETURN collect(influencing.cmdb) AS influencingSystems";
+        return session.run(query, Values.parameters("cmdb", cmdb))
+                .single()
+                .get("influencingSystems")
+                .asList(Value::asString);
+    }
 }
