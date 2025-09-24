@@ -11,6 +11,7 @@ import ru.beeline.architecting_graph.repository.neo4j.CompareVersionsQuery;
 import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -30,8 +31,15 @@ public class ProductInfluenceService {
             List<String> dependentSystems = compareVersionsQuery.getDependentSystems(session, cmdb);
             List<String> influencingSystems = compareVersionsQuery.getInfluencingSystems(session, cmdb);
 
-            return new ProductInfluenceDTO(dependentSystems != null ? dependentSystems : Collections.emptyList(),
-                                           influencingSystems != null ? influencingSystems : Collections.emptyList());
+            return new ProductInfluenceDTO(
+                    dependentSystems != null ?
+                            dependentSystems.stream().distinct().collect(Collectors.toList()) :
+                            Collections.emptyList(),
+                    influencingSystems != null ?
+                            influencingSystems.stream().distinct().collect(Collectors.toList()) :
+                            Collections.emptyList()
+            );
+
         }
     }
 }
