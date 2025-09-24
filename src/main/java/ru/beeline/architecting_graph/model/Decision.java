@@ -11,21 +11,11 @@ public class Decision {
 
     private String id;
     private String date;
-    private Status status;
+    private String status;
     private String title;
     private String content;
     private Format format;
     private String elementId;
-
-    public enum Status {
-        Proposed,
-        Accepted,
-        Superseded,
-        Deprecated,
-        Rejected,
-        Creating,
-        Draft
-    }
 
     public enum Format {
         Markdown,
