@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>ru.beeline</groupId>
 	<artifactId>architecting_graph</artifactId>
-	<version>1.0.2</version>
+	<version>1.0.3</version>
 	<name>architecting_graph</name>
 	<url/>
 	<licenses>
@@ -74,6 +74,11 @@
 		<dependency>
 			<groupId>com.fasterxml.jackson.datatype</groupId>
 			<artifactId>jackson-datatype-jsr310</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>ru.beeline</groupId>
+			<artifactId>fdm-lib</artifactId>
+			<version>0.0.36</version>
 		</dependency>
 		<dependency>
 			<groupId>net.minidev</groupId>

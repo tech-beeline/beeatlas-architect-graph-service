@@ -5,13 +5,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.beeline.architecting_graph.dto.ProductInfluenceDTO;
 import ru.beeline.architecting_graph.dto.TaskCacheDTO;
 import ru.beeline.architecting_graph.service.compareVersions.CompareVersionsService;
 import ru.beeline.architecting_graph.service.createDiagrams.CreateDiagrams;
 import ru.beeline.architecting_graph.service.getElements.GetElements;
 import ru.beeline.architecting_graph.service.graph.GraphConstructionService;
 import ru.beeline.architecting_graph.service.graph.ProductInfluenceService;
+import ru.beeline.fdmlib.dto.graph.ProductInfluenceDTO;
 
 import java.util.NoSuchElementException;
 
@@ -67,7 +67,7 @@ public class GraphController {
         return getC4Diagramm(softwareSystemMnemonic, null);
     }
 
-    @GetMapping("/product/{cmdb}/influence")
+    @GetMapping("/graph/product/{cmdb}/influence")
     @Operation(summary = "Метод для получения связанных систем")
     public ResponseEntity<ProductInfluenceDTO> getInfluence(@PathVariable String cmdb) {
         try {

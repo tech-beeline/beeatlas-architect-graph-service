@@ -5,8 +5,8 @@ import org.neo4j.driver.Driver;
 import org.neo4j.driver.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ru.beeline.architecting_graph.dto.ProductInfluenceDTO;
 import ru.beeline.architecting_graph.repository.neo4j.CompareVersionsQuery;
+import ru.beeline.fdmlib.dto.graph.ProductInfluenceDTO;
 
 import java.util.Collections;
 import java.util.List;
@@ -39,7 +39,6 @@ public class ProductInfluenceService {
                             influencingSystems.stream().distinct().collect(Collectors.toList()) :
                             Collections.emptyList()
             );
-
         }
     }
 }
