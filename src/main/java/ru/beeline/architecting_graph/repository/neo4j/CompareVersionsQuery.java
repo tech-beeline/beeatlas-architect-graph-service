@@ -135,14 +135,19 @@ public class CompareVersionsQuery {
     }
 
     public boolean productExists(Session session, String cmdb) {
-        String query = "MATCH (p:SoftwareSystem {graphTag: 'Global', cmdb: $cmdb}) RETURN p LIMIT 1";
+        String query = "MATCH (p:SoftwareSystem {graphTag: 'Global'}) " +
+                "WHERE toLower(p.cmdb) = toLower($cmdb) " +
+                "RETURN p LIMIT 1";
         Record productRecord = session.run(query, Values.parameters("cmdb", cmdb)).single();
         return productRecord != null;
     }
 
     public List<String> getDependentSystems(Session session, String cmdb) {
-        String query = "MATCH (p:SoftwareSystem {graphTag: 'Global', cmdb: $cmdb})-[r:Relationship]->(dependent:SoftwareSystem) " +
-                "RETURN collect(dependent.cmdb) AS dependentSystems";
+        String query =
+                "MATCH (p:SoftwareSystem {graphTag: 'Global'}) " +
+                        "WHERE toLower(p.cmdb) = toLower($cmdb) " +
+                        "MATCH (p)-[r:Relationship]->(dependent:SoftwareSystem) " +
+                        "RETURN collect(dependent.cmdb) AS dependentSystems";
         return session.run(query, Values.parameters("cmdb", cmdb))
                 .single()
                 .get("dependentSystems")
@@ -150,8 +155,10 @@ public class CompareVersionsQuery {
     }
 
     public List<String> getInfluencingSystems(Session session, String cmdb) {
-        String query = "MATCH (influencing:SoftwareSystem)-[r:Relationship]->(p:SoftwareSystem {graphTag: 'Global', cmdb: $cmdb}) " +
-                "RETURN collect(influencing.cmdb) AS influencingSystems";
+        String query =
+                "MATCH (influencing:SoftwareSystem)-[r:Relationship]->(p:SoftwareSystem {graphTag: 'Global'}) " +
+                        "WHERE toLower(p.cmdb) = toLower($cmdb) " +
+                        "RETURN collect(influencing.cmdb) AS influencingSystems";
         return session.run(query, Values.parameters("cmdb", cmdb))
                 .single()
                 .get("influencingSystems")
