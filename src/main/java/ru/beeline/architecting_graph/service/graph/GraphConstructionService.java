@@ -40,6 +40,7 @@ public class GraphConstructionService {
 
     public ResponseEntity<String> graphConstruct(Long docId, String graphTag) {
         try (Session session = driver.session()) {
+            log.info("graphConstruct is running");
             session.run("RETURN 1");
             String workspaceJson = getWorkspaceJson(docId);
             if (workspaceJson == null) {
@@ -60,6 +61,7 @@ public class GraphConstructionService {
                 log.info("Граф не построен: " + e.getMessage());
                 return ResponseEntity.badRequest().body("Граф не построен\n" + e.getMessage());
             }
+            log.info("graph constructed");
             return ResponseEntity.status(HttpStatus.CREATED).body("Граф построен");
 
         } catch (ServiceUnavailableException e) {

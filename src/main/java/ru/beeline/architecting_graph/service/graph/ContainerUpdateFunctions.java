@@ -1,5 +1,6 @@
 package ru.beeline.architecting_graph.service.graph;
 
+import lombok.extern.slf4j.Slf4j;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
@@ -12,6 +13,7 @@ import ru.beeline.architecting_graph.repository.neo4j.BuildGraphQuery;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @Service
 public class ContainerUpdateFunctions {
 
@@ -28,11 +30,13 @@ public class ContainerUpdateFunctions {
     CreateExternalObjects createExternalObjects;
 
     public void createGraph(Session session, String graphTag, Workspace workspace) throws Exception {
+        log.info("createGraph 1");
         Model model = workspace.getModel();
         String cmdb = model.getProperties().get("workspace_cmdb").toString();
         SoftwareSystem softwareSystem = getSoftwareSystem(model, cmdb);
         HashMap<String, GraphObject> objects = new HashMap<>();
         String curVersion = null;
+        log.info("createGraph 2");
         if (graphTag.equals("Global")) {
             curVersion = updateSystem(session, graphTag, softwareSystem, cmdb, objects);
             Integer prevVersion = Integer.parseInt(curVersion) - 1;
@@ -42,11 +46,16 @@ public class ContainerUpdateFunctions {
             buildGraphQuery.deleteGraph(session, graphTag);
             updateSystem(session, graphTag, softwareSystem, cmdb, objects);
         }
+        log.info("createGraph 4");
+        log.info("createGraph 4.1");
         updateContainers(session, graphTag, model, softwareSystem, cmdb, curVersion, objects);
+        log.info("createGraph 4.2");
         updateSystemRelationships(session, graphTag, model, cmdb, curVersion,
                 objects);
+        log.info("createGraph 4.3");
         updateDeploymentNodes(session, graphTag, model, softwareSystem.getId(),
                 cmdb, curVersion, objects);
+        log.info("createGraph 5");
         if (model.getDeploymentNodes() != null) {
             for (DeploymentNode deploymentNode : model.getDeploymentNodes()) {
                 deploymentNodeUpdateFunctions.updateDeploymentNodeRelationships(session, graphTag, deploymentNode,
