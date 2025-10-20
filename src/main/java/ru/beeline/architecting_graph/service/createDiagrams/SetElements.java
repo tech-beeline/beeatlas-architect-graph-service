@@ -14,13 +14,13 @@ public class SetElements {
     ElementView elementView = new ElementView();
     RelationshipView relationshipView = new RelationshipView();
 
-    public AutomaticLayout createAutomaticLayout() {
+    public AutomaticLayout createAutomaticLayout(String rankDirection) {
         AutomaticLayout automaticLayout = new AutomaticLayout();
         automaticLayout.setApplied(false);
         automaticLayout.setEdgeSeparation(0);
         automaticLayout.setImplementation(LayoutImplementation.Graphviz);
         automaticLayout.setNodeSeparation(300);
-        automaticLayout.setRankDirection(RankDirection.TopBottom);
+        automaticLayout.setRankDirection(rankDirection == null ? RankDirection.TopBottom : RankDirection.valueOf(rankDirection));
         automaticLayout.setRankSeparation(300);
         automaticLayout.setVertices(false);
         return automaticLayout;
@@ -42,7 +42,8 @@ public class SetElements {
         }
     }
 
-    public void setContextView(Workspace workspace, SoftwareSystem system, DiagramParameters diagramParameters) {
+    public void setContextView(Workspace workspace, SoftwareSystem system, DiagramParameters diagramParameters,
+                               String rankDirection) {
         List<SystemContextView> systemContextViews = new ArrayList<>();
         SystemContextView systemContextView = new SystemContextView();
         systemContextView.setElements(new ArrayList<>());
@@ -51,7 +52,7 @@ public class SetElements {
         systemContextView.setEnterpriseBoundaryVisible(true);
         systemContextView.setKey("context");
         systemContextView.setOrder(1);
-        AutomaticLayout automaticLayout = createAutomaticLayout();
+        AutomaticLayout automaticLayout = createAutomaticLayout(rankDirection);
         systemContextView.setAutomaticLayout(automaticLayout);
         for (Map.Entry<String, SoftwareSystem> entry : diagramParameters.getCreatedSystems().entrySet()) {
             SoftwareSystem currentSystem = entry.getValue();
@@ -113,7 +114,8 @@ public class SetElements {
         }
     }
 
-    public void setContainerView(Workspace workspace, SoftwareSystem system, DiagramParameters diagramParameters) {
+    public void setContainerView(Workspace workspace, SoftwareSystem system, DiagramParameters diagramParameters,
+                                 String rankDirection) {
         diagramParameters.setViewObjects(new HashSet<>());
         List<ContainerView> containerViews = new ArrayList<>();
         ContainerView containerView = new ContainerView();
@@ -123,7 +125,7 @@ public class SetElements {
         containerView.setExternalSoftwareSystemBoundariesVisible(false);
         containerView.setKey("containers");
         containerView.setOrder(2);
-        AutomaticLayout automaticLayout = createAutomaticLayout();
+        AutomaticLayout automaticLayout = createAutomaticLayout(rankDirection);
         containerView.setAutomaticLayout(automaticLayout);
         diagramParameters.getViewObjects().add(system.getId());
         Set<String> containersId = new HashSet<>();
@@ -177,7 +179,8 @@ public class SetElements {
         }
     }
 
-    public void setComponentView(Workspace workspace, String containerMnemonic, DiagramParameters diagramParameters) {
+    public void setComponentView(Workspace workspace, String containerMnemonic, DiagramParameters diagramParameters,
+                                 String rankDirection) {
         List<ComponentView> componentViews = new ArrayList<>();
         ComponentView componentView = new ComponentView();
         componentView.setElements(new ArrayList<>());
@@ -187,7 +190,7 @@ public class SetElements {
         componentView.setExternalContainerBoundariesVisible(true);
         componentView.setKey("components");
         componentView.setOrder(3);
-        AutomaticLayout automaticLayout = createAutomaticLayout();
+        AutomaticLayout automaticLayout = createAutomaticLayout(rankDirection);
         componentView.setAutomaticLayout(automaticLayout);
         Set<String> componentsId = new HashSet<>();
         setComponentViewElements(container, componentsId, componentView, diagramParameters);
@@ -261,7 +264,7 @@ public class SetElements {
     }
 
     public void setDeploymentView(Workspace workspace, Model model, String systemId, String environment,
-                                  DiagramParameters diagramParameters) {
+                                  DiagramParameters diagramParameters, String rankDirection) {
         List<DeploymentView> deploymentViews = new ArrayList<>();
         DeploymentView deploymentView = new DeploymentView();
         deploymentView.setElements(new ArrayList<>());
@@ -271,7 +274,7 @@ public class SetElements {
         deploymentView.setEnvironment(environment);
         deploymentView.setKey(environment + "-01");
         deploymentView.setOrder(4);
-        AutomaticLayout automaticLayout = createAutomaticLayout();
+        AutomaticLayout automaticLayout = createAutomaticLayout(rankDirection);
         deploymentView.setAutomaticLayout(automaticLayout);
         for (DeploymentNode deploymentNode : model.getDeploymentNodes()) {
             setDeploymentViewNode(deploymentNode, deploymentView, diagramParameters);

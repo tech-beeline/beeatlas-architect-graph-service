@@ -27,27 +27,30 @@ public class GetView {
     @Autowired
     CreateDiagramsQuery createDiagramsQuery;
 
-    public Workspace GetContextView(Session session, String softwareSystemMnemonic) {
+    public Workspace GetContextView(Session session, String softwareSystemMnemonic, String rankDirection) {
         DiagramParameters diagramParameters = createNewDiagramParameters(session, softwareSystemMnemonic);
         createContextView(session, diagramParameters.getSystem(), softwareSystemMnemonic, diagramParameters);
         updateElements(diagramParameters.getWorkspace(), diagramParameters.getModel(), diagramParameters.getSystem(),
                 softwareSystemMnemonic, diagramParameters);
-        setElements.setContextView(diagramParameters.getWorkspace(), diagramParameters.getSystem(), diagramParameters);
-        setElements.setContainerView(diagramParameters.getWorkspace(), diagramParameters.getSystem(), diagramParameters);
+        setElements.setContextView(diagramParameters.getWorkspace(), diagramParameters.getSystem(), diagramParameters
+                , rankDirection);
+        setElements.setContainerView(diagramParameters.getWorkspace(), diagramParameters.getSystem(),
+                                     diagramParameters, rankDirection);
         return diagramParameters.getWorkspace();
     }
 
-    public Workspace GetComponentView(Session session, String softwareSystemMnemonic, String containerMnemonic) {
+    public Workspace GetComponentView(Session session, String softwareSystemMnemonic, String containerMnemonic,
+                                      String rankDirection) {
         DiagramParameters diagramParameters = createNewDiagramParameters(session, softwareSystemMnemonic);
         containerComponentBuilder.createComponentView(session, softwareSystemMnemonic, containerMnemonic, diagramParameters.getSystem(),
                 diagramParameters);
         updateElements(diagramParameters.getWorkspace(), diagramParameters.getModel(), diagramParameters.getSystem(),
                 softwareSystemMnemonic, diagramParameters);
-        setElements.setComponentView(diagramParameters.getWorkspace(), containerMnemonic, diagramParameters);
+        setElements.setComponentView(diagramParameters.getWorkspace(), containerMnemonic, diagramParameters, rankDirection);
         return diagramParameters.getWorkspace();
     }
 
-    public Workspace GetDeploymentView(Session session, String softwareSystemMnemonic, String environment) {
+    public Workspace GetDeploymentView(Session session, String softwareSystemMnemonic, String environment, String rankDirection) {
         DiagramParameters diagramParameters = createNewDiagramParameters(session, softwareSystemMnemonic);
         createDeploymentView(session, softwareSystemMnemonic, environment, diagramParameters.getModel(), diagramParameters);
 
@@ -55,7 +58,7 @@ public class GetView {
                 softwareSystemMnemonic, diagramParameters);
 
         setElements.setDeploymentView(diagramParameters.getWorkspace(), diagramParameters.getModel(), diagramParameters.getSystem().getId(),
-                environment, diagramParameters);
+                environment, diagramParameters, rankDirection);
         return diagramParameters.getWorkspace();
     }
 

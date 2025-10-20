@@ -56,15 +56,17 @@ public class GraphController {
     @GetMapping("/context/{softwareSystemMnemonic}/{containerMnemonic}")
     @Operation(summary = "Генерация json с описанием containerView")
     public ResponseEntity<String> getC4Diagramm(@PathVariable String softwareSystemMnemonic,
-                                                @PathVariable(required = false) String containerMnemonic) {
+                                                @PathVariable(required = false) String containerMnemonic,
+                                                @PathVariable(required = false, value = "LeftRight") String rankDirection) {
 
-        return createDiagrams.createDiagramm(softwareSystemMnemonic, containerMnemonic, null);
+        return createDiagrams.createDiagramm(softwareSystemMnemonic, containerMnemonic, null, rankDirection);
     }
 
     @GetMapping("/context/{softwareSystemMnemonic}")
     @Operation(summary = "Генерация json с описанием contextView")
-    public ResponseEntity<String> getContextDiagramm(@PathVariable String softwareSystemMnemonic) {
-        return getC4Diagramm(softwareSystemMnemonic, null);
+    public ResponseEntity<String> getContextDiagramm(@PathVariable String softwareSystemMnemonic,
+                                                     @PathVariable(required = false, value = "LeftRight") String rankDirection) {
+        return getC4Diagramm(softwareSystemMnemonic, null, rankDirection);
     }
 
     @GetMapping("/graph/product/{cmdb}/influence")
@@ -82,9 +84,10 @@ public class GraphController {
     @GetMapping("/deployment/{environment}/{softwareSystemMnemonic}")
     @Operation(summary = "Генерация json с описанием deploymentView")
     public ResponseEntity<String> getDeploymentDiagramm(@PathVariable String environment,
-                                                        @PathVariable String softwareSystemMnemonic) {
+                                                        @PathVariable String softwareSystemMnemonic,
+                                                        @PathVariable(required = false, value = "LeftRight") String rankDirection) {
 
-        return createDiagrams.createDiagramm(softwareSystemMnemonic, null, environment);
+        return createDiagrams.createDiagramm(softwareSystemMnemonic, null, environment, rankDirection);
     }
 
     @GetMapping("/diff/{cmdb}/{firstVersion}/{secondVersion}")
@@ -104,7 +107,7 @@ public class GraphController {
     }
 
     @GetMapping("/elements")
-    public ResponseEntity<String> getElements(@RequestHeader(value = "CYPHER-QUERY", required = true) String query) {
+    public ResponseEntity<String> getElements(@RequestHeader(value = "CYPHER-QUERY") String query) {
         return getElements.processingQuery(query);
     }
 }

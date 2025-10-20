@@ -48,7 +48,11 @@ public class CreateDiagrams {
         return result.hasNext();
     }
 
-    public ResponseEntity<String> createDiagramm(String softwareSystemMnemonic, String containerMnemonic, String environment) {
+    public ResponseEntity<String> createDiagramm(String softwareSystemMnemonic, String containerMnemonic, String environment,
+                                                 String rankDirection) {
+        if(!rankDirection.equals("TopBottom") && !rankDirection.equals("LeftRight")){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Недопустимая ориентация диаграммы");
+        }
         try (Session session = driver.session()) {
             session.run("RETURN 1");
             ObjectMapper objectMapper = new ObjectMapper();
@@ -65,17 +69,17 @@ public class CreateDiagrams {
             Workspace workspace;
             try {
                 if (containerMnemonic == null && environment == null) {
-                    workspace = getView.GetContextView(session, softwareSystemMnemonic);
+                    workspace = getView.GetContextView(session, softwareSystemMnemonic, rankDirection);
                 } else if (containerMnemonic != null) {
                     if (!checkifContainerExists(session, softwareSystemMnemonic, containerMnemonic)) {
                         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Контейнер не найден");
                     }
-                    workspace = getView.GetComponentView(session, softwareSystemMnemonic, containerMnemonic);
+                    workspace = getView.GetComponentView(session, softwareSystemMnemonic, containerMnemonic, rankDirection);
                 } else {
                     if (!checkIfEnvironmentExists(session, environment)) {
                         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Окружение не найдено");
                     }
-                    workspace = getView.GetDeploymentView(session, softwareSystemMnemonic, environment);
+                    workspace = getView.GetDeploymentView(session, softwareSystemMnemonic, environment, rankDirection);
                 }
                 String json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(workspace);
                 json = structurizrClient.changeJson(json);
