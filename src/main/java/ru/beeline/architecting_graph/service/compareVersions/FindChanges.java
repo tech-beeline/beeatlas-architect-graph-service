@@ -94,20 +94,20 @@ public class FindChanges {
                 out.add(new Pair(descriptionRelation(record.get("n"), record.get("m"), "Child", "Child"), "Relationship"));
             }
             if (childType.equals("DeploymentNode")) {
-                checkDeploymentNodes(name, session, v1, v2, curVersion, cmdb, flag, out);
+                checkDeploymentNodes(name, v1, v2, curVersion, cmdb, flag, out);
             }
             if (!childType.equals("DeploymentNode")) {
-                processRelationships(childType, name, session, v1, v2, curVersion, cmdb, flag, out);
+                processRelationships(childType, name, v1, v2, curVersion, cmdb, flag, out);
             }
         }
     }
 
     private void checkDeploymentNodes(String name, Integer v1, Integer v2,
                                       Integer curVersion, String cmdb, Boolean flag, Set<Pair> out) {
-        processRelationships("DeploymentNode", name, session, v1, v2, curVersion, cmdb, flag, out);
-        processChildren("DeploymentNode", "DeploymentNode", name, session, v1, v2, curVersion, cmdb, flag, out);
-        processChildren("DeploymentNode", "InfrastructureNode", name, session, v1, v2, curVersion, cmdb, flag, out);
-        processChildren("DeploymentNode", "ContainerInstance", name, session, v1, v2, curVersion, cmdb, flag, out);
+        processRelationships("DeploymentNode", name, v1, v2, curVersion, cmdb, flag, out);
+        processChildren("DeploymentNode", "DeploymentNode", name, v1, v2, curVersion, cmdb, flag, out);
+        processChildren("DeploymentNode", "InfrastructureNode", name, v1, v2, curVersion, cmdb, flag, out);
+        processChildren("DeploymentNode", "ContainerInstance", name, v1, v2, curVersion, cmdb, flag, out);
     }
 
     private boolean isChangeMatch(ChangeType type, int start, int end, int v1, int v2) {
@@ -119,19 +119,19 @@ public class FindChanges {
 
     public Set<Pair> earlierChanges(Integer v1, Integer v2, Integer curVersion, String cmdb) {
         Set<Pair> out = new HashSet<>();
-        processSystemRelationships(cmdb, v1, v2, curVersion, session, ChangeType.EARLIER, out);
-        processContainers(cmdb, v1, v2, curVersion, session, ChangeType.EARLIER, out);
-        processSoftwareSystemInstances(cmdb, v1, v2, curVersion, session, ChangeType.EARLIER, out);
-        processDeploymentNodes(cmdb, v1, v2, curVersion, session, ChangeType.EARLIER, out);
+        processSystemRelationships(cmdb, v1, v2, curVersion, ChangeType.EARLIER, out);
+        processContainers(cmdb, v1, v2, curVersion, ChangeType.EARLIER, out);
+        processSoftwareSystemInstances(cmdb, v1, v2, curVersion, ChangeType.EARLIER, out);
+        processDeploymentNodes(cmdb, v1, v2, curVersion, ChangeType.EARLIER, out);
         return out;
     }
 
     public Set<Pair> laterChanges(Integer v1, Integer v2, Integer curVersion, String cmdb) {
         Set<Pair> out = new HashSet<>();
-        processSystemRelationships(cmdb, v1, v2, curVersion, session, ChangeType.LATER, out);
-        processContainers(cmdb, v1, v2, curVersion, session, ChangeType.LATER, out);
-        processSoftwareSystemInstances(cmdb, v1, v2, curVersion, session, ChangeType.LATER, out);
-        processDeploymentNodes(cmdb, v1, v2, curVersion, session, ChangeType.LATER, out);
+        processSystemRelationships(cmdb, v1, v2, curVersion, ChangeType.LATER, out);
+        processContainers(cmdb, v1, v2, curVersion, ChangeType.LATER, out);
+        processSoftwareSystemInstances(cmdb, v1, v2, curVersion, ChangeType.LATER, out);
+        processDeploymentNodes(cmdb, v1, v2, curVersion, ChangeType.LATER, out);
         return out;
     }
 
@@ -160,7 +160,7 @@ public class FindChanges {
     }
 
     private void processContainerRelationships(String containerName, Integer v1, Integer v2, Integer curVersion, String cmdb,
-                                               Session session, Set<Pair> out) {
+                                               Set<Pair> out) {
         Result containerResult = relationshipRepository.getContainerRelationshipsOut(containerName, cmdb);
         while (containerResult.hasNext()) {
             Record record = containerResult.next();
@@ -238,11 +238,11 @@ public class FindChanges {
                 out.add(new Pair(descriptionRelation(record.get("n"), record.get("m"), "Child", "Child"), "Relationship"));
             }
             if (type == ChangeType.EARLIER) {
-                processContainerRelationships(containerName, v1, v2, curVersion, cmdb, session, out);
-                processComponents(containerName, v1, v2, curVersion, cmdb, session, out);
+                processContainerRelationships(containerName, v1, v2, curVersion, cmdb, out);
+                processComponents(containerName, v1, v2, curVersion, cmdb, out);
             } else {
-                processNodeRelationships("Container", containerName, cmdb, v1, v2, curVersion, session, out);
-                processComponents(containerName, cmdb, v1, v2, curVersion, session, out);
+                processNodeRelationships("Container", containerName, cmdb, v1, v2, curVersion, out);
+                processComponents(containerName, cmdb, v1, v2, curVersion, out);
             }
         }
     }
@@ -258,7 +258,7 @@ public class FindChanges {
                 out.add(new Pair(componentName, "Component"));
                 out.add(new Pair(descriptionRelation(record.get("n"), record.get("m"), "Child", "Child"), "Relationship"));
             }
-            processNodeRelationships("Component", componentName, cmdb, v1, v2, curVersion, session, out);
+            processNodeRelationships("Component", componentName, cmdb, v1, v2, curVersion, out);
         }
     }
 
@@ -314,7 +314,7 @@ public class FindChanges {
                 out.add(new Pair(name, "DeploymentNode"));
                 out.add(new Pair(descriptionRelation(record.get("n"), record.get("m"), "Child", "Child"), "Relationship"));
             }
-            checkDeploymentNodes(name, session, v1, v2, curVersion, cmdb, changeType == ChangeType.EARLIER, out);
+            checkDeploymentNodes(name, v1, v2, curVersion, cmdb, changeType == ChangeType.EARLIER, out);
         }
     }
 }

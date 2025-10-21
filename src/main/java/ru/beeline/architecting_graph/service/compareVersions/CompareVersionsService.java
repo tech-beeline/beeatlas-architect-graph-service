@@ -55,8 +55,8 @@ public class CompareVersionsService {
                 firstVersion = secondVersion;
                 secondVersion = tmp;
             }
-            Set<Pair> addElements = findChanges.laterChanges(firstVersion, secondVersion, curVersion, cmdb, session);
-            Set<Pair> removeElements = findChanges.earlierChanges(firstVersion, secondVersion, curVersion, cmdb, session);
+            Set<Pair> addElements = findChanges.laterChanges(firstVersion, secondVersion, curVersion, cmdb);
+            Set<Pair> removeElements = findChanges.earlierChanges(firstVersion, secondVersion, curVersion, cmdb);
             return "{\n\t\"addElements\": [\n" + constactOutput(addElements) + "\t],\n\t\"removeElements\": [\n"
                     + constactOutput(removeElements) + "\t]\n}";
         } catch (NotFoundException e) {

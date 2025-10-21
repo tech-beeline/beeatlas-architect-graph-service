@@ -2,7 +2,6 @@ package ru.beeline.architecting_graph.service.createDiagrams;
 
 import org.neo4j.driver.Record;
 import org.neo4j.driver.Result;
-import org.neo4j.driver.Session;
 import org.neo4j.driver.types.Node;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
@@ -12,7 +11,10 @@ import ru.beeline.architecting_graph.model.DeploymentNode;
 import ru.beeline.architecting_graph.model.DiagramParameters;
 import ru.beeline.architecting_graph.model.InfrastructureNode;
 import ru.beeline.architecting_graph.model.RelationshipEntity;
-import ru.beeline.architecting_graph.repository.neo4j.*;
+import ru.beeline.architecting_graph.repository.neo4j.DeploymentNodesRepository;
+import ru.beeline.architecting_graph.repository.neo4j.EnvironmentRepository;
+import ru.beeline.architecting_graph.repository.neo4j.InfrastructureNodesRepository;
+import ru.beeline.architecting_graph.repository.neo4j.RelationshipRepository;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -48,7 +50,8 @@ public class NodesBuilder {
         }
     }
 
-    public void setInfrastructureNodeEnvironment(String infrastructureNodeDSLIdentifier, InfrastructureNode infrastructureNode) {
+    public void setInfrastructureNodeEnvironment(String infrastructureNodeDSLIdentifier,
+                                                 InfrastructureNode infrastructureNode) {
         Result result = environmentRepository.getInfrastructureNodeEnvironment(infrastructureNodeDSLIdentifier);
         infrastructureNode.setEnvironment(result.next().get("n.name").asString());
     }
@@ -59,7 +62,8 @@ public class NodesBuilder {
         infrastructureNode.setRelationships(new ArrayList<>());
         infrastructureNode.setId(String.valueOf(diagramParameters.getLastObjectId()));
         setInfrastructureNodeProperties(node, infrastructureNode);
-        String infrastructureNodeDSLIdentifier = infrastructureNode.getProperties().get("structurizr_dsl_identifier")
+        String infrastructureNodeDSLIdentifier = infrastructureNode.getProperties()
+                .get("structurizr_dsl_identifier")
                 .toString();
         setInfrastructureNodeEnvironment(infrastructureNodeDSLIdentifier, infrastructureNode);
         if (!infrastructureNode.getEnvironment().equals(environment)) {
@@ -71,28 +75,34 @@ public class NodesBuilder {
     }
 
     public void getInfrastructureNodeRelationships(InfrastructureNode infrastructureNode,
-                                                   String infrastructureNodeDSLIdentifier, DiagramParameters diagramParameters) {
+                                                   String infrastructureNodeDSLIdentifier,
+                                                   DiagramParameters diagramParameters) {
         Result result = relationshipRepository.getInfrastructureNodeRelationships(infrastructureNodeDSLIdentifier);
         while (result.hasNext()) {
             Record record = result.next();
             String destinationDSLIdentifier = record.get("m.structurizr_dsl_identifier").asString();
             String destinationId = diagramParameters.getObjectMap().get(destinationDSLIdentifier).toString();
-            RelationshipEntity relationship = containerComponentBuilder.getRelationship(record.get("r").asRelationship(), infrastructureNode.getId(),
-                    destinationId, diagramParameters);
+            RelationshipEntity relationship = containerComponentBuilder.getRelationship(record.get("r")
+                                                                                                .asRelationship(),
+                                                                                        infrastructureNode.getId(),
+                                                                                        destinationId,
+                                                                                        diagramParameters);
             if (relationship != null) {
                 infrastructureNode.getRelationships().add(relationship);
             }
         }
     }
 
-    public void setInfrastructureNodes(DeploymentNode deploymentNode, String deploymentNodeDSLIdentifier,
+    public void setInfrastructureNodes(DeploymentNode deploymentNode,
+                                       String deploymentNodeDSLIdentifier,
                                        DiagramParameters diagramParameters) {
         deploymentNode.setInfrastructureNodes(new ArrayList<>());
         Result result = infrastructureNodesRepository.getInfrastructureNodes(deploymentNodeDSLIdentifier);
         while (result.hasNext()) {
             Record record = result.next();
             String infrastructureNodeDSLIdentifier = record.get("m.structurizr_dsl_identifier").asString();
-            InfrastructureNode infrastructureNode = diagramParameters.getCreatedInfrastructureNodes().get(infrastructureNodeDSLIdentifier);
+            InfrastructureNode infrastructureNode = diagramParameters.getCreatedInfrastructureNodes()
+                    .get(infrastructureNodeDSLIdentifier);
             getInfrastructureNodeRelationships(infrastructureNode, infrastructureNodeDSLIdentifier, diagramParameters);
             deploymentNode.getInfrastructureNodes().add(infrastructureNode);
         }
@@ -104,7 +114,9 @@ public class NodesBuilder {
         deploymentNode.setId(String.valueOf(id));
         deploymentNode.setProperties(new HashMap<>());
         setDeploymentNodeProperties(node, deploymentNode);
-        String deploymentNodeDSLIdentifier = deploymentNode.getProperties().get("structurizr_dsl_identifier").toString();
+        String deploymentNodeDSLIdentifier = deploymentNode.getProperties()
+                .get("structurizr_dsl_identifier")
+                .toString();
         setDeploymentNodeEnvironment(deploymentNodeDSLIdentifier, deploymentNode);
         if (!deploymentNode.getEnvironment().equals(environment)) {
             return;
@@ -118,22 +130,27 @@ public class NodesBuilder {
     }
 
     public void setDeploymentNodeRelationships(DeploymentNode deploymentNode,
-                                               String deploymentNodeDSLIdentifier, DiagramParameters diagramParameters) {
+                                               String deploymentNodeDSLIdentifier,
+                                               DiagramParameters diagramParameters) {
         deploymentNode.setRelationships(new ArrayList<>());
         Result result = relationshipRepository.getDeploymentNodeRelationships(deploymentNodeDSLIdentifier);
         while (result.hasNext()) {
             Record record = result.next();
             String destinationDSLIdentifier = record.get("m.structurizr_dsl_identifier").asString();
             String destinationId = diagramParameters.getObjectMap().get(destinationDSLIdentifier).toString();
-            RelationshipEntity relationship = containerComponentBuilder.getRelationship(record.get("r").asRelationship(), deploymentNode.getId(),
-                    destinationId, diagramParameters);
+            RelationshipEntity relationship = containerComponentBuilder.getRelationship(record.get("r")
+                                                                                                .asRelationship(),
+                                                                                        deploymentNode.getId(),
+                                                                                        destinationId,
+                                                                                        diagramParameters);
             if (relationship != null) {
                 deploymentNode.getRelationships().add(relationship);
             }
         }
     }
 
-    public void getChildDeploymentNodes(String deploymentNodeDSLIdentifier, String environment,
+    public void getChildDeploymentNodes(String deploymentNodeDSLIdentifier,
+                                        String environment,
                                         DiagramParameters diagramParameters) {
         Result result = deploymentNodesRepository.getChildDeploymentNodes(deploymentNodeDSLIdentifier);
         while (result.hasNext()) {
@@ -159,7 +176,8 @@ public class NodesBuilder {
         deploymentNode.setEnvironment(result.next().get("n.name").asString());
     }
 
-    public void getInfrastructureNodes(String deploymentNodeDSLIdentifier, String environment,
+    public void getInfrastructureNodes(String deploymentNodeDSLIdentifier,
+                                       String environment,
                                        DiagramParameters diagramParameters) {
         Result result = infrastructureNodesRepository.getInfrastructureNodes(deploymentNodeDSLIdentifier);
         while (result.hasNext()) {
@@ -169,19 +187,25 @@ public class NodesBuilder {
     }
 
     public void setChildDeploymentNodes(DeploymentNode deploymentNode,
-                                        String deploymentNodeDSLIdentifier, DiagramParameters diagramParameters) {
+                                        String deploymentNodeDSLIdentifier,
+                                        DiagramParameters diagramParameters) {
         deploymentNode.setChildren(new ArrayList<>());
         Result result = deploymentNodesRepository.getChildDeploymentNodes(deploymentNodeDSLIdentifier);
         while (result.hasNext()) {
             Record record = result.next();
             String childDeploymentNodeDSLIdentifier = record.get("m.structurizr_dsl_identifier").asString();
-            deploymentNode.getChildren().add(getDeploymentNodeRelationships(session,
-                    diagramParameters.getCreatedDeploymentNodes().get(childDeploymentNodeDSLIdentifier), diagramParameters));
+            deploymentNode.getChildren()
+                    .add(getDeploymentNodeRelationships(diagramParameters.getCreatedDeploymentNodes()
+                                                                .get(childDeploymentNodeDSLIdentifier),
+                                                        diagramParameters));
         }
     }
 
-    public DeploymentNode getDeploymentNodeRelationships(DeploymentNode deploymentNode, DiagramParameters diagramParameters) {
-        String deploymentNodeDSLIdentifier = deploymentNode.getProperties().get("structurizr_dsl_identifier").toString();
+    public DeploymentNode getDeploymentNodeRelationships(DeploymentNode deploymentNode,
+                                                         DiagramParameters diagramParameters) {
+        String deploymentNodeDSLIdentifier = deploymentNode.getProperties()
+                .get("structurizr_dsl_identifier")
+                .toString();
         setDeploymentNodeRelationships(deploymentNode, deploymentNodeDSLIdentifier, diagramParameters);
         setInfrastructureNodes(deploymentNode, deploymentNodeDSLIdentifier, diagramParameters);
         containerComponentBuilder.setContainerInstances(deploymentNode, deploymentNodeDSLIdentifier, diagramParameters);
