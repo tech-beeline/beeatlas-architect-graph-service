@@ -5,7 +5,8 @@ import org.neo4j.driver.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.beeline.architecting_graph.model.*;
-import ru.beeline.architecting_graph.repository.neo4j.BuildGraphQuery;
+import ru.beeline.architecting_graph.repository.neo4j.GenericRepository;
+import ru.beeline.architecting_graph.repository.neo4j.DeploymentNodesRepository;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,7 +15,7 @@ import java.util.Map;
 public class DeploymentNodeUpdateFunctions {
 
     @Autowired
-    BuildGraphQuery buildGraphQuery;
+    GenericRepository genericRepository;
 
     @Autowired
     ContainerInstanceUpdateFunctions containerInstanceUpdateFunctions;
@@ -25,22 +26,25 @@ public class DeploymentNodeUpdateFunctions {
     @Autowired
     CreateExternalObjects createExternalObjects;
 
+    @Autowired
+    DeploymentNodesRepository deploymentNodesRepository;
+
     public void setDeploymentNodeProperties(Session session, String graphTag, DeploymentNode deploymentNode) {
         if (deploymentNode.getProperties() != null) {
             for (Map.Entry<String, Object> entry : deploymentNode.getProperties().entrySet()) {
                 String key = entry.getKey().replaceAll("[^a-zA-Z0-9]", "_");
-                buildGraphQuery.setDeploymentNodeProperty(session, graphTag, deploymentNode.getName(), key, entry.getValue());
+                deploymentNodesRepository.setDeploymentNodeProperty(session, graphTag, deploymentNode.getName(), key, entry.getValue());
             }
         }
     }
 
     public void setParametersForDeploymentNode(Session session, String graphTag, DeploymentNode deploymentNode,
                                                GraphObject deploymentNodeGraphObject, String curVersion) {
-        if (graphTag.equals("Global") && buildGraphQuery.getObjectParameter(session, graphTag, deploymentNodeGraphObject,
-                "startVersion").toString().equals("NULL")) {
-            buildGraphQuery.setObjectParameter(session, graphTag, deploymentNodeGraphObject, "startVersion", curVersion);
+        if (graphTag.equals("Global") && genericRepository.getObjectParameter(session, graphTag, deploymentNodeGraphObject,
+                                                                              "startVersion").toString().equals("NULL")) {
+            genericRepository.setObjectParameter(session, graphTag, deploymentNodeGraphObject, "startVersion", curVersion);
         }
-        buildGraphQuery.updateDeploymentNode(session, graphTag, deploymentNode);
+        deploymentNodesRepository.updateDeploymentNode(session, graphTag, deploymentNode);
         setDeploymentNodeProperties(session, graphTag, deploymentNode);
     }
 
@@ -55,8 +59,8 @@ public class DeploymentNodeUpdateFunctions {
     public void updateEnvironment(Session session, String graphTag, String environment,
                                   HashMap<String, GraphObject> objects) {
         GraphObject environmentGraphObject = new GraphObject("Environment", "name", environment);
-        if (!buildGraphQuery.checkIfObjectExists(session, graphTag, environmentGraphObject)) {
-            buildGraphQuery.createObject(session, graphTag, environmentGraphObject);
+        if (!genericRepository.checkIfObjectExists(session, graphTag, environmentGraphObject)) {
+            genericRepository.createObject(session, graphTag, environmentGraphObject);
         }
         if (!objects.containsKey(environment)) {
             objects.put(environment, environmentGraphObject);
@@ -111,9 +115,9 @@ public class DeploymentNodeUpdateFunctions {
     public void updateDeploymentNode(Session session, String graphTag, DeploymentNode deploymentNode,
                                      String curVersion, String cmdb, Model model, HashMap<String, GraphObject> objects) {
         GraphObject deploymentNodeGraphObject = new GraphObject("DeploymentNode", "name", deploymentNode.getName());
-        boolean exists = buildGraphQuery.checkIfObjectExists(session, graphTag, deploymentNodeGraphObject);
+        boolean exists = genericRepository.checkIfObjectExists(session, graphTag, deploymentNodeGraphObject);
         if (!exists) {
-            buildGraphQuery.createObject(session, graphTag, deploymentNodeGraphObject);
+            genericRepository.createObject(session, graphTag, deploymentNodeGraphObject);
         }
         objects.put(deploymentNode.getId(), deploymentNodeGraphObject);
         setParametersForDeploymentNode(session, graphTag, deploymentNode, deploymentNodeGraphObject, curVersion);
@@ -126,7 +130,7 @@ public class DeploymentNodeUpdateFunctions {
 
     public void setChildDeploymentNodeEndVersion(Session session, String graphTag, String deploymentNodeName,
                                                  String curVersion, String cmdb) {
-        Result result = buildGraphQuery.findChildDeploymentNodesWithNullEndVersion(session, graphTag, deploymentNodeName);
+        Result result = deploymentNodesRepository.findChildDeploymentNodesWithNullEndVersion(session, graphTag, deploymentNodeName);
         while (result.hasNext()) {
             String childDeploymentNodeName = result.next().get("childDeploymentNodeName").toString();
             childDeploymentNodeName = childDeploymentNodeName.substring(1, childDeploymentNodeName.length() - 1);
@@ -137,7 +141,7 @@ public class DeploymentNodeUpdateFunctions {
     public void setDeploymentNodeEndVersion(Session session, String graphTag, String deploymentNodeName,
                                             String curVersion, String cmdb) {
         GraphObject deploymentNodeGraphObject = new GraphObject("DeploymentNode", "name", deploymentNodeName);
-        buildGraphQuery.setObjectParameter(session, graphTag, deploymentNodeGraphObject, "endVersion", curVersion);
+        genericRepository.setObjectParameter(session, graphTag, deploymentNodeGraphObject, "endVersion", curVersion);
         infrastructureNodeUpdateFunctions.setInfrastructureNodeEndVersion(session, graphTag, deploymentNodeName, curVersion);
         containerInstanceUpdateFunctions.setContainerInstanceEndVersion(session, graphTag, deploymentNodeName, curVersion);
         setChildDeploymentNodeEndVersion(session, graphTag, deploymentNodeName, curVersion, cmdb);

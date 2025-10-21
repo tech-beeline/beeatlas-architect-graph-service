@@ -5,7 +5,7 @@ import org.neo4j.driver.Driver;
 import org.neo4j.driver.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ru.beeline.architecting_graph.repository.neo4j.CompareVersionsQuery;
+import ru.beeline.architecting_graph.repository.neo4j.SoftwareSystemRepository;
 import ru.beeline.fdmlib.dto.graph.ProductInfluenceDTO;
 
 import java.util.Collections;
@@ -21,15 +21,15 @@ public class ProductInfluenceService {
     private Driver driver;
 
     @Autowired
-    private CompareVersionsQuery compareVersionsQuery;
+    SoftwareSystemRepository softwareSystemRepository;
 
     public ProductInfluenceDTO getRelatedSystems(String cmdb) {
         try (Session session = driver.session()) {
-            if (!compareVersionsQuery.productExists(session, cmdb)) {
+            if (!softwareSystemRepository.productExists(session, cmdb)) {
                 throw new NoSuchElementException("Продукт с cmdb = " + cmdb + " не найден");
             }
-            List<String> dependentSystems = compareVersionsQuery.getDependentSystems(session, cmdb);
-            List<String> influencingSystems = compareVersionsQuery.getInfluencingSystems(session, cmdb);
+            List<String> dependentSystems = softwareSystemRepository.getDependentSystems(session, cmdb);
+            List<String> influencingSystems = softwareSystemRepository.getInfluencingSystems(session, cmdb);
 
             return new ProductInfluenceDTO(
                     dependentSystems != null ?

@@ -14,22 +14,25 @@ import org.springframework.stereotype.Service;
 import ru.beeline.architecting_graph.client.StructurizrClient;
 import ru.beeline.architecting_graph.model.GraphObject;
 import ru.beeline.architecting_graph.model.Workspace;
-import ru.beeline.architecting_graph.repository.neo4j.BuildGraphQuery;
-import ru.beeline.architecting_graph.repository.neo4j.CreateDiagramsQuery;
+import ru.beeline.architecting_graph.repository.neo4j.GenericRepository;
+import ru.beeline.architecting_graph.repository.neo4j.ContainerRepository;
+import ru.beeline.architecting_graph.repository.neo4j.EnvironmentRepository;
 
-;
 
 @Service
 public class CreateDiagrams {
 
     @Autowired
-    CreateDiagramsQuery createDiagramsQuery;
-
-    @Autowired
     GetView getView;
 
     @Autowired
-    BuildGraphQuery buildGraphQuery;
+    GenericRepository genericRepository;
+
+    @Autowired
+    ContainerRepository containerRepository;
+
+    @Autowired
+    EnvironmentRepository environmentRepository;
 
     @Autowired
     StructurizrClient structurizrClient;
@@ -37,32 +40,34 @@ public class CreateDiagrams {
     @Autowired
     private Driver driver;
 
-    public Boolean checkifContainerExists(Session session, String softwareSystemMnemonic,
-                                          String containerMnemonic) {
-        Result result = createDiagramsQuery.checkIfContainerExists(session, softwareSystemMnemonic, containerMnemonic);
+    public Boolean checkifContainerExists(Session session, String softwareSystemMnemonic, String containerMnemonic) {
+        Result result = containerRepository.checkIfContainerExists(session, softwareSystemMnemonic, containerMnemonic);
         return result.hasNext();
     }
 
     public Boolean checkIfEnvironmentExists(Session session, String environment) {
-        Result result = createDiagramsQuery.checkIfEnvironmentExists(session, environment);
+        Result result = environmentRepository.checkIfEnvironmentExists(session, environment);
         return result.hasNext();
     }
 
-    public ResponseEntity<String> createDiagramm(String softwareSystemMnemonic, String containerMnemonic, String environment,
+    public ResponseEntity<String> createDiagramm(String softwareSystemMnemonic,
+                                                 String containerMnemonic,
+                                                 String environment,
                                                  String rankDirection) {
-        if(!rankDirection.equals("TopBottom") && !rankDirection.equals("LeftRight")){
+        if (rankDirection == null) {
+            rankDirection = "LeftRight";
+        }
+        if (!rankDirection.equals("TopBottom") && !rankDirection.equals("LeftRight")) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Недопустимая ориентация диаграммы");
         }
         try (Session session = driver.session()) {
             session.run("RETURN 1");
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-            GraphObject systemGraphObject = new GraphObject(
-                    "SoftwareSystem",
-                    "structurizr_dsl_identifier",
-                    softwareSystemMnemonic
-            );
-            boolean exists = buildGraphQuery.checkIfObjectExists(session, "Global", systemGraphObject);
+            GraphObject systemGraphObject = new GraphObject("SoftwareSystem",
+                                                            "structurizr_dsl_identifier",
+                                                            softwareSystemMnemonic);
+            boolean exists = genericRepository.checkIfObjectExists(session, "Global", systemGraphObject);
             if (!exists) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Система не найдена");
             }
@@ -74,7 +79,10 @@ public class CreateDiagrams {
                     if (!checkifContainerExists(session, softwareSystemMnemonic, containerMnemonic)) {
                         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Контейнер не найден");
                     }
-                    workspace = getView.GetComponentView(session, softwareSystemMnemonic, containerMnemonic, rankDirection);
+                    workspace = getView.GetComponentView(session,
+                                                         softwareSystemMnemonic,
+                                                         containerMnemonic,
+                                                         rankDirection);
                 } else {
                     if (!checkIfEnvironmentExists(session, environment)) {
                         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Окружение не найдено");
@@ -83,12 +91,9 @@ public class CreateDiagrams {
                 }
                 String json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(workspace);
                 json = structurizrClient.changeJson(json);
-                return ResponseEntity.ok()
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(json);
+                return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(json);
             } catch (Exception e) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body("Ошибка при сериализации\n" + e.getMessage());
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Ошибка при сериализации\n" + e.getMessage());
             }
         } catch (ServiceUnavailableException e) {
             return ResponseEntity.badRequest().body("Нет подключения к БД");

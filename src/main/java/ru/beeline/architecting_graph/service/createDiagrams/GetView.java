@@ -7,7 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.beeline.architecting_graph.model.*;
 import ru.beeline.architecting_graph.model.ViewObjects.Views;
-import ru.beeline.architecting_graph.repository.neo4j.CreateDiagramsQuery;
+import ru.beeline.architecting_graph.repository.neo4j.ContainerRepository;
+import ru.beeline.architecting_graph.repository.neo4j.DeploymentNodesRepository;
 
 import java.util.*;
 
@@ -24,8 +25,12 @@ public class GetView {
     @Autowired
     NodesBuilder nodesBuilder;
 
+
     @Autowired
-    CreateDiagramsQuery createDiagramsQuery;
+    ContainerRepository containerRepository;
+
+    @Autowired
+    DeploymentNodesRepository deploymentNodesRepository;
 
     public Workspace GetContextView(Session session, String softwareSystemMnemonic, String rankDirection) {
         DiagramParameters diagramParameters = createNewDiagramParameters(session, softwareSystemMnemonic);
@@ -64,18 +69,18 @@ public class GetView {
 
     void createDeploymentView(Session session, String softwareSystemMnemonic, String environment, Model model,
                               DiagramParameters diagramParameters) {
-        Result result = createDiagramsQuery.getContainers(session, softwareSystemMnemonic);
+        Result result = containerRepository.getContainers(session, softwareSystemMnemonic);
         while (result.hasNext()) {
             Record record = result.next();
             containerComponentBuilder.getContainer(session, record.get("m").asNode(), diagramParameters);
         }
-        result = createDiagramsQuery.getDeploymentNodes(session, softwareSystemMnemonic);
+        result = deploymentNodesRepository.getDeploymentNodes(session, softwareSystemMnemonic);
         while (result.hasNext()) {
             Record record = result.next();
             nodesBuilder.getDeploymentNode(session, record.get("m").asNode(), environment, diagramParameters);
         }
         model.setDeploymentNodes(new ArrayList<>());
-        result = createDiagramsQuery.getDeploymentNodes(session, softwareSystemMnemonic);
+        result = deploymentNodesRepository.getDeploymentNodes(session, softwareSystemMnemonic);
         while (result.hasNext()) {
             Record record = result.next();
             String deploymentNodeDSLIdentifier = record.get("m.structurizr_dsl_identifier").asString();

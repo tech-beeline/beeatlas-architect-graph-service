@@ -7,7 +7,7 @@ import org.neo4j.driver.Value;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import ru.beeline.architecting_graph.model.Pair;
-import ru.beeline.architecting_graph.repository.neo4j.CompareVersionsQuery;
+import ru.beeline.architecting_graph.repository.neo4j.*;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -16,7 +16,15 @@ import java.util.Set;
 public class FindChanges {
 
     @Autowired
-    private CompareVersionsQuery queryProvider;
+    private RelationshipRepository relationshipRepository;
+    @Autowired
+    private ComponentRepository componentRepository;
+    @Autowired
+    private DeploymentNodesRepository deploymentNodesRepository;
+    @Autowired
+    private ContainerRepository containerRepository;
+    @Autowired
+    private DeployRepository deployRepository;
 
     public enum ChangeType {
         EARLIER, LATER
@@ -49,7 +57,7 @@ public class FindChanges {
 
     private void processRelationships(String label, String name, Session session, int v1, int v2, int curVersion,
                                       String cmdb, boolean flag, Set<Pair> out) {
-        Result result = queryProvider.getRelationships(session, label, name, cmdb);
+        Result result = relationshipRepository.getRelationships(session, label, name, cmdb);
         while (result.hasNext()) {
             Record record = result.next();
             int start = parseVersion(record.get("r.startVersion"), 0);
@@ -75,7 +83,7 @@ public class FindChanges {
 
     private void processChildren(String parentType, String childType, String parentName, Session session,
                                  int v1, int v2, int curVersion, String cmdb, boolean flag, Set<Pair> out) {
-        Result result = queryProvider.getChildren(session, parentType, childType, parentName);
+        Result result = relationshipRepository.getChildren(session, parentType, childType, parentName);
         while (result.hasNext()) {
             Record record = result.next();
             int start = parseVersion(record.get("m.startVersion"), 0);
@@ -129,7 +137,7 @@ public class FindChanges {
 
     private void processSystemRelationships(String cmdb, Integer v1, Integer v2, Integer curVersion, Session session, ChangeType type,
                                             Set<Pair> out) {
-        Result result = queryProvider.getSystemRelationshipsOut(session, cmdb);
+        Result result = relationshipRepository.getSystemRelationshipsOut(session, cmdb);
         while (result.hasNext()) {
             Record record = result.next();
             Integer start = getVersion(record.get("r.startVersion").toString(), curVersion);
@@ -139,7 +147,7 @@ public class FindChanges {
                         record.get("r.description").asString()), "Relationship"));
             }
         }
-        result = queryProvider.getSystemRelationshipsIn(session, cmdb);
+        result = relationshipRepository.getSystemRelationshipsIn(session, cmdb);
         while (result.hasNext()) {
             Record record = result.next();
             Integer start = getVersion(record.get("r.startVersion").toString(), curVersion);
@@ -153,7 +161,7 @@ public class FindChanges {
 
     private void processContainerRelationships(String containerName, Integer v1, Integer v2, Integer curVersion, String cmdb,
                                                Session session, Set<Pair> out) {
-        Result containerResult = queryProvider.getContainerRelationshipsOut(session, containerName, cmdb);
+        Result containerResult = relationshipRepository.getContainerRelationshipsOut(session, containerName, cmdb);
         while (containerResult.hasNext()) {
             Record record = containerResult.next();
             Integer startVersionContainerRel = getVersion(record.get("r.startVersion").toString(), curVersion);
@@ -163,7 +171,7 @@ public class FindChanges {
                         record.get("r.description").asString()), "Relationship"));
             }
         }
-        Result containerResultRev = queryProvider.getContainerRelationshipsIn(session, containerName, cmdb);
+        Result containerResultRev = relationshipRepository.getContainerRelationshipsIn(session, containerName, cmdb);
         while (containerResultRev.hasNext()) {
             Record record = containerResultRev.next();
             Integer startVersionContainerRelRev = getVersion(record.get("r.startVersion").toString(), curVersion);
@@ -177,7 +185,7 @@ public class FindChanges {
 
     private void processComponents(String containerName, Integer v1, Integer v2, Integer curVersion, String cmdb, Session session,
                                    Set<Pair> out) {
-        Result componentResult = queryProvider.getContainerComponents(session, containerName);
+        Result componentResult = componentRepository.getContainerComponents(session, containerName);
         while (componentResult.hasNext()) {
             Record record = componentResult.next();
             Integer startVersionComponent = getVersion(record.get("m.startVersion").toString(), curVersion);
@@ -187,7 +195,7 @@ public class FindChanges {
                 out.add(new Pair(componentName, "Component"));
                 out.add(new Pair(descriptionRelation(record.get("n"), record.get("m"), "Child", "Child"), "Relationship"));
             }
-            Result componentRelResult = queryProvider.getComponentRelationshipsOut(session, componentName, cmdb);
+            Result componentRelResult = relationshipRepository.getComponentRelationshipsOut(session, componentName, cmdb);
             while (componentRelResult.hasNext()) {
                 record = componentRelResult.next();
                 Integer startVersionComponentRel = getVersion(record.get("r.startVersion").toString(), curVersion);
@@ -197,7 +205,7 @@ public class FindChanges {
                             record.get("r.description").asString()), "Relationship"));
                 }
             }
-            Result componentRelResultRev = queryProvider.getComponentRelationshipsIn(session, componentName, cmdb);
+            Result componentRelResultRev = relationshipRepository.getComponentRelationshipsIn(session, componentName, cmdb);
             while (componentRelResultRev.hasNext()) {
                 record = componentRelResultRev.next();
                 Integer startVersionComponentRelRev = getVersion(record.get("r.startVersion").toString(), curVersion);
@@ -219,7 +227,7 @@ public class FindChanges {
     }
 
     private void processContainers(String cmdb, Integer v1, Integer v2, Integer curVersion, Session session, ChangeType type, Set<Pair> out) {
-        Result result = queryProvider.getContainers(session, cmdb);
+        Result result = containerRepository.getContainersByCmdb(session, cmdb);
         while (result.hasNext()) {
             Record record = result.next();
             Integer start = getVersion(record.get("m.startVersion").toString(), curVersion);
@@ -240,7 +248,7 @@ public class FindChanges {
     }
 
     private void processComponents(String containerName, String cmdb, Integer v1, Integer v2, Integer curVersion, Session session, Set<Pair> out) {
-        Result result = queryProvider.getComponents(session, containerName);
+        Result result = componentRepository.getComponentsByContainerName(session, containerName);
         while (result.hasNext()) {
             Record record = result.next();
             Integer start = getVersion(record.get("m.startVersion").toString(), curVersion);
@@ -256,7 +264,7 @@ public class FindChanges {
 
     private void processNodeRelationships(String label, String name, String cmdb, Integer v1, Integer v2, Integer curVersion, Session session,
                                           Set<Pair> out) {
-        Result result = queryProvider.getNodeRelationshipsOut(session, label, name, cmdb);
+        Result result = relationshipRepository.getNodeRelationshipsOut(session, label, name, cmdb);
         while (result.hasNext()) {
             Record record = result.next();
             Integer start = getVersion(record.get("r.startVersion").toString(), curVersion);
@@ -266,7 +274,7 @@ public class FindChanges {
                         record.get("r.description").asString()), "Relationship"));
             }
         }
-        result = queryProvider.getNodeRelationshipsIn(session, label, name, cmdb);
+        result = relationshipRepository.getNodeRelationshipsIn(session, label, name, cmdb);
         while (result.hasNext()) {
             Record record = result.next();
             Integer start = getVersion(record.get("r.startVersion").toString(), curVersion);
@@ -280,7 +288,7 @@ public class FindChanges {
 
     private void processSoftwareSystemInstances(String cmdb, Integer v1, Integer v2,
                                                 Integer curVersion, Session session, ChangeType type, Set<Pair> out) {
-        Result result = queryProvider.getSoftwareSystemInstances(session, cmdb);
+        Result result = deployRepository.getSoftwareSystemInstances(session, cmdb);
         while (result.hasNext()) {
             Record record = result.next();
             int start = getVersion(record.get("r.startVersion").toString(), curVersion);
@@ -296,7 +304,7 @@ public class FindChanges {
 
     private void processDeploymentNodes(String cmdb, Integer v1, Integer v2, Integer curVersion, Session session, ChangeType changeType,
                                         Set<Pair> out) {
-        Result result = queryProvider.getDeploymentNodes(session, cmdb);
+        Result result = deploymentNodesRepository.getDeploymentNodesByCmdb(session, cmdb);
         while (result.hasNext()) {
             Record record = result.next();
             Integer start = getVersion(record.get("m.startVersion").toString(), curVersion);

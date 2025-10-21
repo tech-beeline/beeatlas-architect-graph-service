@@ -1,0 +1,81 @@
+package ru.beeline.architecting_graph.repository.neo4j;
+
+import lombok.extern.slf4j.Slf4j;
+import org.neo4j.driver.Result;
+import org.neo4j.driver.Session;
+import org.neo4j.driver.Value;
+import org.neo4j.driver.Values;
+import org.springframework.stereotype.Repository;
+import ru.beeline.architecting_graph.model.DeploymentNode;
+
+@Slf4j
+@Repository
+public class DeploymentNodesRepository {
+
+    public Result getDeploymentNodes(Session session, String systemDSLIdentifier) {
+        String query = "MATCH (n:SoftwareSystem {graphTag: \"Global\", structurizr_dsl_identifier: $val1})"
+                + "-[r:Child]->(m:DeploymentNode) RETURN m, m.structurizr_dsl_identifier";
+        Value parameters = Values.parameters("val1", systemDSLIdentifier);
+        return session.run(query, parameters);
+    }
+
+    public Result findDeploymentNodesBySearch(Session session, String search) {
+        String cypher = "MATCH (n:DeploymentNode) " +
+                "WHERE n.graphTag = 'global' " +
+                "AND (toLower(n.name) CONTAINS toLower($search) OR toLower(n.ip) CONTAINS toLower($search)) " +
+                "RETURN n";
+        Value parameters = Values.parameters("search", search);
+        return session.run(cypher, parameters);
+    }
+
+    public Result getChildDeploymentNodes(Session session, String deploymentNodeDSLIdentifier) {
+        String query = "MATCH (n:DeploymentNode {graphTag: \"Global\", structurizr_dsl_identifier: $val1})"
+                + "-[r:Child]->(m:DeploymentNode) RETURN m, m.structurizr_dsl_identifier";
+        Value parameters = Values.parameters("val1", deploymentNodeDSLIdentifier);
+        return session.run(query, parameters);
+    }
+
+    public Result getDeploymentNodesByCmdb(Session session, String cmdb) {
+        String query = "MATCH (n:SoftwareSystem {graphTag: \"Global\", cmdb: $val1})-[r:Child]->(m:DeploymentNode) " +
+                "RETURN n, m, m.name, m.startVersion, m.endVersion";
+        Value parameters = Values.parameters("val1", cmdb);
+        return session.run(query, parameters);
+    }
+    public Result getDeploymentNodeNames(Session session, String graphTag, String cmdb) {
+        String getDeploymentNode = "MATCH (n:SoftwareSystem {cmdb: $cmdb1, graphTag: $graphTag1})-[r:Child]->(m:DeploymentNode) "
+                + "WHERE m.endVersion IS NULL RETURN m.name as deploymentNodeName";
+        Value parameters = Values.parameters("graphTag1", graphTag, "cmdb1", cmdb);
+        return session.run(getDeploymentNode, parameters);
+    }
+
+    public Result findChildDeploymentNodesWithNullEndVersion(Session session, String graphTag,
+                                                             String deploymentNodeName) {
+        String cypher = "MATCH (n:DeploymentNode {name: $name1, graphTag: $graphTag1})-[r:Child]->(m:DeploymentNode) "
+                + "WHERE m.endVersion IS NULL RETURN m.name AS childDeploymentNodeName";
+        Value parameters = Values.parameters("graphTag1", graphTag, "name1", deploymentNodeName);
+        return session.run(cypher, parameters);
+    }
+
+    public void updateDeploymentNode(Session session, String graphTag, DeploymentNode deploymentNode) {
+        String cypher = "MATCH (n:DeploymentNode {graphTag: $graphTag1, name: $name1}) "
+                + "SET n.description = $description1, n.technology = $technology1, n.instances = $instances1, "
+                + "n.tags = $tags1, n.url = $url1, n.endVersion = $endVersion1";
+        Value parameters = Values.parameters(
+                "graphTag1", graphTag, "name1", deploymentNode.getName(), "description1",
+                deploymentNode.getDescription(),
+                "technology1", deploymentNode.getTechnology(), "instances1",
+                deploymentNode.getInstances(),
+                "tags1", deploymentNode.getTags(), "url1", deploymentNode.getUrl(), "endVersion1",
+                null);
+        session.run(cypher, parameters);
+    }
+
+    public void setDeploymentNodeProperty(Session session, String graphTag, String name, String propertyKey,
+                                          Object value) {
+        String cypher = "MATCH (n:DeploymentNode {graphTag: $graphTag1, name: $name1}) SET n." + propertyKey
+                + " = $value";
+        Value parameters = Values.parameters("graphTag1", graphTag, "name1", name, "value", value);
+        session.run(cypher, parameters);
+    }
+
+}

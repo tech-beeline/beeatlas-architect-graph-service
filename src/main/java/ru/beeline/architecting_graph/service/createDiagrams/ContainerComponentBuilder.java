@@ -8,9 +8,10 @@ import org.neo4j.driver.types.Relationship;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.beeline.architecting_graph.model.*;
-import ru.beeline.architecting_graph.repository.neo4j.CreateDiagramsQuery;
+import ru.beeline.architecting_graph.repository.neo4j.*;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
+
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -20,7 +21,22 @@ import java.util.Map;
 public class ContainerComponentBuilder {
 
     @Autowired
-    CreateDiagramsQuery createDiagramsQuery;
+    SoftwareSystemRepository softwareSystemRepository;
+
+    @Autowired
+    ContainerRepository containerRepository;
+
+    @Autowired
+    ComponentRepository componentRepository;
+
+    @Autowired
+    EnvironmentRepository environmentRepository;
+
+    @Autowired
+    ContainerInstanceRepository containerInstanceRepository;
+
+    @Autowired
+    RelationshipRepository relationshipRepository;
 
     public void getComponent(Session session, Node node, DiagramParameters diagramParameters) {
         Component component = new Component();
@@ -62,7 +78,7 @@ public class ContainerComponentBuilder {
     public void addComponentToContainer(Session session, Component component, DiagramParameters diagramParameters) {
 
         String componentDSLIdentifier = component.getProperties().get("structurizr_dsl_identifier").toString();
-        Result result = createDiagramsQuery.getParentContainer(session, componentDSLIdentifier);
+        Result result = containerRepository.getParentContainer(session, componentDSLIdentifier);
         Record record = result.next();
         String containerDSLIdentifier = record.get("m.structurizr_dsl_identifier").asString();
         if (!diagramParameters.getObjectMap().containsKey(containerDSLIdentifier)) {
@@ -77,7 +93,7 @@ public class ContainerComponentBuilder {
     public void getDirectComponentRelationships(Session session, Component component, SoftwareSystem system,
                                                 Container container, String componentDSLIndentifier, Boolean needAddingToSystem,
                                                 Boolean needAddingToContainer, DiagramParameters diagramParameters) {
-        Result result = createDiagramsQuery.getDirectComponentRelationships(session, componentDSLIndentifier);
+        Result result = relationshipRepository.getDirectComponentRelationships(session, componentDSLIndentifier);
         while (result.hasNext()) {
             Record record = result.next();
             Node destinationNode = record.get("m").asNode();
@@ -109,7 +125,7 @@ public class ContainerComponentBuilder {
     }
 
     public void getComponents(Session session, String containerDSLIdentifier, DiagramParameters diagramParameters) {
-        Result result = createDiagramsQuery.getComponents(session, containerDSLIdentifier);
+        Result result = componentRepository.getComponents(session, containerDSLIdentifier);
         while (result.hasNext()) {
             Record record = result.next();
             diagramParameters.getSystemChilds().add(diagramParameters.getLastObjectId().toString());
@@ -119,7 +135,7 @@ public class ContainerComponentBuilder {
 
     public void getContainerRelationships(Session session, SoftwareSystem system, String systemtDSLIndentifier,
                                           Boolean needAddingToSystem, DiagramParameters diagramParameters) {
-        Result result = createDiagramsQuery.getContainers(session, systemtDSLIndentifier);
+        Result result = containerRepository.getContainers(session, systemtDSLIndentifier);
         while (result.hasNext()) {
             Record record = result.next();
             String containerDSLIndentifier = record.get("m.structurizr_dsl_identifier").asString();
@@ -134,14 +150,14 @@ public class ContainerComponentBuilder {
 
     public void createComponentView(Session session, String softwareSystemMnemonic, String containerMnemonic,
                                     SoftwareSystem system, DiagramParameters diagramParameters) {
-        Result result = createDiagramsQuery.getContainer(session, softwareSystemMnemonic, containerMnemonic);
+        Result result = containerRepository.getContainer(session, softwareSystemMnemonic, containerMnemonic);
         getContainer(session, result.next().get("m").asNode(), diagramParameters);
         getComponents(session, containerMnemonic, diagramParameters);
         getComponentRelationships(session, containerMnemonic, system, null, false, false, diagramParameters);
     }
 
     public void getContainers(Session session, String softwareSystemMnemonic, DiagramParameters diagramParameters) {
-        Result result = createDiagramsQuery.getContainers(session, softwareSystemMnemonic);
+        Result result = containerRepository.getContainers(session, softwareSystemMnemonic);
         while (result.hasNext()) {
             Record record = result.next();
             diagramParameters.getSystemChilds().add(diagramParameters.getLastObjectId().toString());
@@ -154,7 +170,7 @@ public class ContainerComponentBuilder {
     public void getReverseComponentRelationships(Session session, Component component, String systemId, String containerId,
                                                  String componentDSLIndentifier, Boolean needAddingToSystem,
                                                  Boolean needAddingToContainer, DiagramParameters diagramParameters) {
-        Result result = createDiagramsQuery.getReverseComponentRelationships(session, componentDSLIndentifier);
+        Result result = relationshipRepository.getReverseComponentRelationships(session, componentDSLIndentifier);
         while (result.hasNext()) {
             Record record = result.next();
             Node sourceNode = record.get("m").asNode();
@@ -173,7 +189,7 @@ public class ContainerComponentBuilder {
     public void getComponentRelationships(Session session, String containerDSLIdentifier, SoftwareSystem system,
                                           Container container, Boolean needAddingToSystem, Boolean needAddingToContainer,
                                           DiagramParameters diagramParameters) {
-        Result result = createDiagramsQuery.getComponents(session, containerDSLIdentifier);
+        Result result = componentRepository.getComponents(session, containerDSLIdentifier);
         while (result.hasNext()) {
             Record record = result.next();
             String componentDSLIndentifier = record.get("m.structurizr_dsl_identifier").asString();
@@ -189,7 +205,7 @@ public class ContainerComponentBuilder {
     public void setContainerInstances(Session session, DeploymentNode deploymentNode,
                                       String deploymentNodeDSLIdentifier, DiagramParameters diagramParameters) {
         deploymentNode.setContainerInstances(new ArrayList<>());
-        Result result = createDiagramsQuery.getContainerInstances(session, deploymentNodeDSLIdentifier);
+        Result result = containerInstanceRepository.getContainerInstances(session, deploymentNodeDSLIdentifier);
         while (result.hasNext()) {
             Record record = result.next();
             String containerInstanceDSLIdentifier = record.get("m.structurizr_dsl_identifier").asString();
@@ -213,13 +229,13 @@ public class ContainerComponentBuilder {
 
     public void setContainerInstanceEnvironment(Session session, String containerInstanceDSLIdentifier,
                                                 ContainerInstance containerInstance) {
-        Result result = createDiagramsQuery.getContainerInstanceEnvironment(session, containerInstanceDSLIdentifier);
+        Result result = environmentRepository.getContainerInstanceEnvironment(session, containerInstanceDSLIdentifier);
         containerInstance.setEnvironment(result.next().get("n.name").asString());
     }
 
     public void setContainerInstanceContainerId(Session session, String containerInstanceDSLIdentifier,
                                                 ContainerInstance containerInstance, DiagramParameters diagramParameters) {
-        Result result = createDiagramsQuery.getContainerInstanceContainerId(session, containerInstanceDSLIdentifier);
+        Result result = containerRepository.getContainerInstanceContainerId(session, containerInstanceDSLIdentifier);
         String containerDSLIdentifier = result.next().get("n.structurizr_dsl_identifier").asString();
         containerInstance.setContainerId(diagramParameters.getObjectMap().get(containerDSLIdentifier).toString());
     }
@@ -244,7 +260,7 @@ public class ContainerComponentBuilder {
 
     public void getContainerInstances(Session session, String deploymentNodeDSLIdentifier, String environment,
                                       DiagramParameters diagramParameters) {
-        Result result = createDiagramsQuery.getContainerInstances(session, deploymentNodeDSLIdentifier);
+        Result result = containerInstanceRepository.getContainerInstances(session, deploymentNodeDSLIdentifier);
         while (result.hasNext()) {
             Record record = result.next();
             getContainerInstance(session, record.get("m").asNode(), environment, diagramParameters);
@@ -252,7 +268,7 @@ public class ContainerComponentBuilder {
     }
 
     public SoftwareSystem getSystem(Session session, String systemDSLIdentifier, DiagramParameters diagramParameters) {
-        Result result = createDiagramsQuery.getSystem(session, systemDSLIdentifier);
+        Result result = softwareSystemRepository.getSystem(session, systemDSLIdentifier);
         Node node = result.next().get("n").asNode();
         SoftwareSystem softwareSystem = new SoftwareSystem();
         softwareSystem.setProperties(new HashMap<>());
@@ -280,7 +296,7 @@ public class ContainerComponentBuilder {
 
     public void addContainerToSystem(Session session, Container container, DiagramParameters diagramParameters) {
         String containerDSLIdentifier = container.getProperties().get("structurizr_dsl_identifier").toString();
-        Result result = createDiagramsQuery.getParentSystem(session, containerDSLIdentifier);
+        Result result = softwareSystemRepository.getParentSystem(session, containerDSLIdentifier);
         String systemDSLIdentifier = result.next().get("m.structurizr_dsl_identifier").asString();
         if (!diagramParameters.getObjectMap().containsKey(systemDSLIdentifier)) {
             getSystem(session, systemDSLIdentifier, diagramParameters);
@@ -318,7 +334,7 @@ public class ContainerComponentBuilder {
 
     public void getDirectSystemRelationships(Session session, SoftwareSystem system, String systemtDSLIndentifier,
                                              DiagramParameters diagramParameters) {
-        Result result = createDiagramsQuery.getDirectSystemRelationships(session, systemtDSLIndentifier);
+        Result result = relationshipRepository.getDirectSystemRelationships(session, systemtDSLIndentifier);
         while (result.hasNext()) {
             Record record = result.next();
             Node destinationNode = record.get("m").asNode();
@@ -334,7 +350,7 @@ public class ContainerComponentBuilder {
 
     public void getReverseSystemRelationships(Session session, SoftwareSystem system, String systemtDSLIndentifier,
                                               DiagramParameters diagramParameters) {
-        Result result = createDiagramsQuery.getReverseComponentRelationships(session, systemtDSLIndentifier);
+        Result result = relationshipRepository.getReverseComponentRelationships(session, systemtDSLIndentifier);
         while (result.hasNext()) {
             Record record = result.next();
             Node sourceNode = record.get("m").asNode();
@@ -357,7 +373,7 @@ public class ContainerComponentBuilder {
 
     public void getReverseContainerRelationships(Session session, Container container, SoftwareSystem system, String containerDSLIndentifier,
                                                  Boolean needAddingToSystem, DiagramParameters diagramParameters) {
-        Result result = createDiagramsQuery.getReverseContainerRelationships(session, containerDSLIndentifier);
+        Result result = relationshipRepository.getReverseContainerRelationships(session, containerDSLIndentifier);
         while (result.hasNext()) {
             Record record = result.next();
             Node sourceNode = record.get("m").asNode();
@@ -376,7 +392,7 @@ public class ContainerComponentBuilder {
 
     public void getDirectContainerRelationships(Session session, Container container, SoftwareSystem system, String containerDSLIndentifier,
                                                 Boolean needAddingToSystem, DiagramParameters diagramParameters) {
-        Result result = createDiagramsQuery.getDirectContainerRelationships(session, containerDSLIndentifier);
+        Result result = relationshipRepository.getDirectContainerRelationships(session, containerDSLIndentifier);
         while (result.hasNext()) {
             Record record = result.next();
             Node destinationNode = record.get("m").asNode();
@@ -479,7 +495,7 @@ public class ContainerComponentBuilder {
 
     public void getContainerInstanceRelationships(Session session, ContainerInstance containerInstance,
                                                   String containerInstanceDSLIdentifier, DiagramParameters diagramParameters) {
-        Result result = createDiagramsQuery.getContainerInstanceRelationships(session, containerInstanceDSLIdentifier);
+        Result result = relationshipRepository.getContainerInstanceRelationships(session, containerInstanceDSLIdentifier);
         while (result.hasNext()) {
             Record record = result.next();
             String destinationDSLIdentifier = record.get("m.structurizr_dsl_identifier").asString();

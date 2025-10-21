@@ -3,6 +3,8 @@ package ru.beeline.architecting_graph.service.graph;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.neo4j.driver.Driver;
+import org.neo4j.driver.Record;
+import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.exceptions.ServiceUnavailableException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,10 +16,18 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.server.ResponseStatusException;
 import ru.beeline.architecting_graph.client.DocumentClient;
+import ru.beeline.architecting_graph.dto.DeploymentNodeDTO;
 import ru.beeline.architecting_graph.dto.TaskCacheDTO;
+import ru.beeline.architecting_graph.model.DeploymentNode;
+import ru.beeline.architecting_graph.model.Environment;
+import ru.beeline.architecting_graph.model.SoftwareSystem;
 import ru.beeline.architecting_graph.model.Workspace;
+import ru.beeline.architecting_graph.repository.neo4j.DeploymentNodesRepository;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -37,6 +47,9 @@ public class GraphConstructionService {
 
     @Autowired
     ObjectMapper objectMapper;
+
+    @Autowired
+    DeploymentNodesRepository deploymentNodesRepository;
 
     public ResponseEntity<String> graphConstruct(Long docId, String graphTag) {
         try (Session session = driver.session()) {
@@ -116,5 +129,42 @@ public class GraphConstructionService {
         }
 
         return ResponseEntity.ok(existingDto);
+    }
+
+    public ResponseEntity<List<DeploymentNodeDTO>> getDeploymentNode(String search) {
+        List<DeploymentNodeDTO> result = new ArrayList<>();
+        Result deploymentNodes = getGlobalDeploymentNodeLikeName();
+//        while (deploymentNodes.hasNext()) {
+//            Record record = deploymentNodes.next();
+//            getContainerInstance(session, record.get("m").asNode(), environment, diagramParameters);
+//            SoftwareSystem system = getParentSoftwareSystem();
+//            Environment environment = getParentEnvironment();
+//            result.add(DeploymentNodeDTO.builder()
+//                               .deploymentName(node.getName())
+//                               .environmentName(environment.getName())
+//                               .cmdb(system.getCmdb()).build())
+//        }
+//
+        return ResponseEntity.ok(result);
+    }
+
+    private Result getGlobalDeploymentNodeLikeName() {
+        return deploymentNodesRepository.findDeploymentNodesBySearch(null, null);
+    }
+
+    private SoftwareSystem getParentSoftwareSystem() {
+        //если к найденной DeploymentNode идет прямая связь типа child от SoftwareSystem, она считается родительской
+        //если такой нет
+        //  найти родительский DeploymentNode от которой есть связь child к найденной, определить для нее родительский SoftwareSystem
+        //  если такого нет, найти ее родительский DeploymentNode и повторять рекурсивно пока не будет найден родительский SoftwareSystem
+        return null;
+    }
+
+    private Environment getParentEnvironment() {
+        //если к найденной DeploymentNode идет прямая связь типа child от Environment, она считается родительской
+        //если такой нет
+        //  найти родительский DeploymentNode от которой есть связь child к найденной, определить для нее родительский Environment
+        //  если такого нет, найти ее родительский DeploymentNode и повторять рекурсивно пока не будет найден родительский Environment
+        return null;
     }
 }

@@ -5,7 +5,8 @@ import org.neo4j.driver.Value;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.beeline.architecting_graph.model.*;
-import ru.beeline.architecting_graph.repository.neo4j.BuildGraphQuery;
+import ru.beeline.architecting_graph.repository.neo4j.GenericRepository;
+import ru.beeline.architecting_graph.repository.neo4j.ComponentRepository;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,16 +15,19 @@ import java.util.Map;
 public class ComponentUpdateService {
 
     @Autowired
-    BuildGraphQuery buildGraphQuery;
+    GenericRepository genericRepository;
 
     @Autowired
     CreateExternalObjects createExternalObjects;
+
+    @Autowired
+    ComponentRepository componentRepository;
 
     public void setComponentProperties(Session session, String graphTag, Component component) {
         if (component.getProperties() != null) {
             for (Map.Entry<String, Object> entry : component.getProperties().entrySet()) {
                 String sanitizedKey = sanitizeKey(entry.getKey());
-                buildGraphQuery.setComponentProperty(session, graphTag, component.getName(), sanitizedKey, entry.getValue());
+                componentRepository.setComponentProperty(session, graphTag, component.getName(), sanitizedKey, entry.getValue());
             }
         }
     }
@@ -41,21 +45,21 @@ public class ComponentUpdateService {
             String componentExternalName = component.getProperties().get("external_name").toString();
             externalComponentGraphObject = new GraphObject("Component", "external_name",
                     componentExternalName);
-            externalExists = buildGraphQuery.checkIfObjectExists(session, graphTag, externalComponentGraphObject);
+            externalExists = genericRepository.checkIfObjectExists(session, graphTag, externalComponentGraphObject);
         }
         if (externalExists) {
             if (changeComponent(session, graphTag, component, externalComponentGraphObject, curVersion, objects)) {
-                buildGraphQuery.setObjectParameter(session, graphTag, externalComponentGraphObject, "external_name",
-                        null);
+                genericRepository.setObjectParameter(session, graphTag, externalComponentGraphObject, "external_name",
+                                                     null);
             } else {
                 component.getProperties().put("external_name", null);
             }
         }
         GraphObject componentGraphObject = new GraphObject("Component", "name", component.getName());
-        boolean exists = buildGraphQuery.checkIfObjectExists(session, graphTag, componentGraphObject);
+        boolean exists = genericRepository.checkIfObjectExists(session, graphTag, componentGraphObject);
 
         if (!exists) {
-            buildGraphQuery.createObject(session, graphTag, componentGraphObject);
+            genericRepository.createObject(session, graphTag, componentGraphObject);
         }
         objects.put(component.getId(), componentGraphObject);
         setParametersForComponent(session, graphTag, component, componentGraphObject, curVersion);
@@ -64,11 +68,11 @@ public class ComponentUpdateService {
 
     public void setParametersForComponent(Session session, String graphTag, Component component,
                                           GraphObject componentGraphObject, String curVersion) {
-        Value value = buildGraphQuery.getObjectParameter(session, graphTag, componentGraphObject, "startVersion");
+        Value value = genericRepository.getObjectParameter(session, graphTag, componentGraphObject, "startVersion");
         if ("Global".equals(graphTag) && "NULL".equals(String.valueOf(value))) {
-            buildGraphQuery.setObjectParameter(session, graphTag, componentGraphObject, "startVersion", curVersion);
+            genericRepository.setObjectParameter(session, graphTag, componentGraphObject, "startVersion", curVersion);
         }
-        buildGraphQuery.setMainComponentFields(session, graphTag, componentGraphObject, component);
+        componentRepository.setMainComponentFields(session, graphTag, componentGraphObject, component);
         setComponentProperties(session, graphTag, component);
     }
 
@@ -76,7 +80,7 @@ public class ComponentUpdateService {
                                         GraphObject externalComponentGraphObject) {
         Integer numberOfRelationshipsFirst = getComponentNumberOfConnects(session, graphTag,
                 externalComponentGraphObject.getValue());
-        String source = buildGraphQuery.getObjectParameter(session, graphTag, externalComponentGraphObject, "source")
+        String source = genericRepository.getObjectParameter(session, graphTag, externalComponentGraphObject, "source")
                 .toString();
         Integer numberOfRelationshipsSecond = 0;
         if (component.getRelationships() != null) {
@@ -89,19 +93,19 @@ public class ComponentUpdateService {
     }
 
     public Integer getComponentNumberOfConnects(Session session, String graphTag, String componentExternalName) {
-        return buildGraphQuery.fetchNumberOfConnections(session, graphTag, componentExternalName);
+        return componentRepository.fetchNumberOfConnections(session, graphTag, componentExternalName);
     }
 
     public Boolean changeComponent(Session session, String graphTag, Component component,
                                    GraphObject externalComponentGraphObject, String curVersion, HashMap<String, GraphObject> objects) {
-        String startVersion = buildGraphQuery
+        String startVersion = genericRepository
                 .getObjectParameter(session, graphTag, externalComponentGraphObject, "startVersion").toString();
         if (startVersion.equals("NULL")) {
-            buildGraphQuery.setObjectParameter(session, graphTag, externalComponentGraphObject, "name",
-                    component.getName());
+            genericRepository.setObjectParameter(session, graphTag, externalComponentGraphObject, "name",
+                                                 component.getName());
             return true;
         }
-        String endVersion = buildGraphQuery
+        String endVersion = genericRepository
                 .getObjectParameter(session, graphTag, externalComponentGraphObject, "endVersion").toString();
         if (endVersion.equals("NULL")) {
             return needComponentReplace(session, graphTag, component, externalComponentGraphObject);

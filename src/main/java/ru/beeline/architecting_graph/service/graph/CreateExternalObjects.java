@@ -4,7 +4,8 @@ import org.neo4j.driver.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.beeline.architecting_graph.model.*;
-import ru.beeline.architecting_graph.repository.neo4j.BuildGraphQuery;
+import ru.beeline.architecting_graph.repository.neo4j.GenericRepository;
+import ru.beeline.architecting_graph.repository.neo4j.RelationshipRepository;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -13,19 +14,21 @@ import java.util.Map;
 public class CreateExternalObjects {
 
     @Autowired
-    BuildGraphQuery buildGraphQuery;
+    GenericRepository genericRepository;
+    @Autowired
+    private RelationshipRepository relationshipRepository;
 
     public void createExternalSystem(Session session, String graphTag, SoftwareSystem softwareSystem,
                                      String cmdb, HashMap<String, GraphObject> objects) {
         GraphObject systemGraphObject = new GraphObject("SoftwareSystem", "cmdb", cmdb);
-        boolean exists = buildGraphQuery.checkIfObjectExists(session, graphTag, systemGraphObject);
+        boolean exists = genericRepository.checkIfObjectExists(session, graphTag, systemGraphObject);
         if (!exists) {
-            buildGraphQuery.createObject(session, graphTag, systemGraphObject);
-            buildGraphQuery.setObjectParameter(session, graphTag, systemGraphObject, "name", softwareSystem.getName());
+            genericRepository.createObject(session, graphTag, systemGraphObject);
+            genericRepository.setObjectParameter(session, graphTag, systemGraphObject, "name", softwareSystem.getName());
             if (softwareSystem.getProperties() != null
                     && softwareSystem.getProperties().containsKey("structurizr.dsl.identifier")) {
-                buildGraphQuery.setObjectParameter(session, graphTag, systemGraphObject, "structurizr_dsl_identifier",
-                        softwareSystem.getProperties().get("structurizr.dsl.identifier").toString());
+                genericRepository.setObjectParameter(session, graphTag, systemGraphObject, "structurizr_dsl_identifier",
+                                                     softwareSystem.getProperties().get("structurizr.dsl.identifier").toString());
             }
         }
         objects.put(softwareSystem.getId(), systemGraphObject);
@@ -35,15 +38,15 @@ public class CreateExternalObjects {
                                         String containerExternalName, HashMap<String, GraphObject> objects) {
         GraphObject containerGraphObject = new GraphObject("Container", "external_name",
                 containerExternalName);
-        Boolean exists = buildGraphQuery.checkIfObjectExists(session, graphTag, containerGraphObject);
+        Boolean exists = genericRepository.checkIfObjectExists(session, graphTag, containerGraphObject);
         if (!exists) {
-            buildGraphQuery.createObject(session, graphTag, containerGraphObject);
-            buildGraphQuery.setObjectParameter(session, graphTag, containerGraphObject, "name", container.getName());
+            genericRepository.createObject(session, graphTag, containerGraphObject);
+            genericRepository.setObjectParameter(session, graphTag, containerGraphObject, "name", container.getName());
             if (container.getProperties() != null
                     && container.getProperties().containsKey("structurizr.dsl.identifier")) {
-                buildGraphQuery.setObjectParameter(session, graphTag, containerGraphObject,
-                        "structurizr_dsl_identifier",
-                        container.getProperties().get("structurizr.dsl.identifier").toString());
+                genericRepository.setObjectParameter(session, graphTag, containerGraphObject,
+                                                     "structurizr_dsl_identifier",
+                                                     container.getProperties().get("structurizr.dsl.identifier").toString());
             }
         }
         objects.put(container.getId(), containerGraphObject);
@@ -53,16 +56,16 @@ public class CreateExternalObjects {
                                         String componentExternalName, HashMap<String, GraphObject> objects) {
         GraphObject componentGraphObject = new GraphObject("Component", "external_name",
                 componentExternalName);
-        Boolean exists = buildGraphQuery.checkIfObjectExists(session, graphTag, componentGraphObject);
+        Boolean exists = genericRepository.checkIfObjectExists(session, graphTag, componentGraphObject);
         if (!exists) {
-            buildGraphQuery.createObject(session, graphTag, componentGraphObject);
-            buildGraphQuery.setObjectParameter(session, graphTag, componentGraphObject, "name", component.getName());
+            genericRepository.createObject(session, graphTag, componentGraphObject);
+            genericRepository.setObjectParameter(session, graphTag, componentGraphObject, "name", component.getName());
 
             if (component.getProperties() != null
                     && component.getProperties().containsKey("structurizr.dsl.identifier")) {
-                buildGraphQuery.setObjectParameter(session, graphTag, componentGraphObject,
-                        "structurizr_dsl_identifier",
-                        component.getProperties().get("structurizr.dsl.identifier").toString());
+                genericRepository.setObjectParameter(session, graphTag, componentGraphObject,
+                                                     "structurizr_dsl_identifier",
+                                                     component.getProperties().get("structurizr.dsl.identifier").toString());
             }
         }
         objects.put(component.getId(), componentGraphObject);
@@ -116,14 +119,14 @@ public class CreateExternalObjects {
     }
 
     public void createRelationship(Session session, String graphTag, RelationshipEntity relationship, Connection connection) {
-        buildGraphQuery.createRelationshipQuery(session, graphTag, relationship, connection);
+        relationshipRepository.createRelationshipQuery(session, graphTag, relationship, connection);
     }
 
     public void setRelationshipProperties(Session session, String graphTag, RelationshipEntity relationship, Connection connection) {
         if (relationship.getProperties() != null) {
             for (Map.Entry<String, Object> entry : relationship.getProperties().entrySet()) {
                 String sanitizedKey = entry.getKey().replaceAll("[^a-zA-Z0-9]", "_");
-                buildGraphQuery.setRelationshipProperty(session, graphTag, sanitizedKey, entry.getValue(), relationship, connection);
+                relationshipRepository.setRelationshipProperty(session, graphTag, sanitizedKey, entry.getValue(), relationship, connection);
             }
         }
     }
@@ -131,30 +134,30 @@ public class CreateExternalObjects {
     public void setRelationshipNumberOfConnects(Session session, String graphTag, RelationshipEntity relationship,
                                                 Connection connection) {
         if (relationship.getDescription().equals("None")) {
-            String numberOfConnects = buildGraphQuery.getRelationshipParameter(session, graphTag, "None", connection,
-                    "numberOfConnects").toString();
-            String endVersionRelationship = buildGraphQuery.getRelationshipParameter(session, graphTag, "None", connection,
-                    "endVersion").toString();
+            String numberOfConnects = relationshipRepository.getRelationshipParameter(session, graphTag, "None", connection,
+                                                                                      "numberOfConnects").toString();
+            String endVersionRelationship = relationshipRepository.getRelationshipParameter(session, graphTag, "None", connection,
+                                                                                            "endVersion").toString();
             if (numberOfConnects.equals("NULL") || !endVersionRelationship.equals("NULL")) {
                 numberOfConnects = "0";
             } else {
                 numberOfConnects = numberOfConnects.substring(1, numberOfConnects.length() - 1);
             }
             Integer newNumberOfConnects = Integer.parseInt(numberOfConnects) + 1;
-            buildGraphQuery.setRelationshipParameter(session, graphTag, "None", connection, "numberOfConnects",
-                    newNumberOfConnects.toString());
+            relationshipRepository.setRelationshipParameter(session, graphTag, "None", connection, "numberOfConnects",
+                                                            newNumberOfConnects.toString());
         }
     }
 
     public void setParametersForRelationship(Session session, String graphTag, RelationshipEntity relationship,
                                              Connection connection, String curVersion) {
-        if (graphTag.equals("Global") && buildGraphQuery.getRelationshipParameter(session, graphTag, relationship.getDescription(),
-                connection, "startVersion").toString().equals("NULL")) {
-            buildGraphQuery.setRelationshipParameter(session, graphTag, relationship.getDescription(), connection, "startVersion",
-                    curVersion);
+        if (graphTag.equals("Global") && relationshipRepository.getRelationshipParameter(session, graphTag, relationship.getDescription(),
+                                                                                         connection, "startVersion").toString().equals("NULL")) {
+            relationshipRepository.setRelationshipParameter(session, graphTag, relationship.getDescription(), connection, "startVersion",
+                                                            curVersion);
         }
         setRelationshipNumberOfConnects(session, graphTag, relationship, connection);
-        buildGraphQuery.buildSetRelationshipParameters(session, graphTag, relationship, connection);
+        relationshipRepository.buildSetRelationshipParameters(session, graphTag, relationship, connection);
         setRelationshipProperties(session, graphTag, relationship, connection);
     }
 
@@ -215,7 +218,7 @@ public class CreateExternalObjects {
         if (relationship.getDescription() == null) {
             relationship.setDescription("None");
         }
-        if (!buildGraphQuery.checkIfRelationshipExists(session, graphTag, relationship, connection)) {
+        if (!relationshipRepository.checkIfRelationshipExists(session, graphTag, relationship, connection)) {
             createRelationship(session, graphTag, relationship, connection);
         }
         setParametersForRelationship(session, graphTag, relationship, connection, curVersion);

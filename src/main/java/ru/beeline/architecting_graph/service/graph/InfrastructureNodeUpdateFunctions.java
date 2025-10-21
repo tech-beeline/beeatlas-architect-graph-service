@@ -6,7 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import ru.beeline.architecting_graph.model.GraphObject;
 import ru.beeline.architecting_graph.model.InfrastructureNode;
-import ru.beeline.architecting_graph.repository.neo4j.BuildGraphQuery;
+import ru.beeline.architecting_graph.repository.neo4j.GenericRepository;
+import ru.beeline.architecting_graph.repository.neo4j.InfrastructureNodesRepository;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,15 +16,18 @@ import java.util.Map;
 public class InfrastructureNodeUpdateFunctions {
 
     @Autowired
-    BuildGraphQuery buildGraphQuery;
+    GenericRepository genericRepository;
+
+    @Autowired
+    InfrastructureNodesRepository infrastructureNodesRepository;
 
     public void setInfrastructureNodeProperties(Session session, String graphTag, InfrastructureNode infrastructureNode) {
         if (infrastructureNode.getProperties() != null) {
             for (Map.Entry<String, Object> entry : infrastructureNode.getProperties().entrySet()) {
                 String rawKey = entry.getKey();
                 String cleanedKey = rawKey.replaceAll("[^a-zA-Z0-9]", "_");
-                buildGraphQuery.setInfrastructureNodeProperty(session, graphTag, infrastructureNode.getName(),
-                        cleanedKey, entry.getValue());
+                infrastructureNodesRepository.setInfrastructureNodeProperty(session, graphTag, infrastructureNode.getName(),
+                                                                            cleanedKey, entry.getValue());
             }
         }
     }
@@ -31,12 +35,12 @@ public class InfrastructureNodeUpdateFunctions {
     public void setParametersForInfrastructureNode(Session session, String graphTag, InfrastructureNode infrastructureNode,
                                                    GraphObject infrastructureNodeGraphObject, String curVersion) {
         if ("Global".equals(graphTag)
-                && buildGraphQuery.getObjectParameter(session, graphTag, infrastructureNodeGraphObject, "startVersion")
+                && genericRepository.getObjectParameter(session, graphTag, infrastructureNodeGraphObject, "startVersion")
                 .toString().equals("NULL")) {
-            buildGraphQuery.setObjectParameter(session, graphTag, infrastructureNodeGraphObject, "startVersion", curVersion);
+            genericRepository.setObjectParameter(session, graphTag, infrastructureNodeGraphObject, "startVersion", curVersion);
         }
-        buildGraphQuery.updateInfrastructureNode(session, graphTag, infrastructureNode.getName(), infrastructureNode.getDescription(),
-                infrastructureNode.getTechnology(), infrastructureNode.getTags(), infrastructureNode.getUrl(), null);
+        infrastructureNodesRepository.updateInfrastructureNode(session, graphTag, infrastructureNode.getName(), infrastructureNode.getDescription(),
+                                                               infrastructureNode.getTechnology(), infrastructureNode.getTags(), infrastructureNode.getUrl(), null);
         setInfrastructureNodeProperties(session, graphTag, infrastructureNode);
     }
 
@@ -45,9 +49,9 @@ public class InfrastructureNodeUpdateFunctions {
                                          HashMap<String, GraphObject> objects) {
         GraphObject infrastructureNodeGraphObject = new GraphObject("InfrastructureNode", "name",
                 infrastructureNode.getName());
-        boolean exists = buildGraphQuery.checkIfObjectExists(session, graphTag, infrastructureNodeGraphObject);
+        boolean exists = genericRepository.checkIfObjectExists(session, graphTag, infrastructureNodeGraphObject);
         if (!exists) {
-            buildGraphQuery.createObject(session, graphTag, infrastructureNodeGraphObject);
+            genericRepository.createObject(session, graphTag, infrastructureNodeGraphObject);
         }
         objects.put(infrastructureNode.getId(), infrastructureNodeGraphObject);
         setParametersForInfrastructureNode(session, graphTag, infrastructureNode, infrastructureNodeGraphObject,
@@ -55,12 +59,12 @@ public class InfrastructureNodeUpdateFunctions {
     }
 
     public void setInfrastructureNodeEndVersion(Session session, String graphTag, String deploymentNodeName, String curVersion) {
-        Result result = buildGraphQuery.findInfrastructureNodesWithNullEndVersion(session, graphTag, deploymentNodeName);
+        Result result = infrastructureNodesRepository.findInfrastructureNodesWithNullEndVersion(session, graphTag, deploymentNodeName);
         while (result.hasNext()) {
             String infrastructureNodeName = result.next().get("infrastructureNodeName").toString();
             infrastructureNodeName = infrastructureNodeName.substring(1, infrastructureNodeName.length() - 1);
             GraphObject infrastructureNodeGraphObject = new GraphObject("InfrastructureNode", "name", infrastructureNodeName);
-            buildGraphQuery.setObjectParameter(session, graphTag, infrastructureNodeGraphObject, "endVersion", curVersion);
+            genericRepository.setObjectParameter(session, graphTag, infrastructureNodeGraphObject, "endVersion", curVersion);
         }
     }
 }

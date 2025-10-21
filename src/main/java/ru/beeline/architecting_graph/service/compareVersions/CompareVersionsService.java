@@ -11,7 +11,7 @@ import ru.beeline.architecting_graph.exception.NotFoundException;
 import ru.beeline.architecting_graph.exception.ValidationException;
 import ru.beeline.architecting_graph.model.GraphObject;
 import ru.beeline.architecting_graph.model.Pair;
-import ru.beeline.architecting_graph.repository.neo4j.BuildGraphQuery;
+import ru.beeline.architecting_graph.repository.neo4j.GenericRepository;
 
 import java.util.Set;
 
@@ -26,16 +26,16 @@ public class CompareVersionsService {
     FindChanges findChanges;
 
     @Autowired
-    BuildGraphQuery buildGraphQuery;
+    GenericRepository genericRepository;
 
     public String compareVersion(String cmdb, Integer firstVersion, Integer secondVersion) {
         try (Session session = driver.session()) {
             GraphObject systemGraphObject = new GraphObject("SoftwareSystem", "cmdb", cmdb);
-            boolean exists = buildGraphQuery.checkIfObjectExists(session, "Global", systemGraphObject);
+            boolean exists = genericRepository.checkIfObjectExists(session, "Global", systemGraphObject);
             if (!exists) {
                 throw new NotFoundException("Система не найдена");
             }
-            Value versionVal = buildGraphQuery.getObjectParameter(session, "Global", systemGraphObject, "version");
+            Value versionVal = genericRepository.getObjectParameter(session, "Global", systemGraphObject, "version");
             if (versionVal == null || versionVal.isNull()) {
                 throw new ValidationException("У данной системы отсутствует версионность");
             }

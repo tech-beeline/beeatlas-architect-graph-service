@@ -1,0 +1,50 @@
+package ru.beeline.architecting_graph.repository.neo4j;
+
+import lombok.extern.slf4j.Slf4j;
+import org.neo4j.driver.Result;
+import org.neo4j.driver.Session;
+import org.neo4j.driver.Value;
+import org.neo4j.driver.Values;
+import org.springframework.stereotype.Repository;
+
+@Slf4j
+@Repository
+public class InfrastructureNodesRepository {
+
+    public Result getInfrastructureNodes(Session session, String deploymentNodeDSLIdentifier) {
+        String query = "MATCH (n:DeploymentNode {graphTag: \"Global\", structurizr_dsl_identifier: $val1})"
+                + "-[r:Child]->(m:InfrastructureNode) RETURN m, m.structurizr_dsl_identifier";
+        Value parameters = Values.parameters("val1", deploymentNodeDSLIdentifier);
+        return session.run(query, parameters);
+    }
+
+    public void setInfrastructureNodeProperty(Session session, String graphTag, String nodeName,
+                                              String propertyKey, Object propertyValue) {
+        String query = "MATCH (n:InfrastructureNode {graphTag: $graphTag1, name: $name1}) SET n." + propertyKey
+                + " = $value";
+        Value parameters = Values.parameters("graphTag1", graphTag, "name1", nodeName, "value", propertyValue);
+        session.run(query, parameters);
+    }
+
+    public void updateInfrastructureNode(Session session, String graphTag, String name,
+                                         String description, String technology, String tags,
+                                         String url, String endVersion) {
+        String query = "MATCH (n:InfrastructureNode {graphTag: $graphTag1, name: $name1}) "
+                + "SET n.description = $description1, n.technology = $technology1, n.tags = $tags1, "
+                + "n.url = $url1, n.endVersion = $endVersion1";
+        Value parameters = Values.parameters(
+                "graphTag1", graphTag, "name1", name, "description1", description, "technology1",
+                technology,
+                "tags1", tags, "url1", url, "endVersion1", endVersion);
+        session.run(query, parameters);
+    }
+
+    public Result findInfrastructureNodesWithNullEndVersion(Session session, String graphTag,
+                                                            String deploymentNodeName) {
+        String cypher = "MATCH (n:DeploymentNode {name: $name1, graphTag: $graphTag1})-[r:Child]->(m:InfrastructureNode) "
+                + "WHERE m.endVersion IS NULL RETURN m.name AS infrastructureNodeName";
+        Value parameters = Values.parameters("graphTag1", graphTag, "name1", deploymentNodeName);
+        return session.run(cypher, parameters);
+    }
+
+}

@@ -12,7 +12,7 @@ import ru.beeline.architecting_graph.model.DeploymentNode;
 import ru.beeline.architecting_graph.model.DiagramParameters;
 import ru.beeline.architecting_graph.model.InfrastructureNode;
 import ru.beeline.architecting_graph.model.RelationshipEntity;
-import ru.beeline.architecting_graph.repository.neo4j.CreateDiagramsQuery;
+import ru.beeline.architecting_graph.repository.neo4j.*;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -22,10 +22,19 @@ import java.util.HashMap;
 public class NodesBuilder {
 
     @Autowired
-    CreateDiagramsQuery createDiagramsQuery;
+    ContainerComponentBuilder containerComponentBuilder;
 
     @Autowired
-    ContainerComponentBuilder containerComponentBuilder;
+    EnvironmentRepository environmentRepository;
+
+    @Autowired
+    InfrastructureNodesRepository infrastructureNodesRepository;
+
+    @Autowired
+    DeploymentNodesRepository deploymentNodesRepository;
+
+    @Autowired
+    RelationshipRepository relationshipRepository;
 
     public void setInfrastructureNodeProperties(Node node, InfrastructureNode infrastructureNode) {
         for (String key : node.keys()) {
@@ -40,7 +49,7 @@ public class NodesBuilder {
     }
 
     public void setInfrastructureNodeEnvironment(Session session, String infrastructureNodeDSLIdentifier, InfrastructureNode infrastructureNode) {
-        Result result = createDiagramsQuery.getInfrastructureNodeEnvironment(session, infrastructureNodeDSLIdentifier);
+        Result result = environmentRepository.getInfrastructureNodeEnvironment(session, infrastructureNodeDSLIdentifier);
         infrastructureNode.setEnvironment(result.next().get("n.name").asString());
     }
 
@@ -63,7 +72,7 @@ public class NodesBuilder {
 
     public void getInfrastructureNodeRelationships(Session session, InfrastructureNode infrastructureNode,
                                                    String infrastructureNodeDSLIdentifier, DiagramParameters diagramParameters) {
-        Result result = createDiagramsQuery.getInfrastructureNodeRelationships(session, infrastructureNodeDSLIdentifier);
+        Result result = relationshipRepository.getInfrastructureNodeRelationships(session, infrastructureNodeDSLIdentifier);
         while (result.hasNext()) {
             Record record = result.next();
             String destinationDSLIdentifier = record.get("m.structurizr_dsl_identifier").asString();
@@ -79,7 +88,7 @@ public class NodesBuilder {
     public void setInfrastructureNodes(Session session, DeploymentNode deploymentNode, String deploymentNodeDSLIdentifier,
                                        DiagramParameters diagramParameters) {
         deploymentNode.setInfrastructureNodes(new ArrayList<>());
-        Result result = createDiagramsQuery.getInfrastructureNodes(session, deploymentNodeDSLIdentifier);
+        Result result = infrastructureNodesRepository.getInfrastructureNodes(session, deploymentNodeDSLIdentifier);
         while (result.hasNext()) {
             Record record = result.next();
             String infrastructureNodeDSLIdentifier = record.get("m.structurizr_dsl_identifier").asString();
@@ -111,7 +120,7 @@ public class NodesBuilder {
     public void setDeploymentNodeRelationships(Session session, DeploymentNode deploymentNode,
                                                String deploymentNodeDSLIdentifier, DiagramParameters diagramParameters) {
         deploymentNode.setRelationships(new ArrayList<>());
-        Result result = createDiagramsQuery.getDeploymentNodeRelationships(session, deploymentNodeDSLIdentifier);
+        Result result = relationshipRepository.getDeploymentNodeRelationships(session, deploymentNodeDSLIdentifier);
         while (result.hasNext()) {
             Record record = result.next();
             String destinationDSLIdentifier = record.get("m.structurizr_dsl_identifier").asString();
@@ -126,7 +135,7 @@ public class NodesBuilder {
 
     public void getChildDeploymentNodes(Session session, String deploymentNodeDSLIdentifier, String environment,
                                         DiagramParameters diagramParameters) {
-        Result result = createDiagramsQuery.getChildDeploymentNodes(session, deploymentNodeDSLIdentifier);
+        Result result = deploymentNodesRepository.getChildDeploymentNodes(session, deploymentNodeDSLIdentifier);
         while (result.hasNext()) {
             Record record = result.next();
             getDeploymentNode(session, record.get("m").asNode(), environment, diagramParameters);
@@ -146,13 +155,13 @@ public class NodesBuilder {
     }
 
     public void setDeploymentNodeEnvironment(Session session, String deploymentNodeDSLIdentifier, DeploymentNode deploymentNode) {
-        Result result = createDiagramsQuery.getDeploymentNodeEnvironment(session, deploymentNodeDSLIdentifier);
+        Result result = environmentRepository.getDeploymentNodeEnvironment(session, deploymentNodeDSLIdentifier);
         deploymentNode.setEnvironment(result.next().get("n.name").asString());
     }
 
     public void getInfrastructureNodes(Session session, String deploymentNodeDSLIdentifier, String environment,
                                        DiagramParameters diagramParameters) {
-        Result result = createDiagramsQuery.getInfrastructureNodes(session, deploymentNodeDSLIdentifier);
+        Result result = infrastructureNodesRepository.getInfrastructureNodes(session, deploymentNodeDSLIdentifier);
         while (result.hasNext()) {
             Record record = result.next();
             getInfrastructureNode(session, record.get("m").asNode(), environment, diagramParameters);
@@ -162,7 +171,7 @@ public class NodesBuilder {
     public void setChildDeploymentNodes(Session session, DeploymentNode deploymentNode,
                                         String deploymentNodeDSLIdentifier, DiagramParameters diagramParameters) {
         deploymentNode.setChildren(new ArrayList<>());
-        Result result = createDiagramsQuery.getChildDeploymentNodes(session, deploymentNodeDSLIdentifier);
+        Result result = deploymentNodesRepository.getChildDeploymentNodes(session, deploymentNodeDSLIdentifier);
         while (result.hasNext()) {
             Record record = result.next();
             String childDeploymentNodeDSLIdentifier = record.get("m.structurizr_dsl_identifier").asString();

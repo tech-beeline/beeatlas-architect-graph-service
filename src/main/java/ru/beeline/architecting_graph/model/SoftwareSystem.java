@@ -18,6 +18,7 @@ public class SoftwareSystem {
     private Location location;
     private String tags;
     private String url;
+    private String cmdb;
     private List<Container> containers;
     private String group;
     private Map<String, Object> properties;

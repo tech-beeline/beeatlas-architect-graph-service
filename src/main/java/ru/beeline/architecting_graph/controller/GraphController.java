@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.beeline.architecting_graph.dto.DeploymentNodeDTO;
 import ru.beeline.architecting_graph.dto.TaskCacheDTO;
 import ru.beeline.architecting_graph.service.compareVersions.CompareVersionsService;
 import ru.beeline.architecting_graph.service.createDiagrams.CreateDiagrams;
@@ -13,6 +14,7 @@ import ru.beeline.architecting_graph.service.graph.GraphConstructionService;
 import ru.beeline.architecting_graph.service.graph.ProductInfluenceService;
 import ru.beeline.fdmlib.dto.graph.ProductInfluenceDTO;
 
+import java.util.List;
 import java.util.NoSuchElementException;
 
 @RestController
@@ -33,6 +35,12 @@ public class GraphController {
 
     @Autowired
     GetElements getElements;
+
+    @GetMapping("/search/deployment-node")
+    @Operation(summary = "Поиск deploymentNode")
+    public ResponseEntity<List<DeploymentNodeDTO>> getDeploymentNode(@RequestParam String search) {
+        return graphConstructionService.getDeploymentNode(search);
+    }
 
     @GetMapping("/graph/{graph-type}/task/{task-id}")
     @Operation(summary = "Получение статуса графа по taskKey и типу графа")
@@ -57,7 +65,7 @@ public class GraphController {
     @Operation(summary = "Генерация json с описанием containerView")
     public ResponseEntity<String> getC4Diagramm(@PathVariable String softwareSystemMnemonic,
                                                 @PathVariable(required = false) String containerMnemonic,
-                                                @PathVariable(required = false, value = "LeftRight") String rankDirection) {
+                                                @PathVariable(required = false) String rankDirection) {
 
         return createDiagrams.createDiagramm(softwareSystemMnemonic, containerMnemonic, null, rankDirection);
     }
