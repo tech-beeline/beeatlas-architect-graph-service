@@ -25,26 +25,26 @@ public class ContainerInstanceUpdateFunctions {
     @Autowired
     private ContainerRepository containerRepository;
 
-    public void setContainerInstanceProperties(Session session, String graphTag,
+    public void setContainerInstanceProperties(String graphTag,
                                                ContainerInstance containerInstance, String containerInstanceName) {
         if (containerInstance.getProperties() != null) {
             for (Map.Entry<String, Object> entry : containerInstance.getProperties().entrySet()) {
                 String key = entry.getKey().replaceAll("[^a-zA-Z0-9]", "_"); // 👉 оставить тут как бизнес-логику
-                containerInstanceRepository.setProperty(session, graphTag, containerInstanceName, key, entry.getValue());
+                containerInstanceRepository.setProperty(graphTag, containerInstanceName, key, entry.getValue());
             }
         }
     }
 
-    public void setParametersForContainerInstance(Session session, String graphTag, ContainerInstance containerInstance,
+    public void setParametersForContainerInstance(String graphTag, ContainerInstance containerInstance,
                                                   GraphObject containerInstanceGraphObject, String curVersion) {
         if (graphTag.equals("Global")
-                && genericRepository.getObjectParameter(session, graphTag, containerInstanceGraphObject, "startVersion")
+                && genericRepository.getObjectParameter(graphTag, containerInstanceGraphObject, "startVersion")
                 .toString().equals("NULL")) {
-            genericRepository.setObjectParameter(session, graphTag, containerInstanceGraphObject, "startVersion", curVersion);
+            genericRepository.setObjectParameter(graphTag, containerInstanceGraphObject, "startVersion", curVersion);
         }
-        containerInstanceRepository.updateContainerInstance(session, graphTag, containerInstanceGraphObject.getValue(),
+        containerInstanceRepository.updateContainerInstance(graphTag, containerInstanceGraphObject.getValue(),
                                                             containerInstance.getInstanceId(), containerInstance.getTags());
-        setContainerInstanceProperties(session, graphTag, containerInstance, containerInstanceGraphObject.getValue());
+        setContainerInstanceProperties(graphTag, containerInstance, containerInstanceGraphObject.getValue());
     }
 
     public static String getContainerforContainerInstance(Model model, String containerInstanceContainerId) {
@@ -60,7 +60,7 @@ public class ContainerInstanceUpdateFunctions {
         return null;
     }
 
-    public void updateContainerInstance(Session session, String graphTag, Model model, DeploymentNode deploymentNode,
+    public void updateContainerInstance(String graphTag, Model model, DeploymentNode deploymentNode,
                                         ContainerInstance containerInstance, String curVersion, HashMap<String, GraphObject> objects) {
         String containerInstanceName = getContainerforContainerInstance(model, containerInstance.getContainerId());
         if (containerInstanceName == null) {
@@ -69,30 +69,30 @@ public class ContainerInstanceUpdateFunctions {
         containerInstanceName = containerInstanceName + ".ContainerInstance." + deploymentNode.getName().toString();
         GraphObject containerInstanceGraphObject = new GraphObject("ContainerInstance", "name",
                 containerInstanceName);
-        if (!genericRepository.checkIfObjectExists(session, graphTag, containerInstanceGraphObject)) {
-            genericRepository.createObject(session, graphTag, containerInstanceGraphObject);
+        if (!genericRepository.checkIfObjectExists(graphTag, containerInstanceGraphObject)) {
+            genericRepository.createObject(graphTag, containerInstanceGraphObject);
         }
         objects.put(containerInstance.getId(), containerInstanceGraphObject);
-        setParametersForContainerInstance(session, graphTag, containerInstance, containerInstanceGraphObject, curVersion);
+        setParametersForContainerInstance(graphTag, containerInstance, containerInstanceGraphObject, curVersion);
     }
 
-    public void setContainerInstanceEndVersion(Session session, String graphTag, String deploymentNodeName, String curVersion) {
-        Result result = containerInstanceRepository.findContainerInstanceNamesWithNullEndVersion(session, graphTag, deploymentNodeName);
+    public void setContainerInstanceEndVersion(String graphTag, String deploymentNodeName, String curVersion) {
+        Result result = containerInstanceRepository.findContainerInstanceNamesWithNullEndVersion(graphTag, deploymentNodeName);
         while (result.hasNext()) {
             String rawName = result.next().get("containerInstanceName").toString();
             String cleanedName = rawName.substring(1, rawName.length() - 1);
             GraphObject containerInstanceGraphObject = new GraphObject("ContainerInstance", "name", cleanedName);
-            genericRepository.setObjectParameter(session, graphTag, containerInstanceGraphObject, "endVersion", curVersion);
+            genericRepository.setObjectParameter(graphTag, containerInstanceGraphObject, "endVersion", curVersion);
         }
     }
 
-    public void updateContainerInstanceRelationships(Session session, String graphTag, DeploymentNode deploymentNode, String curVersion,
+    public void updateContainerInstanceRelationships(String graphTag, DeploymentNode deploymentNode, String curVersion,
                                                      String cmdb, Model model, HashMap<String, GraphObject> objects) {
         if (deploymentNode.getContainerInstances() != null) {
             for (ContainerInstance containerInstance : deploymentNode.getContainerInstances()) {
                 if (containerInstance.getRelationships() != null) {
                     for (RelationshipEntity relationship : containerInstance.getRelationships()) {
-                        createExternalObjects.updateDefaultRelationship(session, graphTag, relationship, model,
+                        createExternalObjects.updateDefaultRelationship(graphTag, relationship, model,
                                 curVersion, cmdb, "", objects);
                     }
                 }

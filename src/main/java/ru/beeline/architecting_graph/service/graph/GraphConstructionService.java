@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 public class GraphConstructionService {
 
     @Autowired
-    private Driver driver;
+    private Neo4jSessionManager neo4jSessionManager;
 
     @Autowired
     DocumentClient documentClient;
@@ -52,9 +52,7 @@ public class GraphConstructionService {
     DeploymentNodesRepository deploymentNodesRepository;
 
     public ResponseEntity<String> graphConstruct(Long docId, String graphTag) {
-        try (Session session = driver.session()) {
             log.info("graphConstruct is running");
-            session.run("RETURN 1");
             String workspaceJson = getWorkspaceJson(docId);
             if (workspaceJson == null) {
                 log.info("Документ не найден");
@@ -69,18 +67,13 @@ public class GraphConstructionService {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Полученный workspace не валиден");
             }
             try {
-                containerUpdateFunctions.createGraph(session, graphTag, workspace);
+                containerUpdateFunctions.createGraph(graphTag, workspace);
             } catch (Exception e) {
                 log.info("Граф не построен: " + e.getMessage());
                 return ResponseEntity.badRequest().body("Граф не построен\n" + e.getMessage());
             }
             log.info("graph constructed");
             return ResponseEntity.status(HttpStatus.CREATED).body("Граф построен");
-
-        } catch (ServiceUnavailableException e) {
-            log.info("Нет подключения к БД: " + e.getMessage());
-            return ResponseEntity.badRequest().body("Нет подключения к БД");
-        }
     }
 
     private String getWorkspaceJson(Long docId) {
@@ -133,10 +126,10 @@ public class GraphConstructionService {
 
     public ResponseEntity<List<DeploymentNodeDTO>> getDeploymentNode(String search) {
         List<DeploymentNodeDTO> result = new ArrayList<>();
-        Result deploymentNodes = getGlobalDeploymentNodeLikeName();
+        Result deploymentNodes = getGlobalDeploymentNodeLikeName(search);
 //        while (deploymentNodes.hasNext()) {
 //            Record record = deploymentNodes.next();
-//            getContainerInstance(session, record.get("m").asNode(), environment, diagramParameters);
+//            getContainerInstance(record.get("m").asNode(), environment, diagramParameters);
 //            SoftwareSystem system = getParentSoftwareSystem();
 //            Environment environment = getParentEnvironment();
 //            result.add(DeploymentNodeDTO.builder()
@@ -148,8 +141,8 @@ public class GraphConstructionService {
         return ResponseEntity.ok(result);
     }
 
-    private Result getGlobalDeploymentNodeLikeName() {
-        return deploymentNodesRepository.findDeploymentNodesBySearch(null, null);
+    private Result getGlobalDeploymentNodeLikeName(String search) {
+        return deploymentNodesRepository.findDeploymentNodesBySearch(search);
     }
 
     private SoftwareSystem getParentSoftwareSystem() {

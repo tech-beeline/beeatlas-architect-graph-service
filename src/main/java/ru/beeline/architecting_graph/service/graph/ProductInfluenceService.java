@@ -18,18 +18,14 @@ import java.util.stream.Collectors;
 public class ProductInfluenceService {
 
     @Autowired
-    private Driver driver;
-
-    @Autowired
     SoftwareSystemRepository softwareSystemRepository;
 
     public ProductInfluenceDTO getRelatedSystems(String cmdb) {
-        try (Session session = driver.session()) {
-            if (!softwareSystemRepository.productExists(session, cmdb)) {
+            if (!softwareSystemRepository.productExists(cmdb)) {
                 throw new NoSuchElementException("Продукт с cmdb = " + cmdb + " не найден");
             }
-            List<String> dependentSystems = softwareSystemRepository.getDependentSystems(session, cmdb);
-            List<String> influencingSystems = softwareSystemRepository.getInfluencingSystems(session, cmdb);
+            List<String> dependentSystems = softwareSystemRepository.getDependentSystems(cmdb);
+            List<String> influencingSystems = softwareSystemRepository.getInfluencingSystems(cmdb);
 
             return new ProductInfluenceDTO(
                     dependentSystems != null ?
@@ -39,6 +35,5 @@ public class ProductInfluenceService {
                             influencingSystems.stream().distinct().collect(Collectors.toList()) :
                             Collections.emptyList()
             );
-        }
     }
 }

@@ -32,9 +32,9 @@ public class GetView {
     @Autowired
     DeploymentNodesRepository deploymentNodesRepository;
 
-    public Workspace GetContextView(Session session, String softwareSystemMnemonic, String rankDirection) {
-        DiagramParameters diagramParameters = createNewDiagramParameters(session, softwareSystemMnemonic);
-        createContextView(session, diagramParameters.getSystem(), softwareSystemMnemonic, diagramParameters);
+    public Workspace GetContextView(String softwareSystemMnemonic, String rankDirection) {
+        DiagramParameters diagramParameters = createNewDiagramParameters(softwareSystemMnemonic);
+        createContextView(diagramParameters.getSystem(), softwareSystemMnemonic, diagramParameters);
         updateElements(diagramParameters.getWorkspace(), diagramParameters.getModel(), diagramParameters.getSystem(),
                 softwareSystemMnemonic, diagramParameters);
         setElements.setContextView(diagramParameters.getWorkspace(), diagramParameters.getSystem(), diagramParameters
@@ -44,10 +44,10 @@ public class GetView {
         return diagramParameters.getWorkspace();
     }
 
-    public Workspace GetComponentView(Session session, String softwareSystemMnemonic, String containerMnemonic,
+    public Workspace GetComponentView(String softwareSystemMnemonic, String containerMnemonic,
                                       String rankDirection) {
-        DiagramParameters diagramParameters = createNewDiagramParameters(session, softwareSystemMnemonic);
-        containerComponentBuilder.createComponentView(session, softwareSystemMnemonic, containerMnemonic, diagramParameters.getSystem(),
+        DiagramParameters diagramParameters = createNewDiagramParameters(softwareSystemMnemonic);
+        containerComponentBuilder.createComponentView(softwareSystemMnemonic, containerMnemonic, diagramParameters.getSystem(),
                 diagramParameters);
         updateElements(diagramParameters.getWorkspace(), diagramParameters.getModel(), diagramParameters.getSystem(),
                 softwareSystemMnemonic, diagramParameters);
@@ -55,9 +55,9 @@ public class GetView {
         return diagramParameters.getWorkspace();
     }
 
-    public Workspace GetDeploymentView(Session session, String softwareSystemMnemonic, String environment, String rankDirection) {
-        DiagramParameters diagramParameters = createNewDiagramParameters(session, softwareSystemMnemonic);
-        createDeploymentView(session, softwareSystemMnemonic, environment, diagramParameters.getModel(), diagramParameters);
+    public Workspace GetDeploymentView(String softwareSystemMnemonic, String environment, String rankDirection) {
+        DiagramParameters diagramParameters = createNewDiagramParameters(softwareSystemMnemonic);
+        createDeploymentView(softwareSystemMnemonic, environment, diagramParameters.getModel(), diagramParameters);
 
         updateElements(diagramParameters.getWorkspace(), diagramParameters.getModel(), diagramParameters.getSystem(),
                 softwareSystemMnemonic, diagramParameters);
@@ -67,39 +67,39 @@ public class GetView {
         return diagramParameters.getWorkspace();
     }
 
-    void createDeploymentView(Session session, String softwareSystemMnemonic, String environment, Model model,
+    void createDeploymentView(String softwareSystemMnemonic, String environment, Model model,
                               DiagramParameters diagramParameters) {
-        Result result = containerRepository.getContainers(session, softwareSystemMnemonic);
+        Result result = containerRepository.getContainers(softwareSystemMnemonic);
         while (result.hasNext()) {
             Record record = result.next();
-            containerComponentBuilder.getContainer(session, record.get("m").asNode(), diagramParameters);
+            containerComponentBuilder.getContainer(record.get("m").asNode(), diagramParameters);
         }
-        result = deploymentNodesRepository.getDeploymentNodes(session, softwareSystemMnemonic);
+        result = deploymentNodesRepository.getDeploymentNodes(softwareSystemMnemonic);
         while (result.hasNext()) {
             Record record = result.next();
-            nodesBuilder.getDeploymentNode(session, record.get("m").asNode(), environment, diagramParameters);
+            nodesBuilder.getDeploymentNode(record.get("m").asNode(), environment, diagramParameters);
         }
         model.setDeploymentNodes(new ArrayList<>());
-        result = deploymentNodesRepository.getDeploymentNodes(session, softwareSystemMnemonic);
+        result = deploymentNodesRepository.getDeploymentNodes(softwareSystemMnemonic);
         while (result.hasNext()) {
             Record record = result.next();
             String deploymentNodeDSLIdentifier = record.get("m.structurizr_dsl_identifier").asString();
             DeploymentNode deploymentNode = diagramParameters.getCreatedDeploymentNodes().get(deploymentNodeDSLIdentifier);
             if (deploymentNode != null) {
                 model.getDeploymentNodes()
-                        .add(nodesBuilder.getDeploymentNodeRelationships(session, deploymentNode, diagramParameters));
+                        .add(nodesBuilder.getDeploymentNodeRelationships(deploymentNode, diagramParameters));
             }
         }
     }
 
-    public void createContextView(Session session, SoftwareSystem system, String softwareSystemMnemonic, DiagramParameters diagramParameters) {
-        containerComponentBuilder.getContainers(session, softwareSystemMnemonic, diagramParameters);
-        containerComponentBuilder.getSystemRelationships(session, system, softwareSystemMnemonic, diagramParameters);
-        containerComponentBuilder.getContainerRelationships(session, system, softwareSystemMnemonic, true, diagramParameters);
+    public void createContextView(SoftwareSystem system, String softwareSystemMnemonic, DiagramParameters diagramParameters) {
+        containerComponentBuilder.getContainers(softwareSystemMnemonic, diagramParameters);
+        containerComponentBuilder.getSystemRelationships(system, softwareSystemMnemonic, diagramParameters);
+        containerComponentBuilder.getContainerRelationships(system, softwareSystemMnemonic, true, diagramParameters);
 
     }
 
-    public DiagramParameters createNewDiagramParameters(Session session, String softwareSystemMnemonic) {
+    public DiagramParameters createNewDiagramParameters(String softwareSystemMnemonic) {
         DiagramParameters diagramParameters = new DiagramParameters();
         diagramParameters.setLastObjectId(2L);
         diagramParameters.setObjectMap(new HashMap<>());
@@ -115,7 +115,7 @@ public class GetView {
         diagramParameters.setCreatedContainerInstances(new HashMap<>());
         diagramParameters.setWorkspace(new Workspace());
         diagramParameters.setModel(new Model());
-        diagramParameters.setSystem(containerComponentBuilder.getSystem(session, softwareSystemMnemonic, diagramParameters));
+        diagramParameters.setSystem(containerComponentBuilder.getSystem(softwareSystemMnemonic, diagramParameters));
         return diagramParameters;
     }
 

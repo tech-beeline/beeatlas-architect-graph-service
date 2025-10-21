@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import ru.beeline.architecting_graph.service.graph.Neo4jSessionManager;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -19,7 +20,7 @@ import java.util.Map;
 public class GetElements {
 
     @Autowired
-    private Driver driver;
+    private Neo4jSessionManager neo4jSessionManager;
 
     private Object convertValue(Value value) {
         switch (value.type().name()) {
@@ -41,9 +42,7 @@ public class GetElements {
     }
 
     public ResponseEntity<String> processingQuery(String query) {
-        try (Session session = driver.session()) {
-            session.run("RETURN 1");
-            Result result = session.run(query);
+            Result result = neo4jSessionManager.getSession().run(query);
             ObjectMapper mapper = new ObjectMapper();
             StringBuilder returnElements = new StringBuilder("[");
             while (result.hasNext()) {
@@ -69,8 +68,5 @@ public class GetElements {
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(returnElements.toString());
-        } catch (ServiceUnavailableException e) {
-            return ResponseEntity.badRequest().body("Нет подключения к БД");
-        }
     }
 }

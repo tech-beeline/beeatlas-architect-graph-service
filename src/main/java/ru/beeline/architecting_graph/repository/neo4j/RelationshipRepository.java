@@ -5,170 +5,175 @@ import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import ru.beeline.architecting_graph.model.Connection;
 import ru.beeline.architecting_graph.model.RelationshipEntity;
+import ru.beeline.architecting_graph.service.graph.Neo4jSessionManager;
 
 @Slf4j
 @Repository
 public class RelationshipRepository {
-    public Result getDeploymentNodeRelationships(Session session, String deploymentNodeDSLIdentifier) {
+    @Autowired
+    private Neo4jSessionManager neo4jSessionManager;
+
+    public Result getDeploymentNodeRelationships(String deploymentNodeDSLIdentifier) {
         String query = "MATCH (n:DeploymentNode {graphTag: \"Global\", structurizr_dsl_identifier: $val1})"
                 + "-[r:Relationship]->(m) RETURN r, m.structurizr_dsl_identifier";
         Value parameters = Values.parameters("val1", deploymentNodeDSLIdentifier);
-        return session.run(query, parameters);
+        return neo4jSessionManager.getSession().run(query, parameters);
     }
 
-    public Result getInfrastructureNodeRelationships(Session session, String infrastructureNodeDSLIdentifier) {
+    public Result getInfrastructureNodeRelationships(String infrastructureNodeDSLIdentifier) {
         String query = "MATCH (n:InfrastructureNode {graphTag: \"Global\", structurizr_dsl_identifier: $val1})"
                 + "-[r:Relationship]->(m) RETURN r, m.structurizr_dsl_identifier";
         Value parameters = Values.parameters("val1", infrastructureNodeDSLIdentifier);
-        return session.run(query, parameters);
+        return neo4jSessionManager.getSession().run(query, parameters);
     }
 
-    public Result getContainerInstanceRelationships(Session session, String containerInstanceDSLIdentifier) {
+    public Result getContainerInstanceRelationships(String containerInstanceDSLIdentifier) {
         String query = "MATCH (n:ContainerInstance {graphTag: \"Global\", structurizr_dsl_identifier: $val1})"
                 + "-[r:Relationship]->(m) RETURN r, m.structurizr_dsl_identifier";
         Value parameters = Values.parameters("val1", containerInstanceDSLIdentifier);
-        return session.run(query, parameters);
+        return neo4jSessionManager.getSession().run(query, parameters);
     }
 
-    public Result getDirectComponentRelationships(Session session, String componentDSLIndentifier) {
+    public Result getDirectComponentRelationships(String componentDSLIndentifier) {
         String query = "MATCH (n:Component {graphTag: \"Global\", structurizr_dsl_identifier: $val1})" +
                 "-[r:Relationship]->(m) RETURN r, m, m.structurizr_dsl_identifier";
         Value parameters = Values.parameters("val1", componentDSLIndentifier);
-        return session.run(query, parameters);
+        return neo4jSessionManager.getSession().run(query, parameters);
     }
 
-    public Result getReverseComponentRelationships(Session session, String componentDSLIndentifier) {
+    public Result getReverseComponentRelationships(String componentDSLIndentifier) {
         String query = "MATCH (m)-[r:Relationship]->(n:Component {graphTag: \"Global\", structurizr_dsl_identifier: $val1})"
                 + "RETURN r, m, m.structurizr_dsl_identifier";
         Value parameters = Values.parameters("val1", componentDSLIndentifier);
-        return session.run(query, parameters);
+        return neo4jSessionManager.getSession().run(query, parameters);
     }
 
-    public Result getDirectContainerRelationships(Session session, String containerDSLIndentifier) {
+    public Result getDirectContainerRelationships(String containerDSLIndentifier) {
         String query = "MATCH (n:Container {graphTag: \"Global\", structurizr_dsl_identifier: $val1})"
                 + "-[r:Relationship]->(m) RETURN r, m, m.structurizr_dsl_identifier";
         Value parameters = Values.parameters("val1", containerDSLIndentifier);
-        return session.run(query, parameters);
+        return neo4jSessionManager.getSession().run(query, parameters);
     }
 
-    public Result getReverseContainerRelationships(Session session, String containerDSLIndentifier) {
+    public Result getReverseContainerRelationships(String containerDSLIndentifier) {
         String query = "MATCH (m)-[r:Relationship]->(n:Container {graphTag: \"Global\", structurizr_dsl_identifier: $val1})"
                 + " RETURN r, m, m.structurizr_dsl_identifier";
         Value parameters = Values.parameters("val1", containerDSLIndentifier);
-        return session.run(query, parameters);
+        return neo4jSessionManager.getSession().run(query, parameters);
     }
 
-    public Result getDirectSystemRelationships(Session session, String systemDSLIndentifier) {
+    public Result getDirectSystemRelationships(String systemDSLIndentifier) {
         String query = "MATCH (n:SoftwareSystem {graphTag: \"Global\", structurizr_dsl_identifier: $val1})"
                 + "-[r:Relationship]->(m) RETURN r, m, m.structurizr_dsl_identifier";
         Value parameters = Values.parameters("val1", systemDSLIndentifier);
-        return session.run(query, parameters);
+        return neo4jSessionManager.getSession().run(query, parameters);
     }
 
-    public Result getComponentRelationshipsOut(Session session, String componentName, String cmdb) {
+    public Result getComponentRelationshipsOut(String componentName, String cmdb) {
         String query = "MATCH (n:Component {graphTag: \"Global\", name: $val1})-[r:Relationship {sourceWorkspace: $cmdb}]->(m) "
                 +
                 "RETURN n, m, r.startVersion, r.endVersion, r.description";
         Value parameters = Values.parameters("val1", componentName, "cmdb", cmdb);
-        return session.run(query, parameters);
+        return neo4jSessionManager.getSession().run(query, parameters);
     }
 
-    public Result getComponentRelationshipsIn(Session session, String componentName, String cmdb) {
+    public Result getComponentRelationshipsIn(String componentName, String cmdb) {
         String query = "MATCH (m)-[r:Relationship {sourceWorkspace: $cmdb}]->(n:Component {graphTag: \"Global\", name: $val1}) "
                 +
                 "RETURN n, m, r.startVersion, r.endVersion, r.description";
         Value parameters = Values.parameters("val1", componentName, "cmdb", cmdb);
-        return session.run(query, parameters);
+        return neo4jSessionManager.getSession().run(query, parameters);
     }
 
-    public Result getChildren(Session session, String parentType, String childType, String parentName) {
+    public Result getChildren(String parentType, String childType, String parentName) {
         String query = "MATCH (n:" + parentType + " {graphTag: \"Global\", name: $val1})-[r:Child]->(m:" + childType
                 + ") " +
                 "RETURN n, m, m.name, m.startVersion, m.endVersion";
         Value params = Values.parameters("val1", parentName);
-        return session.run(query, params);
+        return neo4jSessionManager.getSession().run(query, params);
     }
 
-    public Result getRelationships(Session session, String label, String name, String cmdb) {
+    public Result getRelationships(String label, String name, String cmdb) {
         String query = "MATCH (n:" + label
                 + " {graphTag: \"Global\", name: $val1})-[r:Relationship {sourceWorkspace: $cmdb}]->(m) " +
                 "RETURN n, m, r.startVersion, r.endVersion, r.description";
         Value params = Values.parameters("cmdb", cmdb, "val1", name);
-        return session.run(query, params);
+        return neo4jSessionManager.getSession().run(query, params);
     }
 
-    public Result getRelationshipsByTagAndCmdb(Session session, String graphTag, String cmdb) {
+    public Result getRelationshipsByTagAndCmdb(String graphTag, String cmdb) {
         String getRelationships = "MATCH (n)-[r {sourceWorkspace: $cmdb, graphTag: $graphTag1}]->(m) "
                 + "WHERE r.endVersion IS NULL RETURN n,m,r";
         Value parameters = Values.parameters("graphTag1", graphTag, "cmdb", cmdb);
-        return session.run(getRelationships, parameters);
+        return neo4jSessionManager.getSession().run(getRelationships, parameters);
     }
 
-    public Result getContainerRelationshipsOut(Session session, String containerName, String cmdb) {
+    public Result getContainerRelationshipsOut(String containerName, String cmdb) {
         String query = "MATCH (n:Container {graphTag: \"Global\", name: $val1})-[r:Relationship {sourceWorkspace: $cmdb}]->(m) "
                 +
                 "RETURN n, m, r.startVersion, r.endVersion, r.description";
         Value parameters = Values.parameters("val1", containerName, "cmdb", cmdb);
-        return session.run(query, parameters);
+        return neo4jSessionManager.getSession().run(query, parameters);
     }
 
-    public Result getContainerRelationshipsIn(Session session, String containerName, String cmdb) {
+    public Result getContainerRelationshipsIn(String containerName, String cmdb) {
         String query = "MATCH (m)-[r:Relationship {sourceWorkspace: $cmdb}]->(n:Container {graphTag: \"Global\", name: $val1}) "
                 +
                 "RETURN n, m, r.startVersion, r.endVersion, r.description";
         Value parameters = Values.parameters("val1", containerName, "cmdb", cmdb);
-        return session.run(query, parameters);
+        return neo4jSessionManager.getSession().run(query, parameters);
     }
 
-    public Result getSystemRelationshipsOut(Session session, String cmdb) {
+    public Result getSystemRelationshipsOut(String cmdb) {
         String query = """
                     MATCH (n:SoftwareSystem {graphTag: "Global", cmdb: $val1})
                     -[r:Relationship {sourceWorkspace: $cmdb}]->(m)
                     RETURN n, m, r.startVersion, r.endVersion, r.description
                 """;
         Value parameters = Values.parameters("val1", cmdb, "cmdb", cmdb);
-        return session.run(query, parameters);
+        return neo4jSessionManager.getSession().run(query, parameters);
     }
 
-    public Result getSystemRelationshipsIn(Session session, String cmdb) {
+    public Result getSystemRelationshipsIn(String cmdb) {
         String query = """
                     MATCH (m)-[r:Relationship {sourceWorkspace: $cmdb}]
                     ->(n:SoftwareSystem {graphTag: "Global", cmdb: $val1})
                     RETURN n, m, r.startVersion, r.endVersion, r.description
                 """;
         Value parameters = Values.parameters("val1", cmdb, "cmdb", cmdb);
-        return session.run(query, parameters);
+        return neo4jSessionManager.getSession().run(query, parameters);
     }
 
-    public Result getNodeRelationshipsOut(Session session, String label, String name, String cmdb) {
+    public Result getNodeRelationshipsOut(String label, String name, String cmdb) {
         String query = String.format(
                 "MATCH (n:%s {graphTag: \"Global\", name: $val1})-[r:Relationship {sourceWorkspace: $cmdb}]->(m) " +
                         "RETURN n, m, r.startVersion, r.endVersion, r.description",
                 label);
         Value parameters = Values.parameters("val1", name, "cmdb", cmdb);
-        return session.run(query, parameters);
+        return neo4jSessionManager.getSession().run(query, parameters);
     }
 
-    public Result getNodeRelationshipsIn(Session session, String label, String name, String cmdb) {
+    public Result getNodeRelationshipsIn(String label, String name, String cmdb) {
         String query = String.format(
                 "MATCH (m)-[r:Relationship {sourceWorkspace: $cmdb}]->(n:%s {graphTag: \"Global\", name: $val1}) " +
                         "RETURN n, m, r.startVersion, r.endVersion, r.description",
                 label);
         Value parameters = Values.parameters("val1", name, "cmdb", cmdb);
-        return session.run(query, parameters);
+        return neo4jSessionManager.getSession().run(query, parameters);
     }
 
-    public Result getContainerRelationships(Session session, String graphTag, String containerExternalName) {
+    public Result getContainerRelationships(String graphTag, String containerExternalName) {
         String findConnects = "MATCH (n:Container {graphTag: $graphTag1, external_name: $external_name1})-[r]-() "
                 + "RETURN count(r) AS numberOfRelationships";
         Value parameters = Values.parameters("graphTag1", graphTag, "external_name1", containerExternalName);
-        return session.run(findConnects, parameters);
+        return neo4jSessionManager.getSession().run(findConnects, parameters);
     }
 
-    public void createRelationshipQuery(Session session, String graphTag, RelationshipEntity relationship,
+    public void createRelationshipQuery(String graphTag, RelationshipEntity relationship,
                                         Connection connection) {
         String cypher = "MATCH (a:" + connection.getSource().getType() + " {graphTag: $graphTag1, "
                 + connection.getSource().getKey() + ": $value1}), (b:"
@@ -180,10 +185,10 @@ public class RelationshipRepository {
         Value parameters = Values.parameters("graphTag1", graphTag, "value1", connection.getSource().getValue(),
                                              "value2", connection.getDestination().getValue(), "cmdb", connection.getCmdb(),
                                              "description1", relationship.getDescription());
-        session.run(cypher, parameters);
+        neo4jSessionManager.getSession().run(cypher, parameters);
     }
 
-    public void setRelationshipProperty(Session session, String graphTag, String key, Object value,
+    public void setRelationshipProperty(String graphTag, String key, Object value,
                                         RelationshipEntity relationship,
                                         Connection connection) {
         String cypher = "MATCH (a:" + connection.getSource().getType() + " {graphTag: $graphTag1, "
@@ -197,10 +202,10 @@ public class RelationshipRepository {
                                              "val2", connection.getDestination().getValue(), "cmdb", connection.getCmdb(),
                                              "description1", relationship.getDescription(),
                                              "value", value);
-        session.run(cypher, parameters);
+        neo4jSessionManager.getSession().run(cypher, parameters);
     }
 
-    public Value getRelationshipParameter(Session session, String graphTag, String realtionshipDescription,
+    public Value getRelationshipParameter(String graphTag, String realtionshipDescription,
                                           Connection connection, String parameter) {
 
         String getParameter = "MATCH (a:" + connection.getSource().getType() + " {graphTag: $graphTag1, "
@@ -212,11 +217,11 @@ public class RelationshipRepository {
         Value parameters = Values.parameters("graphTag1", graphTag, "val1",
                                              connection.getSource().getValue(), "cmdb", connection.getCmdb(), "description1",
                                              realtionshipDescription, "val2", connection.getDestination().getValue());
-        Result result = session.run(getParameter, parameters);
+        Result result = neo4jSessionManager.getSession().run(getParameter, parameters);
         return result.next().get("parameter");
     }
 
-    public void setRelationshipParameter(Session session, String graphTag, String realtionshipDescription,
+    public void setRelationshipParameter(String graphTag, String realtionshipDescription,
                                          Connection connection, String parameter, String value) {
         String setParameter = "MATCH (a:" + connection.getSource().getType() + " {graphTag: $graphTag1, "
                 + connection.getSource().getKey() + ": $val1})-[r:" + connection.getRelationshipType()
@@ -228,10 +233,10 @@ public class RelationshipRepository {
                                              connection.getSource().getValue(), "cmdb", connection.getCmdb(), "description1",
                                              realtionshipDescription, "val2", connection.getDestination().getValue(), "parameter",
                                              value);
-        session.run(setParameter, parameters);
+        neo4jSessionManager.getSession().run(setParameter, parameters);
     }
 
-    public Boolean checkIfRelationshipExists(Session session, String graphTag, RelationshipEntity relationship,
+    public Boolean checkIfRelationshipExists(String graphTag, RelationshipEntity relationship,
                                              Connection connection) {
         String query = "MATCH (a:" + connection.getSource().getType() + " {graphTag: $graphTag1, "
                 + connection.getSource().getKey() + ": $value1})-[r:" + connection.getRelationshipType()
@@ -242,14 +247,14 @@ public class RelationshipRepository {
         Value parameters = Values.parameters("graphTag1", graphTag, "value1", connection.getSource().getValue(),
                                              "value2", connection.getDestination().getValue(), "cmdb", connection.getCmdb(),
                                              "description1", relationship.getDescription());
-        Result result = session.run(query, parameters);
+        Result result = neo4jSessionManager.getSession().run(query, parameters);
         if (result.hasNext()) {
             return true;
         }
         return false;
     }
 
-    public void buildSetRelationshipParameters(Session session, String graphTag, RelationshipEntity relationship,
+    public void buildSetRelationshipParameters(String graphTag, RelationshipEntity relationship,
                                                Connection connection) {
         String setParameters = "MATCH (a:" + connection.getSource().getType() + " {graphTag: $graphTag1, "
                 + connection.getSource().getKey() + ": $val1})-[r:" + connection.getRelationshipType()
@@ -266,7 +271,7 @@ public class RelationshipRepository {
                                              relationship.getTechnology(), "interactionStyle1", relationship.getInteractionStyle(),
                                              "level1",
                                              connection.getLevel());
-        session.run(setParameters, parameters);
+        neo4jSessionManager.getSession().run(setParameters, parameters);
     }
 
 }
