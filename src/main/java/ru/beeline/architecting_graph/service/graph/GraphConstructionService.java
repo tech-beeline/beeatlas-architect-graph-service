@@ -2,39 +2,33 @@ package ru.beeline.architecting_graph.service.graph;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.neo4j.driver.Driver;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.Result;
-import org.neo4j.driver.Session;
-import org.neo4j.driver.exceptions.ServiceUnavailableException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.server.ResponseStatusException;
 import ru.beeline.architecting_graph.client.DocumentClient;
 import ru.beeline.architecting_graph.dto.DeploymentNodeDTO;
 import ru.beeline.architecting_graph.dto.TaskCacheDTO;
-import ru.beeline.architecting_graph.model.DeploymentNode;
-import ru.beeline.architecting_graph.model.Environment;
-import ru.beeline.architecting_graph.model.SoftwareSystem;
 import ru.beeline.architecting_graph.model.Workspace;
 import ru.beeline.architecting_graph.repository.neo4j.DeploymentNodesRepository;
+import ru.beeline.architecting_graph.repository.neo4j.EnvironmentRepository;
+import ru.beeline.architecting_graph.repository.neo4j.SoftwareSystemRepository;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 public class GraphConstructionService {
 
     @Autowired
-    private Neo4jSessionManager neo4jSessionManager;
+    EnvironmentRepository environmentRepository;
 
     @Autowired
     DocumentClient documentClient;
@@ -51,29 +45,32 @@ public class GraphConstructionService {
     @Autowired
     DeploymentNodesRepository deploymentNodesRepository;
 
+    @Autowired
+    SoftwareSystemRepository softwareSystemRepository;
+
     public ResponseEntity<String> graphConstruct(Long docId, String graphTag) {
-            log.info("graphConstruct is running");
-            String workspaceJson = getWorkspaceJson(docId);
-            if (workspaceJson == null) {
-                log.info("Документ не найден");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Документ не найден");
-            }
-            Workspace workspace;
-            try {
-                workspace = objectMapper.readValue(workspaceJson, Workspace.class);
-            } catch (Exception e) {
-                log.info("Полученный workspace не валиден: " + e.getMessage());
-                log.info("workspaceJson is: " + workspaceJson);
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Полученный workspace не валиден");
-            }
-            try {
-                containerUpdateFunctions.createGraph(graphTag, workspace);
-            } catch (Exception e) {
-                log.info("Граф не построен: " + e.getMessage());
-                return ResponseEntity.badRequest().body("Граф не построен\n" + e.getMessage());
-            }
-            log.info("graph constructed");
-            return ResponseEntity.status(HttpStatus.CREATED).body("Граф построен");
+        log.info("graphConstruct is running");
+        String workspaceJson = getWorkspaceJson(docId);
+        if (workspaceJson == null) {
+            log.info("Документ не найден");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Документ не найден");
+        }
+        Workspace workspace;
+        try {
+            workspace = objectMapper.readValue(workspaceJson, Workspace.class);
+        } catch (Exception e) {
+            log.info("Полученный workspace не валиден: " + e.getMessage());
+            log.info("workspaceJson is: " + workspaceJson);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Полученный workspace не валиден");
+        }
+        try {
+            containerUpdateFunctions.createGraph(graphTag, workspace);
+        } catch (Exception e) {
+            log.info("Граф не построен: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Граф не построен\n" + e.getMessage());
+        }
+        log.info("graph constructed");
+        return ResponseEntity.status(HttpStatus.CREATED).body("Граф построен");
     }
 
     private String getWorkspaceJson(Long docId) {
@@ -81,8 +78,6 @@ public class GraphConstructionService {
             return documentClient.getDocument(docId);
         } catch (HttpClientErrorException e) {
             return handleClientError(e);
-        } catch (HttpServerErrorException e) {
-            return null;
         } catch (Exception e) {
             return null;
         }
@@ -127,17 +122,17 @@ public class GraphConstructionService {
     public ResponseEntity<List<DeploymentNodeDTO>> getDeploymentNode(String search) {
         List<DeploymentNodeDTO> result = new ArrayList<>();
         Result deploymentNodes = getGlobalDeploymentNodeLikeName(search);
-//        while (deploymentNodes.hasNext()) {
-//            Record record = deploymentNodes.next();
-//            getContainerInstance(record.get("m").asNode(), environment, diagramParameters);
-//            SoftwareSystem system = getParentSoftwareSystem();
-//            Environment environment = getParentEnvironment();
-//            result.add(DeploymentNodeDTO.builder()
-//                               .deploymentName(node.getName())
-//                               .environmentName(environment.getName())
-//                               .cmdb(system.getCmdb()).build())
-//        }
-//
+        while (deploymentNodes.hasNext()) {
+            Record deployment = deploymentNodes.next();
+            Record system = getParentSoftwareSystem(deployment.get("n").asNode().id());
+            Record environment = getParentEnvironment(deployment.get("n").asNode().id());
+            result.add(DeploymentNodeDTO.builder()
+                               .deploymentName(deployment.get("n").asNode().get("name").asString())
+                               .environmentName(environment.get("parent.name").asString())
+                               .cmdb(system.get("d").asNode().get("cmdb").asString())
+                               .build());
+        }
+
         return ResponseEntity.ok(result);
     }
 
@@ -145,19 +140,29 @@ public class GraphConstructionService {
         return deploymentNodesRepository.findDeploymentNodesBySearch(search);
     }
 
-    private SoftwareSystem getParentSoftwareSystem() {
-        //если к найденной DeploymentNode идет прямая связь типа child от SoftwareSystem, она считается родительской
-        //если такой нет
-        //  найти родительский DeploymentNode от которой есть связь child к найденной, определить для нее родительский SoftwareSystem
-        //  если такого нет, найти ее родительский DeploymentNode и повторять рекурсивно пока не будет найден родительский SoftwareSystem
-        return null;
+    private Record getParentSoftwareSystem(Long id) {
+        Result result = softwareSystemRepository.getParentSystemByDeploymentNodeId(id);
+        if (result.hasNext()) {
+            Record record = result.next();
+            Long parentSystemId = record.get("parent").asNode().id();
+            return softwareSystemRepository.getSystemById(parentSystemId).next();
+        } else {
+            Result parentNodeResult = deploymentNodesRepository.getParentDeploymentNodeId(id);
+            Record record = parentNodeResult.next();
+            Long parentNodeId = record.get("parent").asNode().id();
+            return getParentSoftwareSystem(parentNodeId);
+        }
     }
 
-    private Environment getParentEnvironment() {
-        //если к найденной DeploymentNode идет прямая связь типа child от Environment, она считается родительской
-        //если такой нет
-        //  найти родительский DeploymentNode от которой есть связь child к найденной, определить для нее родительский Environment
-        //  если такого нет, найти ее родительский DeploymentNode и повторять рекурсивно пока не будет найден родительский Environment
-        return null;
+    private Record getParentEnvironment(Long nodeId) {
+        Result result = environmentRepository.getDeploymentNodeEnvironmentNameByIdChild(nodeId);
+        if (result.hasNext()) {
+            return result.next();
+        } else {
+            Result parentNodeResult = deploymentNodesRepository.getParentDeploymentNodeId(nodeId);
+            Record record = parentNodeResult.next();
+            Long parentNodeId = record.get("parentNodeId").asLong();
+            return getParentEnvironment(parentNodeId);
+        }
     }
 }

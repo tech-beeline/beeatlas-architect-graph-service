@@ -3,7 +3,6 @@ package ru.beeline.architecting_graph.repository.neo4j;
 import lombok.extern.slf4j.Slf4j;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.Result;
-import org.neo4j.driver.Session;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,10 +24,23 @@ public class SoftwareSystemRepository {
         return neo4jSessionManager.getSession().run(query, parameters);
     }
 
+    public Result getSystemById(Long id) {
+        String query = "MATCH (d:SoftwareSystem) WHERE id(d) = $val1 RETURN d";
+        Value parameters = Values.parameters("val1", id);
+        return neo4jSessionManager.getSession().run(query, parameters);
+    }
+
     public Result getParentSystem(String containerDSLIdentifier) {
         String query = "MATCH (m:SoftwareSystem)-[r:Child]->(n:Container "
                 + "{graphTag: \"Global\", structurizr_dsl_identifier: $val1}) RETURN m.structurizr_dsl_identifier";
         Value parameters = Values.parameters("val1", containerDSLIdentifier);
+        return neo4jSessionManager.getSession().run(query, parameters);
+    }
+    public Result getParentSystemByDeploymentNodeId(Long id) {
+        String query = "MATCH (parent:SoftwareSystem)-[r:Child]->(child:DeploymentNode)" +
+                "WHERE id(child) = $val1 " +
+                "RETURN parent";
+        Value parameters = Values.parameters("val1", id);
         return neo4jSessionManager.getSession().run(query, parameters);
     }
 

@@ -41,4 +41,11 @@ public class EnvironmentRepository {
         Value parameters = Values.parameters("val1", deploymentNodeDSLIdentifier);
         return neo4jSessionManager.getSession().run(query, parameters);
     }
+
+    public Result getDeploymentNodeEnvironmentNameByIdChild(Long id) {
+        String query = "MATCH (parent:Environment)-[:Child]->(child:DeploymentNode) "
+                + "WHERE id(child) = $val1 RETURN parent.name";
+        Value parameters = Values.parameters("val1", id);
+        return neo4jSessionManager.getSession().run(query, parameters);
+    }
 }

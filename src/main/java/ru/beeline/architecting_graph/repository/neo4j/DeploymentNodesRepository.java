@@ -2,7 +2,6 @@ package ru.beeline.architecting_graph.repository.neo4j;
 
 import lombok.extern.slf4j.Slf4j;
 import org.neo4j.driver.Result;
-import org.neo4j.driver.Session;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +16,12 @@ public class DeploymentNodesRepository {
     @Autowired
     private Neo4jSessionManager neo4jSessionManager;
 
+    public Result getById(String id) {
+        String query = "MATCH (n:DeploymentNode) WHERE n.id = id RETURN n";
+        Value parameters = Values.parameters("id", id);
+        return neo4jSessionManager.getSession().run(query, parameters);
+    }
+
     public Result getDeploymentNodes(String systemDSLIdentifier) {
         String query = "MATCH (n:SoftwareSystem {graphTag: \"Global\", structurizr_dsl_identifier: $val1})"
                 + "-[r:Child]->(m:DeploymentNode) RETURN m, m.structurizr_dsl_identifier";
@@ -26,8 +31,8 @@ public class DeploymentNodesRepository {
 
     public Result findDeploymentNodesBySearch(String search) {
         String cypher = "MATCH (n:DeploymentNode) " +
-                "WHERE n.graphTag = 'global' " +
-                "AND (toLower(n.name) CONTAINS toLower($search) OR toLower(n.ip) CONTAINS toLower($search)) " +
+                "WHERE toLower(n.graphTag) = toLower('Global')" +
+                "AND (toLower(n.host) = toLower($search) OR toLower(n.ip) = toLower($search)) " +
                 "RETURN n";
         Value parameters = Values.parameters("search", search);
         return neo4jSessionManager.getSession().run(cypher, parameters);
@@ -51,6 +56,13 @@ public class DeploymentNodesRepository {
                 + "WHERE m.endVersion IS NULL RETURN m.name as deploymentNodeName";
         Value parameters = Values.parameters("graphTag1", graphTag, "cmdb1", cmdb);
         return neo4jSessionManager.getSession().run(getDeploymentNode, parameters);
+    }
+
+    public Result getParentDeploymentNodeId(Long id) {
+        String query = "MATCH (parent:DeploymentNode)-[:Child]->(child:DeploymentNode) " +
+                "WHERE id(child) = $val1 RETURN parent";
+        Value parameters = Values.parameters("val1", id);
+        return neo4jSessionManager.getSession().run(query, parameters);
     }
 
     public Result findChildDeploymentNodesWithNullEndVersion(String graphTag,
