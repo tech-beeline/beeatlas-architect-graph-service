@@ -67,6 +67,16 @@ public class SoftwareSystemRepository {
                 .asList(Value::asString);
     }
 
+    public Result searchSoftwareSystemsByCMDBorName(String search) {
+        String query =
+                "MATCH (n:SoftwareSystem)" +
+                        "WHERE toLower(n.graphTag) = toLower('Global')" +
+                        "AND (toLower(n.cmdb) CONTAINS toLower($search) OR toLower(n.name) CONTAINS toLower($search))" +
+                        "RETURN n";
+        Value parameters = Values.parameters("search", search);
+        return neo4jSessionManager.getSession().run(query, parameters);
+    }
+
     public boolean productExists(String cmdb) {
         String query = "MATCH (p:SoftwareSystem {graphTag: 'Global'}) " +
                 "WHERE toLower(p.cmdb) = toLower($cmdb) " +

@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.beeline.architecting_graph.dto.DeploymentNodeDTO;
+import ru.beeline.architecting_graph.dto.SearchSoftwareSystemDTO;
 import ru.beeline.architecting_graph.dto.TaskCacheDTO;
 import ru.beeline.architecting_graph.service.compareVersions.CompareVersionsService;
 import ru.beeline.architecting_graph.service.createDiagrams.CreateDiagrams;
@@ -40,6 +41,12 @@ public class GraphController {
     @Operation(summary = "Поиск deploymentNode")
     public ResponseEntity<List<DeploymentNodeDTO>> getDeploymentNode(@RequestParam String search) {
         return graphConstructionService.getDeploymentNode(search);
+    }
+
+    @GetMapping("/search/software-system")
+    @Operation(summary = "Поиск deploymentNode")
+    public ResponseEntity<List<SearchSoftwareSystemDTO>> getSoftwareSystem(@RequestParam String search) {
+        return graphConstructionService.getSoftwareSystem(search);
     }
 
     @GetMapping("/graph/{graph-type}/task/{task-id}")

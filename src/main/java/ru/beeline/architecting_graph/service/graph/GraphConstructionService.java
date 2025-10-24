@@ -13,6 +13,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.server.ResponseStatusException;
 import ru.beeline.architecting_graph.client.DocumentClient;
 import ru.beeline.architecting_graph.dto.DeploymentNodeDTO;
+import ru.beeline.architecting_graph.dto.SearchSoftwareSystemDTO;
 import ru.beeline.architecting_graph.dto.TaskCacheDTO;
 import ru.beeline.architecting_graph.model.Workspace;
 import ru.beeline.architecting_graph.repository.neo4j.DeploymentNodesRepository;
@@ -165,4 +166,16 @@ public class GraphConstructionService {
             return getParentEnvironment(parentNodeId);
         }
     }
+
+    public ResponseEntity<List<SearchSoftwareSystemDTO>> getSoftwareSystem(String search) {
+        List<SearchSoftwareSystemDTO> result = new ArrayList<>();
+        Result softwareSystems = softwareSystemRepository.searchSoftwareSystemsByCMDBorName(search);
+        while (softwareSystems.hasNext()) {
+            Record softwareSystem = softwareSystems.next();
+            result.add(SearchSoftwareSystemDTO.builder()
+                               .name(softwareSystem.get("n").asNode().get("name").asString())
+                               .cmdb(softwareSystem.get("n").asNode().get("cmdb").asString())
+                               .build());
+        }
+    return ResponseEntity.ok(result);}
 }
