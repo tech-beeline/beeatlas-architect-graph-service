@@ -5,9 +5,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.beeline.architecting_graph.dto.ContainerNodeDTO;
 import ru.beeline.architecting_graph.dto.DeploymentNodeDTO;
 import ru.beeline.architecting_graph.dto.TaskCacheDTO;
 import ru.beeline.architecting_graph.service.compareVersions.CompareVersionsService;
+import ru.beeline.architecting_graph.service.createDiagrams.ContainerComponentBuilder;
 import ru.beeline.architecting_graph.service.createDiagrams.CreateDiagrams;
 import ru.beeline.architecting_graph.service.getElements.GetElements;
 import ru.beeline.architecting_graph.service.graph.GraphConstructionService;
@@ -34,12 +36,21 @@ public class GraphController {
     ProductInfluenceService productInfluenceService;
 
     @Autowired
+    ContainerComponentBuilder containerComponentBuilder;
+
+    @Autowired
     GetElements getElements;
 
     @GetMapping("/search/deployment-node")
     @Operation(summary = "Поиск deploymentNode")
     public ResponseEntity<List<DeploymentNodeDTO>> getDeploymentNode(@RequestParam String search) {
         return graphConstructionService.getDeploymentNode(search);
+    }
+
+    @GetMapping("/search/container")
+    @Operation(summary = "Поиск containerNode")
+    public ResponseEntity<List<ContainerNodeDTO>> getContainerNode(@RequestParam(required = false) String search) {
+        return ResponseEntity.status(HttpStatus.OK).body(containerComponentBuilder.findContainersWithParentCmdb(search));
     }
 
     @GetMapping("/graph/{graph-type}/task/{task-id}")

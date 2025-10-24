@@ -88,4 +88,12 @@ public class ContainerRepository {
         return neo4jSessionManager.getSession().run(getContainers, parameters);
     }
 
+    public Result findContainersWithParentCmdb(String search) {
+        String query = "MATCH (sys:SoftwareSystem {graphTag: \"Global\"})-[r:Child]->(cont:Container {graphTag: \"Global\"}) " +
+                "WHERE toLower(cont.name) CONTAINS toLower($search) " +
+                "RETURN cont.name as containerName, sys.cmdb as cmdb";
+        Value parameters = Values.parameters("search", search);
+        return neo4jSessionManager.getSession().run(query, parameters);
+    }
 }
+

@@ -2,19 +2,21 @@ package ru.beeline.architecting_graph.service.createDiagrams;
 
 import org.neo4j.driver.Record;
 import org.neo4j.driver.Result;
-import org.neo4j.driver.Session;
 import org.neo4j.driver.types.Node;
 import org.neo4j.driver.types.Relationship;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import ru.beeline.architecting_graph.model.*;
-import ru.beeline.architecting_graph.repository.neo4j.*;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import ru.beeline.architecting_graph.dto.ContainerNodeDTO;
+import ru.beeline.architecting_graph.exception.ValidationException;
+import ru.beeline.architecting_graph.model.*;
+import ru.beeline.architecting_graph.repository.neo4j.*;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -506,5 +508,21 @@ public class ContainerComponentBuilder {
                 containerInstance.getRelationships().add(relationship);
             }
         }
+    }
+
+    public List<ContainerNodeDTO> findContainersWithParentCmdb(String search) {
+        if (search == null || search.isEmpty()) {
+            throw new ValidationException("Отсутствует обязательный параметр search");
+        }
+        Result result = containerRepository.findContainersWithParentCmdb(search);
+        List<ContainerNodeDTO> response = new ArrayList<>();
+        while (result.hasNext()) {
+            Record record = result.next();
+            response.add(ContainerNodeDTO.builder()
+                    .containerName(record.get("containerName").asString())
+                    .cmdb(record.get("cmdb").asString())
+                    .build());
+        }
+        return response;
     }
 }
