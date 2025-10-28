@@ -105,4 +105,42 @@ public class SoftwareSystemRepository {
         neo4jSessionManager.getSession().run(setParameters, parameters);
     }
 
+    public List<String> findDependentSystemsByContainerId(Long containerId) {
+        String query =
+                "MATCH (con:Container)-[r:Relationship ]->(parent:SoftwareSystem) " +
+                        "WHERE id(con)=$containerId " +
+                        "RETURN parent.cmdb";
+        return neo4jSessionManager.getSession()
+                .run(query, Values.parameters("containerId", containerId))
+                .list(record -> record.get("parent.cmdb").asString());
+    }
+
+    public List<String> findDependentChildSystemsByComponent(Long componentId) {
+        String query =
+                "MATCH (com:Component)-[r:Relationship ]->(parent:SoftwareSystem) " +
+                        "WHERE id(com)=$componentId " +
+                        "RETURN parent";
+        return neo4jSessionManager.getSession()
+                .run(query, Values.parameters("componentId", componentId))
+                .list(record -> record.get("parent.cmdb").asString());
+    }
+    public List<String> findDependentParentSystemsByComponent(Long componentId) {
+        String query =
+                "MATCH (parent:SoftwareSystem)-[r:Relationship ]->(com:Component) " +
+                        "WHERE id(com)=$componentId" +
+                        "RETURN parent";
+        return neo4jSessionManager.getSession()
+                .run(query, Values.parameters("componentId", componentId))
+                .list(record -> record.get("parent.cmdb").asString());
+    }
+
+    public List<String> findInfluencingSystemsByNodeId(Long containerId) {
+        String query =
+                "MATCH (parent:SoftwareSystem )-[r:Relationship]->(con:Container) " +
+                        "WHERE id(con)=$containerId " +
+                        "RETURN parent";
+        return  neo4jSessionManager.getSession()
+                .run(query, Values.parameters("containerId", containerId))
+                .list(record -> record.get("parent.cmdb").asString());
+    }
 }

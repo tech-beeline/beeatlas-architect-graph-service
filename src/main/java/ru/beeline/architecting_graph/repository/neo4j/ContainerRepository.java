@@ -2,7 +2,6 @@ package ru.beeline.architecting_graph.repository.neo4j;
 
 import lombok.extern.slf4j.Slf4j;
 import org.neo4j.driver.Result;
-import org.neo4j.driver.Session;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -95,5 +94,21 @@ public class ContainerRepository {
         Value parameters = Values.parameters("search", search);
         return neo4jSessionManager.getSession().run(query, parameters);
     }
+
+    public Long findContainerIdByParentSystemAndName(String name, String cmdb) {
+        String query = "MATCH (parent:SoftwareSystem )-[r:Child]->(con:Container) \n" +
+                "WHERE toLower(con.name) = toLower($name)  and toLower(parent.cmdb) = toLower($cmdb)\n" +
+                "RETURN id(con) LIMIT 1";
+
+        Result result =
+                neo4jSessionManager.getSession().run(query, Values.parameters("cmdb", cmdb, "name", name));
+
+        if (result.hasNext()) {
+            return result.next().get("id(con)").asLong();
+        } else {
+            return null;
+        }
+    }
+
 }
 

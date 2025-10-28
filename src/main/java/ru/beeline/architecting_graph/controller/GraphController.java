@@ -5,10 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.beeline.architecting_graph.dto.ContainerNodeDTO;
-import ru.beeline.architecting_graph.dto.DeploymentNodeDTO;
-import ru.beeline.architecting_graph.dto.SearchSoftwareSystemDTO;
-import ru.beeline.architecting_graph.dto.TaskCacheDTO;
+import ru.beeline.architecting_graph.dto.*;
 import ru.beeline.architecting_graph.service.compareVersions.CompareVersionsService;
 import ru.beeline.architecting_graph.service.createDiagrams.ContainerComponentBuilder;
 import ru.beeline.architecting_graph.service.createDiagrams.CreateDiagrams;
@@ -60,6 +57,13 @@ public class GraphController {
         return graphConstructionService.getSoftwareSystem(search);
     }
 
+    @GetMapping("/influence")
+    @Operation(summary = "Получить системы связанные с контейнером")
+    public ResponseEntity<InfluenceResponseDTO> getContainerInfluence(
+            @RequestParam String cmdb,
+            @RequestParam String name) {
+        return graphConstructionService.getContainerInfluence(cmdb, name);
+    }
     @GetMapping("/graph/{graph-type}/task/{task-id}")
     @Operation(summary = "Получение статуса графа по taskKey и типу графа")
     public ResponseEntity<TaskCacheDTO> getGraphByTask(@PathVariable("graph-type") String graphType,
@@ -83,7 +87,7 @@ public class GraphController {
     @Operation(summary = "Генерация json с описанием containerView")
     public ResponseEntity<String> getC4Diagramm(@PathVariable String softwareSystemMnemonic,
                                                 @PathVariable(required = false) String containerMnemonic,
-                                                @PathVariable(required = false) String rankDirection) {
+                                                @RequestParam(required = false) String rankDirection) {
 
         return createDiagrams.createDiagramm(softwareSystemMnemonic, containerMnemonic, null, rankDirection);
     }
@@ -91,7 +95,7 @@ public class GraphController {
     @GetMapping("/context/{softwareSystemMnemonic}")
     @Operation(summary = "Генерация json с описанием contextView")
     public ResponseEntity<String> getContextDiagramm(@PathVariable String softwareSystemMnemonic,
-                                                     @PathVariable(required = false, value = "LeftRight") String rankDirection) {
+                                                     @RequestParam(required = false) String rankDirection) {
         return getC4Diagramm(softwareSystemMnemonic, null, rankDirection);
     }
 

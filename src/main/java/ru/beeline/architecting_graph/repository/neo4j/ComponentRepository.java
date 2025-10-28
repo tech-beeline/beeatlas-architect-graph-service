@@ -11,6 +11,8 @@ import ru.beeline.architecting_graph.model.Component;
 import ru.beeline.architecting_graph.model.GraphObject;
 import ru.beeline.architecting_graph.service.graph.Neo4jSessionManager;
 
+import java.util.List;
+
 @Slf4j
 @Repository
 public class ComponentRepository {
@@ -86,4 +88,14 @@ public class ComponentRepository {
         return neo4jSessionManager.getSession().run(cypher, parameters);
     }
 
+    public List<Long> findComponentsByContainer(Long containerId) {
+        String query =
+                "MATCH (container:Container)-[r:Child]->(component:Component) " +
+                        "WHERE id(container) = $containerId " +
+                        "RETURN component.id";
+        return neo4jSessionManager.getSession().run(query, Values.parameters("containerId", containerId))
+                .list(record -> record.get("component.id").asLong());
+
+
+    }
 }
