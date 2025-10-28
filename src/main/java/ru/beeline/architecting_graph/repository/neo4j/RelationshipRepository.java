@@ -2,7 +2,6 @@ package ru.beeline.architecting_graph.repository.neo4j;
 
 import lombok.extern.slf4j.Slf4j;
 import org.neo4j.driver.Result;
-import org.neo4j.driver.Session;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -183,8 +182,8 @@ public class RelationshipRepository {
                 + " {graphTag: $graphTag1, sourceWorkspace: $cmdb, description: $description1}]->(b) RETURN a, b";
 
         Value parameters = Values.parameters("graphTag1", graphTag, "value1", connection.getSource().getValue(),
-                                             "value2", connection.getDestination().getValue(), "cmdb", connection.getCmdb(),
-                                             "description1", relationship.getDescription());
+                "value2", connection.getDestination().getValue(), "cmdb", connection.getCmdb(),
+                "description1", relationship.getDescription());
         neo4jSessionManager.getSession().run(cypher, parameters);
     }
 
@@ -199,15 +198,14 @@ public class RelationshipRepository {
                 + " {graphTag: $graphTag1, " + connection.getDestination().getKey() + ": $val2}) "
                 + "SET r." + key + " = $value";
         Value parameters = Values.parameters("graphTag1", graphTag, "val1", connection.getSource().getValue(),
-                                             "val2", connection.getDestination().getValue(), "cmdb", connection.getCmdb(),
-                                             "description1", relationship.getDescription(),
-                                             "value", value);
+                "val2", connection.getDestination().getValue(), "cmdb", connection.getCmdb(),
+                "description1", relationship.getDescription(),
+                "value", value);
         neo4jSessionManager.getSession().run(cypher, parameters);
     }
 
-    public Value getRelationshipParameter(String graphTag, String realtionshipDescription,
-                                          Connection connection, String parameter) {
-
+    public String getRelationshipParameter(String graphTag, String realtionshipDescription,
+                                           Connection connection, String parameter) {
         String getParameter = "MATCH (a:" + connection.getSource().getType() + " {graphTag: $graphTag1, "
                 + connection.getSource().getKey() + ": $val1})-[r:" + connection.getRelationshipType()
                 + " {graphTag: $graphTag1, sourceWorkspace: $cmdb, description: $description1}]->(b:"
@@ -215,10 +213,17 @@ public class RelationshipRepository {
                 + connection.getDestination().getKey() + ": $val2}) RETURN r." + parameter
                 + " AS parameter";
         Value parameters = Values.parameters("graphTag1", graphTag, "val1",
-                                             connection.getSource().getValue(), "cmdb", connection.getCmdb(), "description1",
-                                             realtionshipDescription, "val2", connection.getDestination().getValue());
+                connection.getSource().getValue(), "cmdb", connection.getCmdb(), "description1",
+                realtionshipDescription, "val2", connection.getDestination().getValue());
         Result result = neo4jSessionManager.getSession().run(getParameter, parameters);
-        return result.next().get("parameter");
+
+        if (result.hasNext()) {
+            Value paramValue = result.next().get("parameter");
+            if (paramValue != null && !paramValue.isNull()) {
+                return paramValue.toString();
+            }
+        }
+        return "NULL";
     }
 
     public void setRelationshipParameter(String graphTag, String realtionshipDescription,
@@ -230,9 +235,9 @@ public class RelationshipRepository {
                 + connection.getDestination().getKey() + ": $val2}) SET r." + parameter
                 + " = $parameter";
         Value parameters = Values.parameters("graphTag1", graphTag, "val1",
-                                             connection.getSource().getValue(), "cmdb", connection.getCmdb(), "description1",
-                                             realtionshipDescription, "val2", connection.getDestination().getValue(), "parameter",
-                                             value);
+                connection.getSource().getValue(), "cmdb", connection.getCmdb(), "description1",
+                realtionshipDescription, "val2", connection.getDestination().getValue(), "parameter",
+                value);
         neo4jSessionManager.getSession().run(setParameter, parameters);
     }
 
@@ -245,8 +250,8 @@ public class RelationshipRepository {
                 + connection.getDestination().getKey()
                 + ": $value2}) RETURN EXISTS((a)-->(b)) AS relationshipExists";
         Value parameters = Values.parameters("graphTag1", graphTag, "value1", connection.getSource().getValue(),
-                                             "value2", connection.getDestination().getValue(), "cmdb", connection.getCmdb(),
-                                             "description1", relationship.getDescription());
+                "value2", connection.getDestination().getValue(), "cmdb", connection.getCmdb(),
+                "description1", relationship.getDescription());
         Result result = neo4jSessionManager.getSession().run(query, parameters);
         if (result.hasNext()) {
             return true;
@@ -264,13 +269,13 @@ public class RelationshipRepository {
                 + ": $val2}) SET r.endVersion = $endVersion1, r.tags = $tags1,  "
                 + "r.url = $url1, r.technology = $technology1, r.interactionStyle = $interactionStyle1, r.level = $level1";
         Value parameters = Values.parameters("graphTag1", graphTag, "val1",
-                                             connection.getSource().getValue(), "cmdb", connection.getCmdb(), "description1",
-                                             relationship.getDescription(), "val2", connection.getDestination().getValue(),
-                                             "endVersion1", null,
-                                             "tags1", relationship.getTags(), "url1", relationship.getUrl(), "technology1",
-                                             relationship.getTechnology(), "interactionStyle1", relationship.getInteractionStyle(),
-                                             "level1",
-                                             connection.getLevel());
+                connection.getSource().getValue(), "cmdb", connection.getCmdb(), "description1",
+                relationship.getDescription(), "val2", connection.getDestination().getValue(),
+                "endVersion1", null,
+                "tags1", relationship.getTags(), "url1", relationship.getUrl(), "technology1",
+                relationship.getTechnology(), "interactionStyle1", relationship.getInteractionStyle(),
+                "level1",
+                connection.getLevel());
         neo4jSessionManager.getSession().run(setParameters, parameters);
     }
 
