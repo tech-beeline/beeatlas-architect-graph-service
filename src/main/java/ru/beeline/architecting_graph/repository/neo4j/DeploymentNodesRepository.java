@@ -9,6 +9,9 @@ import org.springframework.stereotype.Repository;
 import ru.beeline.architecting_graph.model.DeploymentNode;
 import ru.beeline.architecting_graph.service.graph.Neo4jSessionManager;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Slf4j
 @Repository
 public class DeploymentNodesRepository {
@@ -95,4 +98,28 @@ public class DeploymentNodesRepository {
         neo4jSessionManager.getSession().run(cypher, parameters);
     }
 
+    public Result getDeploymentNodeByEnvironmentAndCMDB(String cmdb, String name, String env) {
+        String cypher = "MATCH (ss:SoftwareSystem {cmdb: $cmdb, graphTag: 'Global'})" +
+                "MATCH (dn:DeploymentNode {name: $name})" +
+                "MATCH (env:Environment {name: $env, graphTag: 'Global'})" +
+                "WHERE EXISTS {" +
+                "  MATCH (ss)-[:Child*0..]->(parent:DeploymentNode)" +
+                "  WHERE (dn)-[:Child*0..]->(parent)" +
+                "  AND (env)-[:Child]->(dn)" +
+                "}RETURN id(dn) as id";
+        Value parameters = Values.parameters("cmdb", cmdb, "name", name, "env", env);
+        return neo4jSessionManager.getSession().run(cypher, parameters);
+    }
+
+    public List<Long> getDeploymentNodeChildRecursiveById(Long id) {
+        String cypher = "MATCH (parent:DeploymentNode {id: $id, graphTag: 'Global'})-[:Child*1..]->(child:DeploymentNode) RETURN" +
+                " DISTINCT child.id AS childId";
+        Value parameters = Values.parameters("id", id);
+        Result result = neo4jSessionManager.getSession().run(cypher, parameters);
+        List<Long> childrenIds = new ArrayList<>();
+        while (result.hasNext()) {
+            childrenIds.add(result.next().get("childId").asLong());
+        }
+        return childrenIds;
+    }
 }

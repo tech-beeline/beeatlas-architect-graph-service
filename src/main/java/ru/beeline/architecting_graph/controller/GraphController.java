@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.beeline.architecting_graph.dto.*;
+import ru.beeline.architecting_graph.exception.ConflictValuesException;
 import ru.beeline.architecting_graph.service.compareVersions.CompareVersionsService;
 import ru.beeline.architecting_graph.service.createDiagrams.ContainerComponentBuilder;
 import ru.beeline.architecting_graph.service.createDiagrams.CreateDiagrams;
@@ -108,6 +109,20 @@ public class GraphController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/graph/deployment/{cmdb}/influence")
+    @Operation(summary = "Метод для получения связанных систем деплоймента")
+    public ResponseEntity<ProductInfluenceDTO> getDeploymentInfluence(@PathVariable String cmdb,
+                                                            @RequestParam String name,
+                                                            @RequestParam String env) {
+        try {
+            return ResponseEntity.ok(productInfluenceService.getDeploymentRelatedSystems(cmdb, name, env));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (ConflictValuesException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
     }
 
