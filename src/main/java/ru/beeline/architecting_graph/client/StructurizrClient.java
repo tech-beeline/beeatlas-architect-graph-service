@@ -1,5 +1,6 @@
 package ru.beeline.architecting_graph.client;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -8,6 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+@Slf4j
 @Service
 public class StructurizrClient {
     RestTemplate restTemplate;
@@ -31,6 +33,7 @@ public class StructurizrClient {
                     String.class);
             return response.getBody();
         } catch (Exception e) {
+            log.error(e.getMessage(), e.getStackTrace());
             throw new Exception("Failed to call Graphviz API: " + e.getMessage(), e);
         }
     }

@@ -1,8 +1,8 @@
 package ru.beeline.architecting_graph.service.createDiagrams;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.types.Node;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +19,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 
+@Slf4j
 @Service
 public class DiagramService {
 
@@ -165,6 +166,7 @@ public class DiagramService {
             json = structurizrClient.changeJson(json);
             return ResponseEntity.ok(json);
         } catch (Exception e) {
+            log.error(e.getMessage(), e.getStackTrace());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Ошибка сериализации JSON" + e.getMessage());
         }
     }
