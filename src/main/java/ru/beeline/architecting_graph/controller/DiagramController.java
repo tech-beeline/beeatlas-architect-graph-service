@@ -1,0 +1,52 @@
+package ru.beeline.architecting_graph.controller;
+
+import io.swagger.v3.oas.annotations.Operation;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import ru.beeline.architecting_graph.service.createDiagrams.DiagramService;
+
+@RestController
+@RequestMapping("/api/v1")
+public class DiagramController {
+
+    @Autowired
+    DiagramService diagramService;
+
+
+
+    @GetMapping("/deployment/{environment}/{softwareSystemMnemonic}")
+    @Operation(summary = "Генерация json с описанием deploymentView")
+    public ResponseEntity<String> getDeploymentDiagramm(@PathVariable String environment,
+                                                        @PathVariable String softwareSystemMnemonic,
+                                                        @PathVariable(required = false ) String rankDirection) {
+
+        return diagramService.createDiagram(softwareSystemMnemonic, null, environment, rankDirection);
+    }
+
+    @GetMapping("/context/{softwareSystemMnemonic}")
+    @Operation(summary = "Генерация json с описанием contextView")
+    public ResponseEntity<String> getContextDiagram(@PathVariable String softwareSystemMnemonic,
+                                                     @RequestParam(required = false) String rankDirection) {
+        return getC4Diagram(softwareSystemMnemonic, null, rankDirection);
+    }
+
+    @GetMapping("/diagram/context")
+    @Operation(summary = "Построение context диаграммы V2")
+    public ResponseEntity<String> getContextDiagramV2(@RequestParam String cmdb,
+                                                     @RequestParam(required = false) String rankDirection,
+                                                     @RequestParam String communicationDirection) {
+        return diagramService.createContextDiagramV2(cmdb, rankDirection, communicationDirection);
+    }
+
+
+    @GetMapping("/context/{softwareSystemMnemonic}/{containerMnemonic}")
+    @Operation(summary = "Генерация json с описанием containerView")
+    public ResponseEntity<String> getC4Diagram(@PathVariable String softwareSystemMnemonic,
+                                                @PathVariable(required = false) String containerMnemonic,
+                                                @RequestParam(required = false) String rankDirection) {
+
+        return diagramService.createDiagram(softwareSystemMnemonic, containerMnemonic, null, rankDirection);
+    }
+
+}

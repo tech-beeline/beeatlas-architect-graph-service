@@ -2,11 +2,8 @@ package ru.beeline.architecting_graph.service.getElements;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.neo4j.driver.Driver;
 import org.neo4j.driver.Result;
-import org.neo4j.driver.Session;
 import org.neo4j.driver.Value;
-import org.neo4j.driver.exceptions.ServiceUnavailableException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -17,7 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Component
-public class GetElements {
+public class ElementService {
 
     @Autowired
     private Neo4jSessionManager neo4jSessionManager;

@@ -1,6 +1,7 @@
 package ru.beeline.architecting_graph.repository.neo4j;
 
 import lombok.extern.slf4j.Slf4j;
+import org.neo4j.driver.Record;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
@@ -9,6 +10,11 @@ import org.springframework.stereotype.Repository;
 import ru.beeline.architecting_graph.model.Connection;
 import ru.beeline.architecting_graph.model.RelationshipEntity;
 import ru.beeline.architecting_graph.service.graph.Neo4jSessionManager;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Repository
@@ -277,6 +283,49 @@ public class RelationshipRepository {
                 "level1",
                 connection.getLevel());
         neo4jSessionManager.getSession().run(setParameters, parameters);
+    }
+
+    public List<Map<String,Object>> getIncomingRelationships(List<Long> nodeIds, Long destinationNodeId) {
+        String query =
+                "MATCH (src)-[rel:Relationship]->(target) " +
+                        "WHERE id(target) IN $nodeIds " +
+                        "RETURN id(rel) AS id, rel.description AS description, rel.technology AS technology, " +
+                        "id(target) AS destinationId, id(src) AS sourceId";
+        Result result = neo4jSessionManager.getSession().run(query, Values.parameters("nodeIds", nodeIds));
+        List<Map<String,Object>> relationships = new ArrayList<>();
+        while (result.hasNext()) {
+            Record rec = result.next();
+            Map<String,Object> map = new HashMap<>();
+            map.put("id", String.valueOf(rec.get("id").asLong()));
+            map.put("description", rec.get("description").asString(""));
+            map.put("technology", rec.get("technology").asString(""));
+            map.put("destinationId", String.valueOf(destinationNodeId));
+            map.put("sourceId", String.valueOf(rec.get("sourceId").asLong()));
+            relationships.add(map);
+        }
+        return relationships;
+    }
+
+    public List<Map<String,Object>> getOutgoingRelationships(List<Long> nodeIds, Long sourceNodeId) {
+        String query =
+                "MATCH (src)-[rel:Relationship]->(target) " +
+                        "WHERE id(src) IN $nodeIds " +
+                        "RETURN id(rel) AS id, rel.description AS description, rel.technology AS technology, " +
+                        "id(target) AS destinationId, id(src) AS sourceId";
+
+        Result result = neo4jSessionManager.getSession().run(query, Values.parameters("nodeIds", nodeIds));
+        List<Map<String,Object>> relationships = new ArrayList<>();
+        while (result.hasNext()) {
+            Record rec = result.next();
+            Map<String,Object> map = new HashMap<>();
+            map.put("id", String.valueOf(rec.get("id").asLong()));
+            map.put("description", rec.get("description").asString(""));
+            map.put("technology", rec.get("technology").asString(""));
+            map.put("destinationId", String.valueOf(rec.get("destinationId").asLong()));
+            map.put("sourceId", String.valueOf(sourceNodeId));
+            relationships.add(map);
+        }
+        return relationships;
     }
 
 }

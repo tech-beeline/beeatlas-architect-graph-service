@@ -2,7 +2,6 @@ package ru.beeline.architecting_graph.service.createDiagrams;
 
 import org.neo4j.driver.Record;
 import org.neo4j.driver.Result;
-import org.neo4j.driver.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.beeline.architecting_graph.model.*;
@@ -13,7 +12,7 @@ import ru.beeline.architecting_graph.repository.neo4j.DeploymentNodesRepository;
 import java.util.*;
 
 @Service
-public class GetView {
+public class ViewService {
 
 
     @Autowired

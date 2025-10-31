@@ -17,43 +17,43 @@ public class ContainerRepository {
     private Neo4jSessionManager neo4jSessionManager;
 
     public Result checkIfContainerExists(String softwareSystemMnemonic, String containerMnemonic) {
-        String query = "MATCH (a:SoftwareSystem {graphTag: \"Global\", structurizr_dsl_identifier: $val1})"
-                + "-[r:Child]->(b:Container {graphTag: \"Global\", structurizr_dsl_identifier: $val2})  "
-                + "WHERE r.graphTag = \"Global\" RETURN EXISTS((a)-->(b)) AS relationship_exists";
+        String query = "MATCH (a:SoftwareSystem {graphTag: 'Global', structurizr_dsl_identifier: $val1})"
+                + "-[r:Child]->(b:Container {graphTag: 'Global', structurizr_dsl_identifier: $val2})  "
+                + "WHERE r.graphTag = 'Global' RETURN EXISTS((a)-->(b)) AS relationship_exists";
         Value parameters = Values.parameters("val1", softwareSystemMnemonic, "val2", containerMnemonic);
         return neo4jSessionManager.getSession().run(query, parameters);
     }
 
     public Result getContainer(String systemDSLIdentifier, String containerDSLIdentifier) {
-        String query = "MATCH (n:SoftwareSystem {graphTag: \"Global\", structurizr_dsl_identifier: $val1})"
-                + "-[r:Child]->(m:Container {graphTag: \"Global\", structurizr_dsl_identifier: $val2}) RETURN m";
+        String query = "MATCH (n:SoftwareSystem {graphTag: 'Global', structurizr_dsl_identifier: $val1})"
+                + "-[r:Child]->(m:Container {graphTag: 'Global', structurizr_dsl_identifier: $val2}) RETURN m";
         Value parameters = Values.parameters("val1", systemDSLIdentifier, "val2", containerDSLIdentifier);
         return neo4jSessionManager.getSession().run(query, parameters);
     }
 
     public Result getContainers(String systemDSLIdentifier) {
-        String query = "MATCH (n:SoftwareSystem {graphTag: \"Global\", structurizr_dsl_identifier: $val1})"
+        String query = "MATCH (n:SoftwareSystem {graphTag: 'Global', structurizr_dsl_identifier: $val1})"
                 + "-[r:Child]->(m:Container) RETURN m, m.structurizr_dsl_identifier";
         Value parameters = Values.parameters("val1", systemDSLIdentifier);
         return neo4jSessionManager.getSession().run(query, parameters);
     }
 
     public Result getContainersByCmdb(String cmdb) {
-        String query = "MATCH (n:SoftwareSystem {graphTag: \"Global\", cmdb: $val1})-[r:Child]->(m:Container) " +
+        String query = "MATCH (n:SoftwareSystem {graphTag: 'Global', cmdb: $val1})-[r:Child]->(m:Container) " +
                 "RETURN n, m, m.name, m.startVersion, m.endVersion";
         Value parameters = Values.parameters("val1", cmdb);
         return neo4jSessionManager.getSession().run(query, parameters);
     }
     public Result getParentContainer(String componentDSLIdentifier) {
         String query = "MATCH (m:Container)-[r:Child]->(n:Component "
-                + "{graphTag: \"Global\", structurizr_dsl_identifier: $val1}) RETURN m, m.structurizr_dsl_identifier";
+                + "{graphTag: 'Global', structurizr_dsl_identifier: $val1}) RETURN m, m.structurizr_dsl_identifier";
         Value parameters = Values.parameters("val1", componentDSLIdentifier);
         return neo4jSessionManager.getSession().run(query, parameters);
     }
 
     public Result getContainerInstanceContainerId(String containerInstanceDSLIdentifier) {
         String query = "MATCH (n:Container)-[r:Deploy]->(m:ContainerInstance "
-                + "{graphTag: \"Global\", structurizr_dsl_identifier: $val1}) RETURN n.structurizr_dsl_identifier";
+                + "{graphTag: 'Global', structurizr_dsl_identifier: $val1}) RETURN n.structurizr_dsl_identifier";
         Value parameters = Values.parameters("val1", containerInstanceDSLIdentifier);
         return neo4jSessionManager.getSession().run(query, parameters);
     }
@@ -88,7 +88,8 @@ public class ContainerRepository {
     }
 
     public Result findContainersWithParentCmdb(String search) {
-        String query = "MATCH (sys:SoftwareSystem {graphTag: \"Global\"})-[r:Child]->(cont:Container {graphTag: \"Global\"}) " +
+        String query = "MATCH (sys:SoftwareSystem {graphTag: 'э'Global'\"'})-[r:Child]->(cont:Container {graphTag: " +
+                "'Global'}) " +
                 "WHERE toLower(cont.name) CONTAINS toLower($search) " +
                 "RETURN cont.name as containerName, sys.cmdb as cmdb";
         Value parameters = Values.parameters("search", search);
@@ -96,8 +97,8 @@ public class ContainerRepository {
     }
 
     public Long findContainerIdByParentSystemAndName(String name, String cmdb) {
-        String query = "MATCH (parent:SoftwareSystem )-[r:Child]->(con:Container) \n" +
-                "WHERE toLower(con.name) = toLower($name)  and toLower(parent.cmdb) = toLower($cmdb)\n" +
+        String query = "MATCH (parent:SoftwareSystem )-[r:Child]->(con:Container) " +
+                "WHERE toLower(con.name) = toLower($name)  and toLower(parent.cmdb) = toLower($cmdb) " +
                 "RETURN id(con) LIMIT 1";
 
         Result result =

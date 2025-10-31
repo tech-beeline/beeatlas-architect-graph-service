@@ -9,8 +9,7 @@ import ru.beeline.architecting_graph.dto.*;
 import ru.beeline.architecting_graph.exception.ConflictValuesException;
 import ru.beeline.architecting_graph.service.compareVersions.CompareVersionsService;
 import ru.beeline.architecting_graph.service.createDiagrams.ContainerComponentBuilder;
-import ru.beeline.architecting_graph.service.createDiagrams.CreateDiagrams;
-import ru.beeline.architecting_graph.service.getElements.GetElements;
+import ru.beeline.architecting_graph.service.getElements.ElementService;
 import ru.beeline.architecting_graph.service.graph.GraphConstructionService;
 import ru.beeline.architecting_graph.service.graph.ProductInfluenceService;
 import ru.beeline.fdmlib.dto.graph.ProductInfluenceDTO;
@@ -26,9 +25,6 @@ public class GraphController {
     CompareVersionsService compareVersionService;
 
     @Autowired
-    CreateDiagrams createDiagrams;
-
-    @Autowired
     GraphConstructionService graphConstructionService;
 
     @Autowired
@@ -38,7 +34,7 @@ public class GraphController {
     ContainerComponentBuilder containerComponentBuilder;
 
     @Autowired
-    GetElements getElements;
+    ElementService elementService;
 
     @GetMapping("/search/deployment-node")
     @Operation(summary = "Поиск deploymentNode")
@@ -84,22 +80,6 @@ public class GraphController {
         return graphConstructionService.graphConstruct(docId, "Global");
     }
 
-    @GetMapping("/context/{softwareSystemMnemonic}/{containerMnemonic}")
-    @Operation(summary = "Генерация json с описанием containerView")
-    public ResponseEntity<String> getC4Diagramm(@PathVariable String softwareSystemMnemonic,
-                                                @PathVariable(required = false) String containerMnemonic,
-                                                @RequestParam(required = false) String rankDirection) {
-
-        return createDiagrams.createDiagramm(softwareSystemMnemonic, containerMnemonic, null, rankDirection);
-    }
-
-    @GetMapping("/context/{softwareSystemMnemonic}")
-    @Operation(summary = "Генерация json с описанием contextView")
-    public ResponseEntity<String> getContextDiagramm(@PathVariable String softwareSystemMnemonic,
-                                                     @RequestParam(required = false) String rankDirection) {
-        return getC4Diagramm(softwareSystemMnemonic, null, rankDirection);
-    }
-
     @GetMapping("/graph/product/{cmdb}/influence")
     @Operation(summary = "Метод для получения связанных систем")
     public ResponseEntity<ProductInfluenceDTO> getInfluence(@PathVariable String cmdb) {
@@ -126,15 +106,6 @@ public class GraphController {
         }
     }
 
-    @GetMapping("/deployment/{environment}/{softwareSystemMnemonic}")
-    @Operation(summary = "Генерация json с описанием deploymentView")
-    public ResponseEntity<String> getDeploymentDiagramm(@PathVariable String environment,
-                                                        @PathVariable String softwareSystemMnemonic,
-                                                        @PathVariable(required = false, value = "LeftRight") String rankDirection) {
-
-        return createDiagrams.createDiagramm(softwareSystemMnemonic, null, environment, rankDirection);
-    }
-
     @GetMapping("/diff/{cmdb}/{firstVersion}/{secondVersion}")
     @Operation(summary = "Сравнение двух версий указанной системы")
     public ResponseEntity<String> compareVersions(@PathVariable String cmdb,
@@ -153,6 +124,6 @@ public class GraphController {
 
     @GetMapping("/elements")
     public ResponseEntity<String> getElements(@RequestHeader(value = "CYPHER-QUERY") String query) {
-        return getElements.processingQuery(query);
+        return elementService.processingQuery(query);
     }
 }

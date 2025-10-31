@@ -5,15 +5,14 @@ import org.neo4j.driver.Record;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
+import org.neo4j.driver.types.Node;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
+import ru.beeline.architecting_graph.model.GraphObject;
 import ru.beeline.architecting_graph.model.SoftwareSystem;
 import ru.beeline.architecting_graph.service.graph.Neo4jSessionManager;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Slf4j
 @Repository
@@ -68,6 +67,92 @@ public class SoftwareSystemRepository {
                 .single()
                 .get("dependentSystems")
                 .asList(Value::asString);
+    }
+
+    public Result getSoftwareSystem(String cmdb) {
+        String query =
+                "MATCH (softwareSystem:SoftwareSystem {graphTag: 'Global'}) " +
+                        "WHERE toLower(softwareSystem.cmdb) = toLower($cmdb) " +
+                        "RETURN softwareSystem";
+        return neo4jSessionManager.getSession().run(query, Values.parameters("cmdb", cmdb));
+    }
+
+    public List<Long> getContainerAndComponentChildIds(String cmdb) {
+        String cypher = "MATCH (ss:SoftwareSystem {graphTag: 'Global', cmdb: $cmdb}) " +
+                "OPTIONAL MATCH (ss)-[:Child]->(container:Container) " +
+                "OPTIONAL MATCH (container)-[:Child]->(component:Component) " +
+                "WITH collect(DISTINCT container) + collect(DISTINCT component) AS nodes " +
+                "RETURN [node IN nodes | id(node)] AS nodeIds";
+
+        Result result = neo4jSessionManager.getSession().run(cypher, Values.parameters("cmdb", cmdb));
+        if (result.hasNext()) {
+            return new ArrayList<>(result.next().get("nodeIds").asList(Value::asLong));
+        }
+        return Collections.emptyList();
+    }
+
+    public HashSet<Map<String, Object>> getSoftwareSystemsFromRelationships(List<Long> sourceNodeIds) {
+        String query =
+                "MATCH (ss:SoftwareSystem) " +
+                        "WHERE id(ss) IN $sourceNodeIds " +
+                        "RETURN DISTINCT ss.cmdb AS name, id(ss) AS id";
+
+        Result result = neo4jSessionManager.getSession().run(query, Values.parameters("sourceNodeIds", sourceNodeIds));
+        HashSet<Map<String, Object>> softwareSystems = new HashSet<>();
+
+        while (result.hasNext()) {
+            Record record = result.next();
+            Map<String, Object> system = new HashMap<>();
+            system.put("name", record.get("name").asString());
+            system.put("id", String.valueOf(record.get("id").asLong()));
+            softwareSystems.add(system);
+        }
+        return softwareSystems;
+    }
+
+    public Map<Long, Map<String, String>> findParentSoftwareSystemsByContainers(Set<Long> sourceNodeIds) {
+        if (sourceNodeIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        String cypher =
+                "MATCH (ss:SoftwareSystem)-[:Child]->(c:Container) " +
+                        "WHERE id(c) IN $sourceNodeIds " +
+                        "RETURN id(c) AS containerId, id(ss) AS softwareSystemId, ss.cmdb AS softwareSystemCmdb";
+
+        Result result = neo4jSessionManager.getSession().run(cypher, Values.parameters("sourceNodeIds", sourceNodeIds));
+
+        Map<Long, Map<String, String>> containerToParentSoftwareSystem = new HashMap<>();
+        while (result.hasNext()) {
+            Record rec = result.next();
+            Long containerId = rec.get("containerId").asLong();
+            Map<String, String> parentSS = new HashMap<>();
+            parentSS.put("id", String.valueOf(rec.get("softwareSystemId").asLong()));
+            parentSS.put("name", rec.get("softwareSystemCmdb").asString());
+            containerToParentSoftwareSystem.put(containerId, parentSS);
+        }
+        return containerToParentSoftwareSystem;
+    }
+
+    public Map<Long, Map<String, String>> getParentSoftwareSystemsForComponents(Set<Long> componentIds) {
+        if (componentIds.isEmpty()) return Collections.emptyMap();
+
+        String cypher =
+                "MATCH (ss:SoftwareSystem)-[:Child]->(c:Container)-[:Child]->(comp:Component) " +
+                        "WHERE id(comp) IN $componentIds " +
+                        "RETURN id(comp) AS componentId, id(ss) AS softwareSystemId, ss.cmdb AS softwareSystemCmdb";
+
+        Result result = neo4jSessionManager.getSession().run(cypher, Values.parameters("componentIds", componentIds));
+
+        Map<Long, Map<String, String>> componentToParentSS = new HashMap<>();
+        while (result.hasNext()) {
+            Record rec = result.next();
+            Long componentId = rec.get("componentId").asLong();
+            Map<String, String> parentSS = new HashMap<>();
+            parentSS.put("id", String.valueOf(rec.get("softwareSystemId").asLong()));
+            parentSS.put("name", rec.get("softwareSystemCmdb").asString());
+            componentToParentSS.put(componentId, parentSS);
+        }
+        return componentToParentSS;
     }
 
     public Result searchSoftwareSystemsByCMDBorName(String search) {
