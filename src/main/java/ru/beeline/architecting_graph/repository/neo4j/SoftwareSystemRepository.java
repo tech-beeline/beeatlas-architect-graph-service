@@ -77,7 +77,7 @@ public class SoftwareSystemRepository {
         return neo4jSessionManager.getSession().run(query, Values.parameters("cmdb", cmdb));
     }
 
-    public List<Long> getContainerAndComponentChildIds(String cmdb) {
+    public Set<Long> getContainerAndComponentChildIds(String cmdb) {
         String cypher = "MATCH (ss:SoftwareSystem {graphTag: 'Global', cmdb: $cmdb}) " +
                 "OPTIONAL MATCH (ss)-[:Child]->(container:Container) " +
                 "OPTIONAL MATCH (container)-[:Child]->(component:Component) " +
@@ -86,9 +86,9 @@ public class SoftwareSystemRepository {
 
         Result result = neo4jSessionManager.getSession().run(cypher, Values.parameters("cmdb", cmdb));
         if (result.hasNext()) {
-            return new ArrayList<>(result.next().get("nodeIds").asList(Value::asLong));
+            return new HashSet<>(result.next().get("nodeIds").asList(Value::asLong));
         }
-        return Collections.emptyList();
+        return Collections.emptySet();
     }
 
     public HashSet<Map<String, Object>> getSoftwareSystemsFromRelationships(List<Long> sourceNodeIds) {

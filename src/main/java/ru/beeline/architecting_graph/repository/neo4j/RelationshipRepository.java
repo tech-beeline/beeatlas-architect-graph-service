@@ -11,10 +11,7 @@ import ru.beeline.architecting_graph.model.Connection;
 import ru.beeline.architecting_graph.model.RelationshipEntity;
 import ru.beeline.architecting_graph.service.graph.Neo4jSessionManager;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Slf4j
 @Repository
@@ -285,7 +282,7 @@ public class RelationshipRepository {
         neo4jSessionManager.getSession().run(setParameters, parameters);
     }
 
-    public List<Map<String,Object>> getIncomingRelationships(List<Long> nodeIds, Long destinationNodeId) {
+    public List<Map<String,Object>> getIncomingRelationships(Set<Long> nodeIds, Long destinationNodeId) {
         String query =
                 "MATCH (src)-[rel:Relationship]->(target) " +
                         "WHERE id(target) IN $nodeIds " +
@@ -306,7 +303,7 @@ public class RelationshipRepository {
         return relationships;
     }
 
-    public List<Map<String,Object>> getOutgoingRelationships(List<Long> nodeIds, Long sourceNodeId) {
+    public List<Map<String,Object>> getOutgoingRelationships(Set<Long> nodeIds, Long sourceNodeId) {
         String query =
                 "MATCH (src)-[rel:Relationship]->(target) " +
                         "WHERE id(src) IN $nodeIds " +

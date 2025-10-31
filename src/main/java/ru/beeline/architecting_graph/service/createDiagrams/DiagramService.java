@@ -118,7 +118,7 @@ public class DiagramService {
         Long softwareSystemId = softwareSystemNode.id();
         String softwareSystemName = softwareSystemNode.get("cmdb").asString();
 
-        List<Long> allNodeIds = softwareSystemRepository.getContainerAndComponentChildIds(cmdb);
+        Set<Long> allNodeIds = softwareSystemRepository.getContainerAndComponentChildIds(cmdb);
         allNodeIds.add(softwareSystemId);
 
         List<Map<String, Object>> relationships = "in".equalsIgnoreCase(communicationDirection) ?
@@ -148,9 +148,10 @@ public class DiagramService {
                 parentSS = componentToParentSS.get(relId);
             }
             if (parentSS != null) {
-                rel.put("sourceId", parentSS.get("id"));
+                rel.put("in".equalsIgnoreCase(communicationDirection) ?
+                                "sourceId" : "destinationId", parentSS.get("id"));
                 if (!existingNames.contains(parentSS.get("name"))) {
-                    softwareSystems.add(Map.of("id", parentSS.get("id"), "name", parentSS.get("name")));
+                    softwareSystems.add(Map.of("id", parentSS.get("id").toString(), "name", parentSS.get("name")));
                     existingNames.add(parentSS.get("name"));
                 }
             }
@@ -180,7 +181,7 @@ public class DiagramService {
 
         Map<String, Object> model = new HashMap<>();
         Map<String, Object> ssMap = new HashMap<>();
-        ssMap.put("id", softwareSystemId);
+        ssMap.put("id", softwareSystemId.toString());
         ssMap.put("name", softwareSystemName);
         ssMap.put("relationships", relationships);
         softwareSystems.add(ssMap);
@@ -200,7 +201,7 @@ public class DiagramService {
         systemContextView.put("elements", softwareSystems);
         systemContextView.put("key", "context");
         systemContextView.put("relationships", relationships);
-        systemContextView.put("softwareSystemId", softwareSystemId);
+        systemContextView.put("softwareSystemId", softwareSystemId.toString());
 
         Map<String, Object> views = new HashMap<>();
         List<Map<String, Object>> systemContextViews = new ArrayList<>();
