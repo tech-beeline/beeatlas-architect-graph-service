@@ -13,15 +13,17 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.server.ResponseStatusException;
 import ru.beeline.architecting_graph.client.DocumentClient;
 import ru.beeline.architecting_graph.dto.DeploymentNodeDTO;
+import ru.beeline.architecting_graph.dto.InfluenceResponseDTO;
+import ru.beeline.architecting_graph.dto.SearchSoftwareSystemDTO;
 import ru.beeline.architecting_graph.dto.TaskCacheDTO;
 import ru.beeline.architecting_graph.model.Workspace;
-import ru.beeline.architecting_graph.repository.neo4j.DeploymentNodesRepository;
-import ru.beeline.architecting_graph.repository.neo4j.EnvironmentRepository;
-import ru.beeline.architecting_graph.repository.neo4j.SoftwareSystemRepository;
+import ru.beeline.architecting_graph.repository.neo4j.*;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -47,6 +49,10 @@ public class GraphConstructionService {
 
     @Autowired
     SoftwareSystemRepository softwareSystemRepository;
+    @Autowired
+    private ContainerRepository containerRepository;
+    @Autowired
+    private ComponentRepository componentRepository;
 
     public ResponseEntity<String> graphConstruct(Long docId, String graphTag) {
         log.info("graphConstruct is running");
@@ -164,5 +170,43 @@ public class GraphConstructionService {
             Long parentNodeId = record.get("parentNodeId").asLong();
             return getParentEnvironment(parentNodeId);
         }
+    }
+
+    public ResponseEntity<List<SearchSoftwareSystemDTO>> getSoftwareSystem(String search) {
+        List<SearchSoftwareSystemDTO> result = new ArrayList<>();
+        Result softwareSystems = softwareSystemRepository.searchSoftwareSystemsByCMDBorName(search);
+        while (softwareSystems.hasNext()) {
+            Record softwareSystem = softwareSystems.next();
+            result.add(SearchSoftwareSystemDTO.builder()
+                               .name(softwareSystem.get("n").asNode().get("name").asString())
+                               .cmdb(softwareSystem.get("n").asNode().get("cmdb").asString())
+                               .build());
+        }
+    return ResponseEntity.ok(result);}
+
+    public ResponseEntity<InfluenceResponseDTO> getContainerInfluence(String cmdb, String name) {
+        if (!softwareSystemRepository.productExists(cmdb)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+        Long containerId = containerRepository.findContainerIdByParentSystemAndName(name, cmdb);
+        if (containerId == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+
+        Set<String> dependentSystems =
+                new HashSet<>(softwareSystemRepository.findDependentSystemsByContainerId(containerId));
+
+        Set<String> influencingSystems = new HashSet<>(softwareSystemRepository.findInfluencingSystemsByNodeId(containerId));
+
+        List<Long> components = componentRepository.findComponentsByContainer(containerId);
+        for (Long componentId : components) {
+            dependentSystems.addAll(softwareSystemRepository.findDependentChildSystemsByComponent(componentId));
+            influencingSystems.addAll(softwareSystemRepository.findDependentParentSystemsByComponent(componentId));
+        }
+
+        return ResponseEntity.ok(InfluenceResponseDTO.builder()
+                .dependentSystems(new ArrayList<>(dependentSystems))
+                .influencingSystems(new ArrayList<>(influencingSystems))
+                .build());
     }
 }
