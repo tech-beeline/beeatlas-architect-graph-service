@@ -156,7 +156,8 @@ public class DiagramService {
                 }
             }
         }
-
+        relationships =
+                relationships.stream().filter(rel -> !rel.get("sourceId").equals(rel.get("destinationId"))).collect(Collectors.toList());
         try {
             ObjectMapper mapper = new ObjectMapper();
             String json = mapper.writeValueAsString(createDiagram(rankDirection,
