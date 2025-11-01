@@ -112,6 +112,16 @@ public class DeploymentNodesRepository {
         return neo4jSessionManager.getSession().run(cypher, parameters);
     }
 
+    public Result findDeploymentNodeByNameEnvCmdb(String deploymentName, String env, String cmdb) {
+        String cypher = "MATCH (ss:SoftwareSystem {cmdb: $cmdb, graphTag: 'Global'}) " +
+                "MATCH (env:Environment {name: $env, graphTag: 'Global'}) " +
+                "MATCH path = (ss)-[:Child*1..]->(dn:DeploymentNode {name: $deploymentName, graphTag: 'Global'}) " +
+                "WHERE (env)-[:Child]->(dn) " +
+                "RETURN dn, ss LIMIT 1";
+        Value params = Values.parameters("deploymentName", deploymentName, "env", env, "cmdb", cmdb);
+        return neo4jSessionManager.getSession().run(cypher, params);
+    }
+
     public List<Long> getDeploymentNodeChildRecursiveById(Long id) {
         String cypher = "MATCH (parent:DeploymentNode {id: $id, graphTag: 'Global'})-[:Child*1..]->(child:DeploymentNode) RETURN" +
                 " DISTINCT child.id AS childId";
@@ -122,5 +132,11 @@ public class DeploymentNodesRepository {
             childrenIds.add(result.next().get("childId").asLong());
         }
         return childrenIds;
+    }
+
+    public Result getChildDeploymentNodesById(Long deploymentNodeId) {
+        String cypher = "MATCH (parent:DeploymentNode {id: $id, graphTag: 'Global'})-[:Child]->(child:DeploymentNode) RETURN child";
+        Value params = Values.parameters("id", deploymentNodeId);
+        return neo4jSessionManager.getSession().run(cypher, params);
     }
 }

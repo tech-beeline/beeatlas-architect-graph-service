@@ -54,13 +54,63 @@ public class GenericRepository {
                 neo4jSessionManager.getSession().run(setParameter, parameters);
         }
 
-
         public void deleteGraph(String graphTag) {
                 String deleteLocalGraph = "MATCH (n) WHERE n.graphTag = $graphTag1 DETACH DELETE n";
                 Value parameters = Values.parameters("graphTag1", graphTag);
                 neo4jSessionManager.getSession().run(deleteLocalGraph, parameters);
         }
 
+        public Result getContainerInstancesWithContainersAndSoftwareSystems(Long deploymentNodeId) {
+                String cypher = "MATCH (dn:DeploymentNode {id: $dnId, graphTag: 'Global'})-[:Child]->(ci:ContainerInstance) " +
+                        "OPTIONAL MATCH (ci)-[:Deploy]->(c:Container) " +
+                        "OPTIONAL MATCH (ss:SoftwareSystem)-[:Child]->(c) " +
+                        "RETURN ci, c, ss";
+                return neo4jSessionManager.getSession().run(cypher, Values.parameters("dnId", deploymentNodeId));
+        }
 
+        public Result findIncomingDeploymentNodeRelationships(Long deploymentNodeId) {
+                String cypher = "MATCH (src:DeploymentNode)-[r:Relationship]->(dst:DeploymentNode) "
+                        + "WHERE id(dst) = $deploymentNodeId "
+                        + "RETURN r, src, dst";
+
+                Value params = Values.parameters("deploymentNodeId", deploymentNodeId);
+                return neo4jSessionManager.getSession().run(cypher, params);
+        }
+
+        public Result findIncomingDeploymentNodeRelationshipsFromInfrastructureNode(Long deploymentNodeId) {
+                String cypher = "MATCH (src:InfrastructureNode)-[r:Relationship]->(dst:DeploymentNode) "
+                        + "WHERE id(dst) = $deploymentNodeId "
+                        + "RETURN r, src, dst";
+
+                Value params = Values.parameters("deploymentNodeId", deploymentNodeId);
+                return neo4jSessionManager.getSession().run(cypher, params);
+        }
+
+        public Result findDeploymentNodesByInfrastructureId(Long infrastructureNodeId) {
+                String cypher = "MATCH (dn:DeploymentNode)-[:Child]->(in:InfrastructureNode) "
+                        + "WHERE id(in) = $infrastructureNodeId "
+                        + "RETURN dn";
+
+                Value params = Values.parameters("infrastructureNodeId", infrastructureNodeId);
+                return neo4jSessionManager.getSession().run(cypher, params);
+        }
+
+        public Result findRelationshipsFromDeploymentNode(Long $infrastructureNodeId) {
+                String cypher = "MATCH (src:DeploymentNode)-[r:Relationship]->(dst:InfrastructureNode) "
+                        + "WHERE id(dst) = $infrastructureNodeId "
+                        + "RETURN r, src, dst";
+
+                Value params = Values.parameters("$infrastructureNodeId", $infrastructureNodeId);
+                return neo4jSessionManager.getSession().run(cypher, params);
+        }
+
+        public Result findIncomingDeploymentNodeRelationshipsFromIncomingDeploymentNode(Long infrastructureNodeId) {
+                String cypher = "MATCH (src:InfrastructureNode)-[r:Relationship]->(dst:InfrastructureNode) "
+                        + "WHERE id(dst) = $infrastructureNodeId "
+                        + "RETURN r, src, dst";
+
+                Value params = Values.parameters("infrastructureNodeId", infrastructureNodeId);
+                return neo4jSessionManager.getSession().run(cypher, params);
+        }
 
 }
