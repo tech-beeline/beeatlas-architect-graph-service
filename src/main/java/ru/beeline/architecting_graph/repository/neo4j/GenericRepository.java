@@ -1,7 +1,6 @@
 package ru.beeline.architecting_graph.repository.neo4j;
 
 import lombok.extern.slf4j.Slf4j;
-import org.neo4j.driver.Record;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
@@ -9,11 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import ru.beeline.architecting_graph.model.*;
 import ru.beeline.architecting_graph.service.graph.Neo4jSessionManager;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Repository
@@ -74,6 +68,101 @@ public class GenericRepository {
                         + "RETURN r, src, dst";
 
                 Value params = Values.parameters("deploymentNodeId", deploymentNodeId);
+                return neo4jSessionManager.getSession().run(cypher, params);
+        }
+
+        public Result findIncomingContainerRelationshipsExtendedContainer(Long containerId, String cmdb) {
+                String cypher = """
+        MATCH (src:Container)-[r:Relationship]->(dst:Container)
+        WHERE id(dst) = $containerId
+          AND (src)-[:Deploy]->(:ContainerInstance)
+          AND EXISTS {
+                MATCH (ssCheck:SoftwareSystem)-[:Child]->(src)
+                WHERE ssCheck.cmdb <> $cmdb
+          }
+        OPTIONAL MATCH (ss:SoftwareSystem)-[:Child]->(src)
+        OPTIONAL MATCH (src)-[:Deploy]->(ci:ContainerInstance)<-[:Child]-(dn:DeploymentNode)
+        RETURN 
+            r, src, dst, ci,
+            ss AS parentSoftwareSystem,
+            dn AS parentDeploymentNode
+            
+        """;
+
+                Value params = Values.parameters("containerId", containerId, "cmdb", cmdb);
+                return neo4jSessionManager.getSession().run(cypher, params);
+        }
+
+        public Result findIncomingContainerRelationshipsExtendedComponent(Long containerId, String cmdb) {
+                String cypher = """
+                            MATCH (srcComponent:Component)-[r:Relationship]->(dst:Container)
+                            WHERE id(dst) = $containerId
+                              AND EXISTS {
+                                  MATCH (src:Container)-[:Child]->(srcComponent)
+                                  WHERE 
+                                      (src)-[:Deploy]->(:ContainerInstance)
+                                      AND EXISTS {
+                                          MATCH (ssCheck:SoftwareSystem)-[:Child]->(src)
+                                          WHERE ssCheck.cmdb <> $cmdb
+                                      }
+                              }
+                            OPTIONAL MATCH (src:Container)-[:Child]->(srcComponent)
+                            OPTIONAL MATCH (ss:SoftwareSystem)-[:Child]->(src)
+                            OPTIONAL MATCH (src)-[:Deploy]->(ci:ContainerInstance)<-[:Child]-(dn:DeploymentNode)
+                            RETURN
+                                r, src, dst, ci, srcComponent,
+                                ss AS parentSoftwareSystem,
+                                dn AS parentDeploymentNode
+                        """;
+
+                Value params = Values.parameters("containerId", containerId, "cmdb", cmdb);
+                return neo4jSessionManager.getSession().run(cypher, params);
+        }
+
+        public Result findIncomingContainerRelationshipsExtendedChildComponent(Long containerId, String cmdb) {
+                String cypher = """
+                            MATCH (dst:Container)-[:Child]->(dstComp:Component)
+                            WHERE id(dst) = $containerId
+                            MATCH (src:Container)-[r:Relationship]->(dstComp)
+                            WHERE 
+                                (src)-[:Deploy]->(:ContainerInstance)
+                                AND EXISTS {
+                                    MATCH (ssCheck:SoftwareSystem)-[:Child]->(src)
+                                    WHERE ssCheck.cmdb <> $cmdb
+                                }
+                            OPTIONAL MATCH (ss:SoftwareSystem)-[:Child]->(src)
+                            OPTIONAL MATCH (src)-[:Deploy]->(ci:ContainerInstance)<-[:Child]-(dn:DeploymentNode)
+                            RETURN
+                                r, src, dst, ci, dstComp,
+                                ss AS parentSoftwareSystem,
+                                dn AS parentDeploymentNode
+                        """;
+
+                Value params = Values.parameters("containerId", containerId, "cmdb", cmdb);
+                return neo4jSessionManager.getSession().run(cypher, params);
+        }
+
+        public Result findIncomingComponentRelationshipsExtended(Long containerId, String cmdb) {
+                String cypher = """
+                            MATCH (parentContainer:Container)-[:Child]->(dstComp:Component)
+                            WHERE id(parentContainer) = $containerId
+                            MATCH (srcComp:Component)-[r:Relationship]->(dstComp)
+                            MATCH (src:Container)-[:Child]->(srcComp)
+                            WHERE 
+                                (src)-[:Deploy]->(:ContainerInstance)
+                                AND EXISTS {
+                                    MATCH (ssCheck:SoftwareSystem)-[:Child]->(src)
+                                    WHERE ssCheck.cmdb <> $cmdb
+                                }
+                            OPTIONAL MATCH (ss:SoftwareSystem)-[:Child]->(src)
+                            OPTIONAL MATCH (src)-[:Deploy]->(ci:ContainerInstance)<-[:Child]-(dn:DeploymentNode)
+                            RETURN 
+                                r, srcComp, dstComp, src, parentContainer, ci,
+                                ss AS parentSoftwareSystem,
+                                dn AS parentDeploymentNode
+                        """;
+
+                Value params = Values.parameters("containerId", containerId, "cmdb", cmdb);
                 return neo4jSessionManager.getSession().run(cypher, params);
         }
 
