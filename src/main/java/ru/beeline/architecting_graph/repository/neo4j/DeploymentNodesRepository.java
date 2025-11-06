@@ -135,7 +135,8 @@ public class DeploymentNodesRepository {
     }
 
     public Result getChildDeploymentNodesById(Long deploymentNodeId) {
-        String cypher = "MATCH (parent:DeploymentNode {id: $id, graphTag: 'Global'})-[:Child]->(child:DeploymentNode) RETURN child";
+        String cypher = "MATCH (parent:DeploymentNode {graphTag: 'Global'})-[:Child]->(child:DeploymentNode)" +
+                " where id(parent)=$id RETURN child";
         Value params = Values.parameters("id", deploymentNodeId);
         return neo4jSessionManager.getSession().run(cypher, params);
     }
