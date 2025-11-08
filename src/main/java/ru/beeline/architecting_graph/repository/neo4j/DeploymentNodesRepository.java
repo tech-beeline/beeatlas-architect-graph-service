@@ -123,7 +123,8 @@ public class DeploymentNodesRepository {
     }
 
     public List<Long> getDeploymentNodeChildRecursiveById(Long id) {
-        String cypher = "MATCH (parent:DeploymentNode {id: $id, graphTag: 'Global'})-[:Child*1..]->(child:DeploymentNode) RETURN" +
+        String cypher = "MATCH (parent:DeploymentNode {graphTag: 'Global'})-[:Child*1..]->" +
+                "(child:DeploymentNode) where id(parent)=$id  RETURN" +
                 " DISTINCT child.id AS childId";
         Value parameters = Values.parameters("id", id);
         Result result = neo4jSessionManager.getSession().run(cypher, parameters);

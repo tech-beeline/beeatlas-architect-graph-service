@@ -52,7 +52,8 @@ public class InfrastructureNodesRepository {
     }
 
     public Result getInfrastructureNodesByDeploymentNodeId(Long deploymentNodeId) {
-        String cypher = "MATCH (dn:DeploymentNode {id: $dnId, graphTag: 'Global'})-[:Child]->(inf:InfrastructureNode) RETURN inf";
+        String cypher = "MATCH (dn:DeploymentNode {graphTag: 'Global'})-[:Child]->(inf:InfrastructureNode)" +
+                " where id(dn) = $dnId RETURN inf";
         return neo4jSessionManager.getSession().run(cypher, Values.parameters("dnId", deploymentNodeId));
     }
 }

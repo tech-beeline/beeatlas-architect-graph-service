@@ -44,38 +44,38 @@ diff --git a/src/main/java/ru/beeline/architecting_graph/service/createDiagrams/
 +                relation.put("destinationId", String.valueOf(dstComp.id()));
 +                relation.put("description", rel.get("description").asString(null));
 +                relation.put("technology", rel.get("technology").asString(null));
-+                ((ArrayList) cMap.get(src.get("id").asString()).get("relationships")).add(relation);
++                ((ArrayList) cMap.get(String.valueOf(src.id())).get("relationships")).add(relation);
 +                relMap.put(String.valueOf(rel.id()), relation);
 +
 +                if (ssMap.containsKey(parentSoftwareSystem.get("id").asString())) {
-+                    if (!cMap.containsKey(src.get("id").asString())) {
++                    if (!cMap.containsKey(String.valueOf(src.id()))) {
 +                        Map<String, Object> newContainer = new HashMap<>();
-+                        newContainer.put("id", src.get("id").asString());
++                        newContainer.put("id", String.valueOf(src.id()));
 +                        newContainer.put("name", src.get("name").asString());
 +                        newContainer.put("relatioships", new ArrayList<>());
-+                        cMap.put(src.get("id").asString(), newContainer);
++                        cMap.put(String.valueOf(src.id()), newContainer);
 +                        ((ArrayList) ssMap.get(parentSoftwareSystem.get("id")).get("containers")).add(newContainer);
 +
 +                    }
 +                } else {
 +                    Map<String, Object> newContainer = new HashMap<>();
-+                    newContainer.put("id", src.get("id").asString());
++                    newContainer.put("id", String.valueOf(src.id()));
 +                    newContainer.put("name", src.get("name").asString());
 +                    newContainer.put("relationships", new ArrayList<>());
-+                    cMap.put(src.get("id").asString(), newContainer);
++                    cMap.put(String.valueOf(src.id()), newContainer);
 +
 +                    Map<String, Object> newSoftwareSystem = new HashMap<>();
 +                    newSoftwareSystem.put("id", parentSoftwareSystem.get("id").asString());
 +                    newSoftwareSystem.put("name", parentSoftwareSystem.get("cmdb").asString());
 +                    newSoftwareSystem.put("containers", newContainer);
-+                    ssMap.put(src.get("id").asString(), newSoftwareSystem);
++                    ssMap.put(String.valueOf(src.id()), newSoftwareSystem);
 +                }
 +                if (dnMap.containsKey(parentDeploymentNode.get("id").asString())) {
-+                    if (!ciMap.containsKey(src.get("id").asString())) {
++                    if (!ciMap.containsKey(String.valueOf(src.id()))) {
 +                        Map<String, Object> containerInstance = new HashMap<>();
 +                        containerInstance.put("id", ci.get("id").asString());
 +                        containerInstance.put("environment","BY BEEATLAS");
-+                        containerInstance.put("containerId", src.get("id").asString());
++                        containerInstance.put("containerId", String.valueOf(src.id()));
 +                        ciMap.put(ci.get("id").asString(), containerInstance);
 +                        ((ArrayList) dnMap.get(parentDeploymentNode.get("id")).get("containerInstances")).add(containerInstance);
 +                    }
@@ -83,7 +83,7 @@ diff --git a/src/main/java/ru/beeline/architecting_graph/service/createDiagrams/
 +                    Map<String, Object> containerInstance = new HashMap<>();
 +                    containerInstance.put("id", ci.get("id").asString());
 +                    containerInstance.put("environment","BY BEEATLAS");
-+                    containerInstance.put("containerId", src.get("id").asString());
++                    containerInstance.put("containerId", String.valueOf(src.id()));
 +                    ciMap.put(ci.get("id").asString(), containerInstance);
 +
 +                    Map<String, Object> newDeploymentNode = new HashMap<>();
@@ -121,38 +121,38 @@ diff --git a/src/main/java/ru/beeline/architecting_graph/service/createDiagrams/
 +            relation.put("destinationId", String.valueOf(dstComp.id()));
 +            relation.put("description", rel.get("description").asString(null));
 +            relation.put("technology", rel.get("technology").asString(null));
-+            ((ArrayList) cMap.get(src.get("id").asString()).get("relationships")).add(relation);
++            ((ArrayList) cMap.get(String.valueOf(src.id())).get("relationships")).add(relation);
 +            relMap.put(String.valueOf(rel.id()), relation);
 +
 +            if (ssMap.containsKey(parentSoftwareSystem.get("id").asString())) {
-+                if (!cMap.containsKey(src.get("id").asString())) {
++                if (!cMap.containsKey(String.valueOf(src.id()))) {
 +                    Map<String, Object> newContainer = new HashMap<>();
-+                    newContainer.put("id", src.get("id").asString());
++                    newContainer.put("id", String.valueOf(src.id()));
 +                    newContainer.put("name", src.get("name").asString());
 +                    newContainer.put("relatioships", new ArrayList<>());
-+                    cMap.put(src.get("id").asString(), newContainer);
++                    cMap.put(String.valueOf(src.id()), newContainer);
 +                    ((ArrayList) ssMap.get(parentSoftwareSystem.get("id")).get("containers")).add(newContainer);
 +
 +                }
 +            } else {
 +                Map<String, Object> newContainer = new HashMap<>();
-+                newContainer.put("id", src.get("id").asString());
++                newContainer.put("id", String.valueOf(src.id()));
 +                newContainer.put("name", src.get("name").asString());
 +                newContainer.put("relationships", new ArrayList<>());
-+                cMap.put(src.get("id").asString(), newContainer);
++                cMap.put(String.valueOf(src.id()), newContainer);
 +
 +                Map<String, Object> newSoftwareSystem = new HashMap<>();
 +                newSoftwareSystem.put("id", parentSoftwareSystem.get("id").asString());
 +                newSoftwareSystem.put("name", parentSoftwareSystem.get("cmdb").asString());
 +                newSoftwareSystem.put("containers", newContainer);
-+                ssMap.put(src.get("id").asString(), newSoftwareSystem);
++                ssMap.put(String.valueOf(src.id()), newSoftwareSystem);
 +            }
 +            if (dnMap.containsKey(parentDeploymentNode.get("id").asString())) {
-+                if (!ciMap.containsKey(src.get("id").asString())) {
++                if (!ciMap.containsKey(String.valueOf(src.id()))) {
 +                    Map<String, Object> containerInstance = new HashMap<>();
 +                    containerInstance.put("id", ci.get("id").asString());
 +                    containerInstance.put("environment","BY BEEATLAS");
-+                    containerInstance.put("containerId", src.get("id").asString());
++                    containerInstance.put("containerId", String.valueOf(src.id()));
 +                    ciMap.put(ci.get("id").asString(), containerInstance);
 +                    ((ArrayList) dnMap.get(parentDeploymentNode.get("id")).get("containerInstances")).add(containerInstance);
 +                }
@@ -160,7 +160,7 @@ diff --git a/src/main/java/ru/beeline/architecting_graph/service/createDiagrams/
 +                Map<String, Object> containerInstance = new HashMap<>();
 +                containerInstance.put("id", ci.get("id").asString());
 +                containerInstance.put("environment","BY BEEATLAS");
-+                containerInstance.put("containerId", src.get("id").asString());
++                containerInstance.put("containerId", String.valueOf(src.id()));
 +                ciMap.put(ci.get("id").asString(), containerInstance);
 +
 +                Map<String, Object> newDeploymentNode = new HashMap<>();
@@ -194,38 +194,38 @@ diff --git a/src/main/java/ru/beeline/architecting_graph/service/createDiagrams/
 +            relation.put("destinationId", String.valueOf(dst.id()));
 +            relation.put("description", rel.get("description").asString(null));
 +            relation.put("technology", rel.get("technology").asString(null));
-+            ((ArrayList) cMap.get(src.get("id").asString()).get("relationships")).add(relation);
++            ((ArrayList) cMap.get(String.valueOf(src.id())).get("relationships")).add(relation);
 +            relMap.put(String.valueOf(rel.id()), relation);
 +
 +            if (ssMap.containsKey(parentSoftwareSystem.get("id").asString())) {
-+                if (!cMap.containsKey(src.get("id").asString())) {
++                if (!cMap.containsKey(String.valueOf(src.id()))) {
 +                    Map<String, Object> newContainer = new HashMap<>();
-+                    newContainer.put("id", src.get("id").asString());
++                    newContainer.put("id", String.valueOf(src.id()));
 +                    newContainer.put("name", src.get("name").asString());
 +                    newContainer.put("relatioships", new ArrayList<>());
-+                    cMap.put(src.get("id").asString(), newContainer);
++                    cMap.put(String.valueOf(src.id()), newContainer);
 +                    ((ArrayList) ssMap.get(parentSoftwareSystem.get("id")).get("containers")).add(newContainer);
 +
 +                }
 +            } else {
 +                Map<String, Object> newContainer = new HashMap<>();
-+                newContainer.put("id", src.get("id").asString());
++                newContainer.put("id", String.valueOf(src.id()));
 +                newContainer.put("name", src.get("name").asString());
 +                newContainer.put("relationships", new ArrayList<>());
-+                cMap.put(src.get("id").asString(), newContainer);
++                cMap.put(String.valueOf(src.id()), newContainer);
 +
 +                Map<String, Object> newSoftwareSystem = new HashMap<>();
 +                newSoftwareSystem.put("id", parentSoftwareSystem.get("id").asString());
 +                newSoftwareSystem.put("name", parentSoftwareSystem.get("cmdb").asString());
 +                newSoftwareSystem.put("containers", newContainer);
-+                ssMap.put(src.get("id").asString(), newSoftwareSystem);
++                ssMap.put(String.valueOf(src.id()), newSoftwareSystem);
 +            }
 +            if (dnMap.containsKey(parentDeploymentNode.get("id").asString())) {
-+                if (!ciMap.containsKey(src.get("id").asString())) {
++                if (!ciMap.containsKey(String.valueOf(src.id()))) {
 +                    Map<String, Object> containerInstance = new HashMap<>();
 +                    containerInstance.put("id", ci.get("id").asString());
 +                    containerInstance.put("environment","BY BEEATLAS");
-+                    containerInstance.put("containerId", src.get("id").asString());
++                    containerInstance.put("containerId", String.valueOf(src.id()));
 +                    ciMap.put(ci.get("id").asString(), containerInstance);
 +                    ((ArrayList) dnMap.get(parentDeploymentNode.get("id")).get("containerInstances")).add(containerInstance);
 +                }
@@ -233,7 +233,7 @@ diff --git a/src/main/java/ru/beeline/architecting_graph/service/createDiagrams/
 +                Map<String, Object> containerInstance = new HashMap<>();
 +                containerInstance.put("id", ci.get("id").asString());
 +                containerInstance.put("environment","BY BEEATLAS");
-+                containerInstance.put("containerId", src.get("id").asString());
++                containerInstance.put("containerId", String.valueOf(src.id()));
 +                ciMap.put(ci.get("id").asString(), containerInstance);
 +
 +                Map<String, Object> newDeploymentNode = new HashMap<>();
@@ -266,38 +266,38 @@ diff --git a/src/main/java/ru/beeline/architecting_graph/service/createDiagrams/
 +            relation.put("destinationId", String.valueOf(dst.id()));
 +            relation.put("description", rel.get("description").asString(null));
 +            relation.put("technology", rel.get("technology").asString(null));
-+            ((ArrayList) cMap.get(src.get("id").asString()).get("relationships")).add(relation);
++            ((ArrayList) cMap.get(String.valueOf(src.id())).get("relationships")).add(relation);
 +            relMap.put(String.valueOf(rel.id()), relation);
 +
 +            if (ssMap.containsKey(parentSoftwareSystem.get("id").asString())) {
-+                if (!cMap.containsKey(src.get("id").asString())) {
++                if (!cMap.containsKey(String.valueOf(src.id()))) {
 +                    Map<String, Object> newContainer = new HashMap<>();
-+                    newContainer.put("id", src.get("id").asString());
++                    newContainer.put("id", String.valueOf(src.id()));
 +                    newContainer.put("name", src.get("name").asString());
 +                    newContainer.put("relatioships", new ArrayList<>());
-+                    cMap.put(src.get("id").asString(), newContainer);
++                    cMap.put(String.valueOf(src.id()), newContainer);
 +                    ((ArrayList) ssMap.get(parentSoftwareSystem.get("id")).get("containers")).add(newContainer);
 +
 +                }
 +            } else {
 +                Map<String, Object> newContainer = new HashMap<>();
-+                newContainer.put("id", src.get("id").asString());
++                newContainer.put("id", String.valueOf(src.id()));
 +                newContainer.put("name", src.get("name").asString());
 +                newContainer.put("relationships", new ArrayList<>());
-+                cMap.put(src.get("id").asString(), newContainer);
++                cMap.put(String.valueOf(src.id()), newContainer);
 +
 +                Map<String, Object> newSoftwareSystem = new HashMap<>();
 +                newSoftwareSystem.put("id", parentSoftwareSystem.get("id").asString());
 +                newSoftwareSystem.put("name", parentSoftwareSystem.get("cmdb").asString());
 +                newSoftwareSystem.put("containers", newContainer);
-+                ssMap.put(src.get("id").asString(), newSoftwareSystem);
++                ssMap.put(String.valueOf(src.id()), newSoftwareSystem);
 +            }
 +            if (dnMap.containsKey(parentDeploymentNode.get("id").asString())) {
-+                if (!ciMap.containsKey(src.get("id").asString())) {
++                if (!ciMap.containsKey(String.valueOf(src.id()))) {
 +                    Map<String, Object> containerInstance = new HashMap<>();
 +                    containerInstance.put("id", ci.get("id").asString());
 +                    containerInstance.put("environment","BY BEEATLAS");
-+                    containerInstance.put("containerId", src.get("id").asString());
++                    containerInstance.put("containerId", String.valueOf(src.id()));
 +                    ciMap.put(ci.get("id").asString(), containerInstance);
 +                    ((ArrayList) dnMap.get(parentDeploymentNode.get("id")).get("containerInstances")).add(containerInstance);
 +                }
@@ -305,7 +305,7 @@ diff --git a/src/main/java/ru/beeline/architecting_graph/service/createDiagrams/
 +                Map<String, Object> containerInstance = new HashMap<>();
 +                containerInstance.put("id", ci.get("id").asString());
 +                containerInstance.put("environment","BY BEEATLAS");
-+                containerInstance.put("containerId", src.get("id").asString());
++                containerInstance.put("containerId", String.valueOf(src.id()));
 +                ciMap.put(ci.get("id").asString(), containerInstance);
 +
 +                Map<String, Object> newDeploymentNode = new HashMap<>();

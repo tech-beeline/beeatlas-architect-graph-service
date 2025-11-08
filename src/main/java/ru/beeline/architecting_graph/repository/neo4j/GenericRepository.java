@@ -55,8 +55,8 @@ public class GenericRepository {
     }
 
     public Result getContainerInstancesWithContainersAndSoftwareSystems(Long deploymentNodeId) {
-        String cypher = "MATCH (dn:DeploymentNode {id: $dnId, graphTag: 'Global'})-[:Child]->(ci:ContainerInstance) " +
-                "OPTIONAL MATCH (ci)-[:Deploy]->(c:Container) " +
+        String cypher = "MATCH (dn:DeploymentNode {graphTag: 'Global'})-[:Child]->(ci:ContainerInstance) where id(dn)=$dnId " +
+                "OPTIONAL MATCH (c:Container)-[:Deploy]->(ci) " +
                 "OPTIONAL MATCH (ss:SoftwareSystem)-[:Child]->(c) " +
                 "RETURN ci, c, ss";
         return neo4jSessionManager.getSession().run(cypher, Values.parameters("dnId", deploymentNodeId));
@@ -71,98 +71,18 @@ public class GenericRepository {
         return neo4jSessionManager.getSession().run(cypher, params);
     }
 
-    public Result findIncomingContainerRelationshipsExtendedContainer(Long containerId, String cmdb) {
+    public Result findIncomingRelationshipsByContainerInstance(Long containerInstanceId) {
         String cypher = """
-                MATCH (src:Container)-[r:Relationship]->(dst:Container)
-                WHERE id(dst) = $containerId
-                  AND (src)-[:Deploy]->(:ContainerInstance)
-                  AND EXISTS {
-                        MATCH (ssCheck:SoftwareSystem)-[:Child]->(src)
-                        WHERE ssCheck.cmdb <> $cmdb
-                  }
-                OPTIONAL MATCH (ss:SoftwareSystem)-[:Child]->(src)
-                OPTIONAL MATCH (src)-[:Deploy]->(ci:ContainerInstance)<-[:Child]-(dn:DeploymentNode)
-                RETURN 
-                    r, src, dst, ci,
-                    ss AS parentSoftwareSystem,
-                    dn AS parentDeploymentNode
-                    
-                """;
+        MATCH (src:ContainerInstance)-[r:Relationship]->(dst:ContainerInstance)
+        WHERE id(dst) = $containerInstanceId
+        MATCH (container:Container)-[:Deploy]->(dst)
+        MATCH (ss:SoftwareSystem)-[:Child]->(container)
+        MATCH (dn:DeploymentNode)-[:Child]->(dst)
+        RETURN
+            r, src, dst, container, ss, dn
+    """;
 
-        Value params = Values.parameters("containerId", containerId, "cmdb", cmdb);
-        return neo4jSessionManager.getSession().run(cypher, params);
-    }
-
-    public Result findIncomingContainerRelationshipsExtendedComponent(Long containerId, String cmdb) {
-        String cypher = """
-                    MATCH (srcComponent:Component)-[r:Relationship]->(dst:Container)
-                    WHERE id(dst) = $containerId
-                      AND EXISTS {
-                          MATCH (src:Container)-[:Child]->(srcComponent)
-                          WHERE 
-                              (src)-[:Deploy]->(:ContainerInstance)
-                              AND EXISTS {
-                                  MATCH (ssCheck:SoftwareSystem)-[:Child]->(src)
-                                  WHERE ssCheck.cmdb <> $cmdb
-                              }
-                      }
-                    OPTIONAL MATCH (src:Container)-[:Child]->(srcComponent)
-                    OPTIONAL MATCH (ss:SoftwareSystem)-[:Child]->(src)
-                    OPTIONAL MATCH (src)-[:Deploy]->(ci:ContainerInstance)<-[:Child]-(dn:DeploymentNode)
-                    RETURN
-                        r, src, dst, ci, srcComponent,
-                        ss AS parentSoftwareSystem,
-                        dn AS parentDeploymentNode
-                """;
-
-        Value params = Values.parameters("containerId", containerId, "cmdb", cmdb);
-        return neo4jSessionManager.getSession().run(cypher, params);
-    }
-
-    public Result findIncomingContainerRelationshipsExtendedChildComponent(Long containerId, String cmdb) {
-        String cypher = """
-                    MATCH (dst:Container)-[:Child]->(dstComp:Component)
-                    WHERE id(dst) = $containerId
-                    MATCH (src:Container)-[r:Relationship]->(dstComp)
-                    WHERE 
-                        (src)-[:Deploy]->(:ContainerInstance)
-                        AND EXISTS {
-                            MATCH (ssCheck:SoftwareSystem)-[:Child]->(src)
-                            WHERE ssCheck.cmdb <> $cmdb
-                        }
-                    OPTIONAL MATCH (ss:SoftwareSystem)-[:Child]->(src)
-                    OPTIONAL MATCH (src)-[:Deploy]->(ci:ContainerInstance)<-[:Child]-(dn:DeploymentNode)
-                    RETURN
-                        r, src, dst, ci, dstComp,
-                        ss AS parentSoftwareSystem,
-                        dn AS parentDeploymentNode
-                """;
-
-        Value params = Values.parameters("containerId", containerId, "cmdb", cmdb);
-        return neo4jSessionManager.getSession().run(cypher, params);
-    }
-
-    public Result findIncomingComponentRelationshipsExtended(Long containerId, String cmdb) {
-        String cypher = """
-                    MATCH (parentContainer:Container)-[:Child]->(dstComp:Component)
-                    WHERE id(parentContainer) = $containerId
-                    MATCH (srcComp:Component)-[r:Relationship]->(dstComp)
-                    MATCH (src:Container)-[:Child]->(srcComp)
-                    WHERE 
-                        (src)-[:Deploy]->(:ContainerInstance)
-                        AND EXISTS {
-                            MATCH (ssCheck:SoftwareSystem)-[:Child]->(src)
-                            WHERE ssCheck.cmdb <> $cmdb
-                        }
-                    OPTIONAL MATCH (ss:SoftwareSystem)-[:Child]->(src)
-                    OPTIONAL MATCH (src)-[:Deploy]->(ci:ContainerInstance)<-[:Child]-(dn:DeploymentNode)
-                    RETURN 
-                        r, srcComp, dstComp, src, parentContainer, ci,
-                        ss AS parentSoftwareSystem,
-                        dn AS parentDeploymentNode
-                """;
-
-        Value params = Values.parameters("containerId", containerId, "cmdb", cmdb);
+        Value params = Values.parameters("containerInstanceId", containerInstanceId);
         return neo4jSessionManager.getSession().run(cypher, params);
     }
 

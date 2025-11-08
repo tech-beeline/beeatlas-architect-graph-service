@@ -258,89 +258,19 @@ public class DiagramService {
             processDntoIn(in, dnMap, deploymentNodes, inMap, relMap);
             processIntoIn(in, dnMap, deploymentNodes, inMap, relMap);
         });
+        Map<String, Map<String, Object>> containersInstances = new HashMap<>();
 
-        cMap.values().forEach(container -> {
-            processCCtoCC(cmdb, container, cMap, relMap, ssMap, dnMap, ciMap);
-            processComToCC(cmdb, container, cMap, relMap, ssMap, dnMap, ciMap);
-            processCCtoChildComp(cmdb, container, cMap, relMap, ssMap, dnMap, ciMap);
-            Result resultSet = genericRepository.findIncomingComponentRelationshipsExtended(Long.parseLong(String.valueOf(container.get("id"))), cmdb);
-            while (resultSet.hasNext()) {
-                var rec = resultSet.next();
-                var rel = rec.get("r").asNode();
-                var src = rec.get("src").asNode();
-                var srcComp = rec.get("srcComp").asNode();
-                var dstComp = rec.get("dstComp").asNode();
-                var ci = rec.get("ci").asNode();
-                var parentSoftwareSystem = rec.get("parentSoftwareSystem").asNode();
-                var parentDeploymentNode = rec.get("parentDeploymentNode").asNode();
-
-                Map<String, Object> relation = new HashMap<>();
-                relation.put("id", String.valueOf(rel.id()));
-                relation.put("sourceId", String.valueOf(srcComp.id()));
-                relation.put("destinationId", String.valueOf(dstComp.id()));
-                relation.put("description", rel.get("description").asString(null));
-                relation.put("technology", rel.get("technology").asString(null));
-                ((ArrayList) cMap.get(src.get("id").asString()).get("relationships")).add(relation);
-                relMap.put(String.valueOf(rel.id()), relation);
-
-                if (ssMap.containsKey(parentSoftwareSystem.get("id").asString())) {
-                    if (!cMap.containsKey(src.get("id").asString())) {
-                        Map<String, Object> newContainer = new HashMap<>();
-                        newContainer.put("id", src.get("id").asString());
-                        newContainer.put("name", src.get("name").asString());
-                        newContainer.put("relatioships", new ArrayList<>());
-                        cMap.put(src.get("id").asString(), newContainer);
-                        ((ArrayList) ssMap.get(parentSoftwareSystem.get("id")).get("containers")).add(newContainer);
-
-                    }
-                } else {
-                    Map<String, Object> newContainer = new HashMap<>();
-                    newContainer.put("id", src.get("id").asString());
-                    newContainer.put("name", src.get("name").asString());
-                    newContainer.put("relationships", new ArrayList<>());
-                    cMap.put(src.get("id").asString(), newContainer);
-
-                    Map<String, Object> newSoftwareSystem = new HashMap<>();
-                    newSoftwareSystem.put("id", parentSoftwareSystem.get("id").asString());
-                    newSoftwareSystem.put("name", parentSoftwareSystem.get("cmdb").asString());
-                    newSoftwareSystem.put("containers", newContainer);
-                    ssMap.put(src.get("id").asString(), newSoftwareSystem);
-                }
-                if (dnMap.containsKey(parentDeploymentNode.get("id").asString())) {
-                    if (!ciMap.containsKey(src.get("id").asString())) {
-                        Map<String, Object> containerInstance = new HashMap<>();
-                        containerInstance.put("id", ci.get("id").asString());
-                        containerInstance.put("environment","BY BEEATLAS");
-                        containerInstance.put("containerId", src.get("id").asString());
-                        ciMap.put(ci.get("id").asString(), containerInstance);
-                        ((ArrayList) dnMap.get(parentDeploymentNode.get("id")).get("containerInstances")).add(containerInstance);
-                    }
-                } else {
-                    Map<String, Object> containerInstance = new HashMap<>();
-                    containerInstance.put("id", ci.get("id").asString());
-                    containerInstance.put("environment","BY BEEATLAS");
-                    containerInstance.put("containerId", src.get("id").asString());
-                    ciMap.put(ci.get("id").asString(), containerInstance);
-
-                    Map<String, Object> newDeploymentNode = new HashMap<>();
-                    newDeploymentNode.put("id", parentDeploymentNode.get("id").asString());
-                    newDeploymentNode.put("name", parentDeploymentNode.get("name").asString());
-                    newDeploymentNode.put("containerInstances", containerInstance);
-                    newDeploymentNode.put("infrastructureNodes", new ArrayList<>());
-                    newDeploymentNode.put("environment", "BY BEEATLAS");
-                    newDeploymentNode.put("children", new ArrayList<>());
-                    newDeploymentNode.put("relationships", new ArrayList<>());
-                    dnMap.put(parentDeploymentNode.get("id").asString(), newDeploymentNode);
-                }
-            }
+        ciMap.values().forEach(containerInstance -> {
+            processCI(containerInstance, ciMap, relMap, ssMap, cMap, dnMap, containersInstances);
         });
+
+        ciMap.putAll(containersInstances);
 
         List<Map<String, String>> elements = new ArrayList<>();
          elements.addAll(dnMap.keySet().stream().map(id -> Map.of("id", String.valueOf(id))).collect(Collectors.toList()));
          elements.addAll(ciMap.keySet().stream().map(id -> Map.of("id", String.valueOf(id))).collect(Collectors.toList()));
          elements.addAll(inMap.keySet().stream().map(id -> Map.of("id", String.valueOf(id))).collect(Collectors.toList()));
          elements.addAll(ssMap.keySet().stream().map(id -> Map.of("id", String.valueOf(id))).collect(Collectors.toList()));
-         elements.addAll(cMap.keySet().stream().map(id -> Map.of("id", String.valueOf(id))).collect(Collectors.toList()));
 
         List<Map<String, String>> relations = relMap.keySet().stream().map(id -> Map.of("id", String.valueOf(id))).collect(Collectors.toList());
 
@@ -355,219 +285,82 @@ public class DiagramService {
         }
     }
 
-    private void processCCtoChildComp(String cmdb, Map<String, Object> container, Map<String, Map<String, Object>> cMap, Map<String, Map<String, Object>> relMap, Map<String, Map<String, Object>> ssMap, Map<String, Map<String, Object>> dnMap, Map<String, Map<String, Object>> ciMap) {
-        Result resultSet = genericRepository.findIncomingContainerRelationshipsExtendedChildComponent(Long.parseLong(String.valueOf(container.get("id"))), cmdb);
+    private void processCI(Map<String, Object> containerInstance,
+                           Map<String, Map<String, Object>> ciMap,
+                           Map<String, Map<String, Object>> relMap,
+                           Map<String, Map<String, Object>> ssMap,
+                           Map<String, Map<String, Object>> cMap,
+                           Map<String, Map<String, Object>> dnMap,
+                           Map<String, Map<String, Object>> containersInstances) {
+        Result resultSet =
+                genericRepository.findIncomingRelationshipsByContainerInstance(Long.parseLong(String.valueOf(
+                        containerInstance.get("id"))));
         while (resultSet.hasNext()) {
             var rec = resultSet.next();
-            var rel = rec.get("r").asNode();
-            var src = rec.get("src").asNode();
-            var dstComp = rec.get("dstComp").asNode();
-            var ci = rec.get("ci").asNode();
-            var parentSoftwareSystem = rec.get("parentSoftwareSystem").asNode();
-            var parentDeploymentNode = rec.get("parentDeploymentNode").asNode();
-
-            Map<String, Object> relation = new HashMap<>();
-            relation.put("id", String.valueOf(rel.id()));
-            relation.put("sourceId", String.valueOf(src.id()));
-            relation.put("destinationId", String.valueOf(dstComp.id()));
-            relation.put("description", rel.get("description").asString(null));
-            relation.put("technology", rel.get("technology").asString(null));
-            ((ArrayList) cMap.get(src.get("id").asString()).get("relationships")).add(relation);
-            relMap.put(String.valueOf(rel.id()), relation);
-
-            if (ssMap.containsKey(parentSoftwareSystem.get("id").asString())) {
-                if (!cMap.containsKey(src.get("id").asString())) {
-                    Map<String, Object> newContainer = new HashMap<>();
-                    newContainer.put("id", src.get("id").asString());
-                    newContainer.put("name", src.get("name").asString());
-                    newContainer.put("relatioships", new ArrayList<>());
-                    cMap.put(src.get("id").asString(), newContainer);
-                    ((ArrayList) ssMap.get(parentSoftwareSystem.get("id")).get("containers")).add(newContainer);
-
-                }
-            } else {
-                Map<String, Object> newContainer = new HashMap<>();
-                newContainer.put("id", src.get("id").asString());
-                newContainer.put("name", src.get("name").asString());
-                newContainer.put("relationships", new ArrayList<>());
-                cMap.put(src.get("id").asString(), newContainer);
-
-                Map<String, Object> newSoftwareSystem = new HashMap<>();
-                newSoftwareSystem.put("id", parentSoftwareSystem.get("id").asString());
-                newSoftwareSystem.put("name", parentSoftwareSystem.get("cmdb").asString());
-                newSoftwareSystem.put("containers", newContainer);
-                ssMap.put(src.get("id").asString(), newSoftwareSystem);
-            }
-            if (dnMap.containsKey(parentDeploymentNode.get("id").asString())) {
-                if (!ciMap.containsKey(src.get("id").asString())) {
-                    Map<String, Object> containerInstance = new HashMap<>();
-                    containerInstance.put("id", ci.get("id").asString());
-                    containerInstance.put("environment","BY BEEATLAS");
-                    containerInstance.put("containerId", src.get("id").asString());
-                    ciMap.put(ci.get("id").asString(), containerInstance);
-                    ((ArrayList) dnMap.get(parentDeploymentNode.get("id")).get("containerInstances")).add(containerInstance);
-                }
-            } else {
-                Map<String, Object> containerInstance = new HashMap<>();
-                containerInstance.put("id", ci.get("id").asString());
-                containerInstance.put("environment","BY BEEATLAS");
-                containerInstance.put("containerId", src.get("id").asString());
-                ciMap.put(ci.get("id").asString(), containerInstance);
-
-                Map<String, Object> newDeploymentNode = new HashMap<>();
-                newDeploymentNode.put("id", parentDeploymentNode.get("id").asString());
-                newDeploymentNode.put("name", parentDeploymentNode.get("name").asString());
-                newDeploymentNode.put("containerInstances", containerInstance);
-                newDeploymentNode.put("infrastructureNodes", new ArrayList<>());
-                newDeploymentNode.put("environment", "BY BEEATLAS");
-                newDeploymentNode.put("children", new ArrayList<>());
-                newDeploymentNode.put("relationships", new ArrayList<>());
-                dnMap.put(parentDeploymentNode.get("id").asString(), newDeploymentNode);
-            }
-        }
-    }
-
-    private void processComToCC(String cmdb, Map<String, Object> container, Map<String, Map<String, Object>> cMap, Map<String, Map<String, Object>> relMap, Map<String, Map<String, Object>> ssMap, Map<String, Map<String, Object>> dnMap, Map<String, Map<String, Object>> ciMap) {
-        Result resultSet = genericRepository.findIncomingContainerRelationshipsExtendedComponent(Long.parseLong(String.valueOf(container.get("id"))), cmdb);
-        while (resultSet.hasNext()) {
-            var rec = resultSet.next();
-            var rel = rec.get("r").asNode();
-            var src = rec.get("src").asNode();
-            var srcComponent = rec.get("srcComponent").asNode();
-            var dst = rec.get("dst").asNode();
-            var ci = rec.get("ci").asNode();
-            var parentSoftwareSystem = rec.get("parentSoftwareSystem").asNode();
-            var parentDeploymentNode = rec.get("parentDeploymentNode").asNode();
-
-            Map<String, Object> relation = new HashMap<>();
-            relation.put("id", String.valueOf(rel.id()));
-            relation.put("sourceId", String.valueOf(srcComponent.id()));
-            relation.put("destinationId", String.valueOf(dst.id()));
-            relation.put("description", rel.get("description").asString(null));
-            relation.put("technology", rel.get("technology").asString(null));
-            ((ArrayList) cMap.get(src.get("id").asString()).get("relationships")).add(relation);
-            relMap.put(String.valueOf(rel.id()), relation);
-
-            if (ssMap.containsKey(parentSoftwareSystem.get("id").asString())) {
-                if (!cMap.containsKey(src.get("id").asString())) {
-                    Map<String, Object> newContainer = new HashMap<>();
-                    newContainer.put("id", src.get("id").asString());
-                    newContainer.put("name", src.get("name").asString());
-                    newContainer.put("relatioships", new ArrayList<>());
-                    cMap.put(src.get("id").asString(), newContainer);
-                    ((ArrayList) ssMap.get(parentSoftwareSystem.get("id")).get("containers")).add(newContainer);
-
-                }
-            } else {
-                Map<String, Object> newContainer = new HashMap<>();
-                newContainer.put("id", src.get("id").asString());
-                newContainer.put("name", src.get("name").asString());
-                newContainer.put("relationships", new ArrayList<>());
-                cMap.put(src.get("id").asString(), newContainer);
-
-                Map<String, Object> newSoftwareSystem = new HashMap<>();
-                newSoftwareSystem.put("id", parentSoftwareSystem.get("id").asString());
-                newSoftwareSystem.put("name", parentSoftwareSystem.get("cmdb").asString());
-                newSoftwareSystem.put("containers", newContainer);
-                ssMap.put(src.get("id").asString(), newSoftwareSystem);
-            }
-            if (dnMap.containsKey(parentDeploymentNode.get("id").asString())) {
-                if (!ciMap.containsKey(src.get("id").asString())) {
-                    Map<String, Object> containerInstance = new HashMap<>();
-                    containerInstance.put("id", ci.get("id").asString());
-                    containerInstance.put("environment","BY BEEATLAS");
-                    containerInstance.put("containerId", src.get("id").asString());
-                    ciMap.put(ci.get("id").asString(), containerInstance);
-                    ((ArrayList) dnMap.get(parentDeploymentNode.get("id")).get("containerInstances")).add(containerInstance);
-                }
-            } else {
-                Map<String, Object> containerInstance = new HashMap<>();
-                containerInstance.put("id", ci.get("id").asString());
-                containerInstance.put("environment","BY BEEATLAS");
-                containerInstance.put("containerId", src.get("id").asString());
-                ciMap.put(ci.get("id").asString(), containerInstance);
-
-                Map<String, Object> newDeploymentNode = new HashMap<>();
-                newDeploymentNode.put("id", parentDeploymentNode.get("id").asString());
-                newDeploymentNode.put("name", parentDeploymentNode.get("name").asString());
-                newDeploymentNode.put("containerInstances", containerInstance);
-                newDeploymentNode.put("infrastructureNodes", new ArrayList<>());
-                newDeploymentNode.put("environment", "BY BEEATLAS");
-                newDeploymentNode.put("children", new ArrayList<>());
-                newDeploymentNode.put("relationships", new ArrayList<>());
-                dnMap.put(parentDeploymentNode.get("id").asString(), newDeploymentNode);
-            }
-        }
-    }
-
-    private void processCCtoCC(String cmdb, Map<String, Object> container, Map<String, Map<String, Object>> cMap, Map<String, Map<String, Object>> relMap, Map<String, Map<String, Object>> ssMap, Map<String, Map<String, Object>> dnMap, Map<String, Map<String, Object>> ciMap) {
-        Result resultSet = genericRepository.findIncomingContainerRelationshipsExtendedContainer(Long.parseLong(String.valueOf(container.get("id"))), cmdb);
-        while (resultSet.hasNext()) {
-            var rec = resultSet.next();
-            var rel = rec.get("r").asNode();
+            var rel = rec.get("r").asRelationship();
             var src = rec.get("src").asNode();
             var dst = rec.get("dst").asNode();
-            var ci = rec.get("ci").asNode();
-            var parentSoftwareSystem = rec.get("parentSoftwareSystem").asNode();
-            var parentDeploymentNode = rec.get("parentDeploymentNode").asNode();
+            var container = rec.get("container").asNode();
+            var ss = rec.get("ss").asNode();
+            var dn = rec.get("dn").asNode();
 
             Map<String, Object> relation = new HashMap<>();
             relation.put("id", String.valueOf(rel.id()));
             relation.put("sourceId", String.valueOf(src.id()));
             relation.put("destinationId", String.valueOf(dst.id()));
-            relation.put("description", rel.get("description").asString(null));
+            relation.put("description", rel.get("description").asString(null) + String.valueOf(rel.id()));
             relation.put("technology", rel.get("technology").asString(null));
-            ((ArrayList) cMap.get(src.get("id").asString()).get("relationships")).add(relation);
+            ((HashSet) ciMap.get(String.valueOf(dst.id())).get("relationships")).add(relation);
             relMap.put(String.valueOf(rel.id()), relation);
 
-            if (ssMap.containsKey(parentSoftwareSystem.get("id").asString())) {
-                if (!cMap.containsKey(src.get("id").asString())) {
+            if (ssMap.containsKey(String.valueOf(ss.id()))) {
+                if (!cMap.containsKey(String.valueOf(src.id()))) {
                     Map<String, Object> newContainer = new HashMap<>();
-                    newContainer.put("id", src.get("id").asString());
-                    newContainer.put("name", src.get("name").asString());
-                    newContainer.put("relatioships", new ArrayList<>());
-                    cMap.put(src.get("id").asString(), newContainer);
-                    ((ArrayList) ssMap.get(parentSoftwareSystem.get("id")).get("containers")).add(newContainer);
-
+                    newContainer.put("id", String.valueOf(container.id()));
+                    newContainer.put("name", container.get("name").asString());
+                    newContainer.put("relationships", new HashSet<>());
+                    cMap.put(String.valueOf(src.id()), newContainer);
+                    ((HashSet) ssMap.get(String.valueOf(ss.id())).get("containers")).add(newContainer);
                 }
             } else {
                 Map<String, Object> newContainer = new HashMap<>();
-                newContainer.put("id", src.get("id").asString());
-                newContainer.put("name", src.get("name").asString());
-                newContainer.put("relationships", new ArrayList<>());
-                cMap.put(src.get("id").asString(), newContainer);
+                newContainer.put("id", String.valueOf(container.id()));
+                newContainer.put("name", container.get("name").asString());
+                newContainer.put("relationships", new HashSet<>());
+                cMap.put(String.valueOf(src.id()), newContainer);
 
                 Map<String, Object> newSoftwareSystem = new HashMap<>();
-                newSoftwareSystem.put("id", parentSoftwareSystem.get("id").asString());
-                newSoftwareSystem.put("name", parentSoftwareSystem.get("cmdb").asString());
+                newSoftwareSystem.put("id", String.valueOf(ss.id()));
+                newSoftwareSystem.put("name", ss.get("cmdb").asString());
                 newSoftwareSystem.put("containers", newContainer);
-                ssMap.put(src.get("id").asString(), newSoftwareSystem);
+                ssMap.put(String.valueOf(src.id()), newSoftwareSystem);
             }
-            if (dnMap.containsKey(parentDeploymentNode.get("id").asString())) {
-                if (!ciMap.containsKey(src.get("id").asString())) {
-                    Map<String, Object> containerInstance = new HashMap<>();
-                    containerInstance.put("id", ci.get("id").asString());
-                    containerInstance.put("environment","BY BEEATLAS");
-                    containerInstance.put("containerId", src.get("id").asString());
-                    ciMap.put(ci.get("id").asString(), containerInstance);
-                    ((ArrayList) dnMap.get(parentDeploymentNode.get("id")).get("containerInstances")).add(containerInstance);
+            if (dnMap.containsKey(String.valueOf(dn.id()))) {
+                if (!dnMap.get(String.valueOf(dn.id())).get("containerInstances").toString().contains(String.valueOf(src.id()))) {
+                    Map<String, Object> ci = new HashMap<>();
+                    ci.put("id", String.valueOf(src.id()));
+                    ci.put("environment", "BY BEEATLAS");
+                    ci.put("containerId", String.valueOf(container.id()));
+                    containersInstances.put(String.valueOf(src.id()), ci);
+                    ((HashSet) dnMap.get(String.valueOf(dn.id())).get("containerInstances")).add(ci);
                 }
             } else {
-                Map<String, Object> containerInstance = new HashMap<>();
-                containerInstance.put("id", ci.get("id").asString());
-                containerInstance.put("environment","BY BEEATLAS");
-                containerInstance.put("containerId", src.get("id").asString());
-                ciMap.put(ci.get("id").asString(), containerInstance);
-
+                Map<String, Object> ci = new HashMap<>();
+                ci.put("id", String.valueOf(src.id()));
+                ci.put("environment", "BY BEEATLAS");
+                ci.put("containerId", String.valueOf(src.id()));
+                containersInstances.put(String.valueOf(src.id()), ci);
+                HashSet hashSet = new HashSet();
+                hashSet.add(ci);
                 Map<String, Object> newDeploymentNode = new HashMap<>();
-                newDeploymentNode.put("id", parentDeploymentNode.get("id").asString());
-                newDeploymentNode.put("name", parentDeploymentNode.get("name").asString());
-                newDeploymentNode.put("containerInstances", containerInstance);
+                newDeploymentNode.put("id", String.valueOf(dn.id()));
+                newDeploymentNode.put("name", dn.get("name").asString());
+                newDeploymentNode.put("containerInstances", hashSet);
                 newDeploymentNode.put("infrastructureNodes", new ArrayList<>());
                 newDeploymentNode.put("environment", "BY BEEATLAS");
                 newDeploymentNode.put("children", new ArrayList<>());
-                newDeploymentNode.put("relationships", new ArrayList<>());
-                dnMap.put(parentDeploymentNode.get("id").asString(), newDeploymentNode);
+                newDeploymentNode.put("relationships", new HashSet<>());
+                dnMap.put(String.valueOf(dn.id()), newDeploymentNode);
             }
         }
     }
@@ -579,7 +372,7 @@ public class DiagramService {
         Result resultIn = genericRepository.findIncomingDeploymentNodeRelationshipsFromIncomingDeploymentNode(Long.parseLong(String.valueOf(in.get("id"))));
         while (resultIn.hasNext()) {
             var rec = resultIn.next();
-            var rel = rec.get("r").asNode();
+            var rel = rec.get("r").asRelationship();
             var src = rec.get("src").asNode();
             var dst = rec.get("dst").asNode();
 
@@ -587,25 +380,25 @@ public class DiagramService {
             relation.put("id", String.valueOf(rel.id()));
             relation.put("sourceId", String.valueOf(src.id()));
             relation.put("destinationId", String.valueOf(dst.id()));
-            relation.put("description", rel.get("description").asString(null));
+            relation.put("description", rel.get("description").asString(null) + String.valueOf(rel.id()));
             relation.put("technology", rel.get("technology").asString(null));
-            ((ArrayList) inMap.get(dst.get("id")).get("relationships")).add(relation);
+            ((HashSet) inMap.get(String.valueOf(dst.id())).get("relationships")).add(relation);
             relMap.put(String.valueOf(rel.id()), relation);
 
-            if(!inMap.containsKey(src.get("id"))) {
+            if(!inMap.containsKey(String.valueOf(src.id()))) {
                 Map<String, Object> InfrastructureNode = new HashMap<>();
-                InfrastructureNode.put("id", src.get("id").asString());
+                InfrastructureNode.put("id", String.valueOf(src.id()));
                 InfrastructureNode.put("name", src.get("name").asString());
                 InfrastructureNode.put("environment", "BY BEEATLAS");
-                Result dnToIn = genericRepository.findDeploymentNodesByInfrastructureId(Long.parseLong(String.valueOf(src.get("id"))));
+                Result dnToIn = genericRepository.findDeploymentNodesByInfrastructureId(Long.parseLong(String.valueOf(src.id())));
                 while (dnToIn.hasNext()) {
                     var dnToInRec = dnToIn.next();
                     var subDn = dnToInRec.get("dn").asNode();
-                    if (dnMap.containsKey(subDn.get("id"))) {
-                        ((ArrayList) dnMap.get(subDn.get("id")).get("infrastructureNodes")).add(InfrastructureNode);
+                    if (dnMap.containsKey(String.valueOf(subDn.id()))) {
+                        ((ArrayList) dnMap.get(String.valueOf(subDn.id())).get("infrastructureNodes")).add(InfrastructureNode);
                     } else {
                         Map<String, Object> newDeploymentNode = new HashMap<>();
-                        newDeploymentNode.put("id", src.get("id").asString());
+                        newDeploymentNode.put("id", String.valueOf(src.id()));
                         newDeploymentNode.put("name", src.get("name").asString());
                         newDeploymentNode.put("environment", "BY BEEATLAS");
                         deploymentNodes.add(newDeploymentNode);
@@ -615,11 +408,12 @@ public class DiagramService {
         }
     }
 
-    private void processDntoIn(Map<String, Object> in, Map<String, Map<String, Object>> dnMap, List<Map<String, Object>> deploymentNodes, Map<String, Map<String, Object>> inMap, Map<String, Map<String, Object>> relMap) {
+    private void processDntoIn(Map<String, Object> in, Map<String, Map<String, Object>> dnMap, List<Map<String, Object>> deploymentNodes,
+                               Map<String, Map<String, Object>> inMap, Map<String, Map<String, Object>> relMap) {
         Result resultDn = genericRepository.findRelationshipsFromDeploymentNode(Long.parseLong(String.valueOf(in.get("id"))));
         while (resultDn.hasNext()) {
             var rec = resultDn.next();
-            var rel = rec.get("r").asNode();
+            var rel = rec.get("r").asRelationship();
             var src = rec.get("src").asNode();
             var dst = rec.get("dst").asNode();
 
@@ -627,17 +421,17 @@ public class DiagramService {
             relation.put("id", String.valueOf(rel.id()));
             relation.put("sourceId", String.valueOf(src.id()));
             relation.put("destinationId", String.valueOf(dst.id()));
-            relation.put("description", rel.get("description").asString(null));
+            relation.put("description", rel.get("description").asString(null) + String.valueOf(rel.id()));
             relation.put("technology", rel.get("technology").asString(null));
 
-            if(!dnMap.containsKey(src.get("id"))) {
+            if(!dnMap.containsKey(String.valueOf(src.id()))) {
                 Map<String, Object> newDeploymentNode = new HashMap<>();
-                newDeploymentNode.put("id", src.get("id").asString());
+                newDeploymentNode.put("id", String.valueOf(src.id()));
                 newDeploymentNode.put("name", src.get("name").asString());
                 newDeploymentNode.put("environment", "BY BEEATLAS");
                 deploymentNodes.add(newDeploymentNode);
             }
-            ((ArrayList) inMap.get(src.get("id")).get("relationships")).add(relation);
+            ((HashSet) inMap.get(String.valueOf(src.id())).get("relationships")).add(relation);
             relMap.put(String.valueOf(rel.id()), relation);
 
         }
@@ -650,7 +444,7 @@ public class DiagramService {
         Result resultIn = genericRepository.findIncomingDeploymentNodeRelationshipsFromInfrastructureNode(Long.parseLong(String.valueOf(dn.get("id"))));
         while (resultIn.hasNext()) {
             var rec = resultIn.next();
-            var rel = rec.get("r").asNode();
+            var rel = rec.get("r").asRelationship();
             var src = rec.get("src").asNode();
             var dst = rec.get("dst").asNode();
 
@@ -658,25 +452,26 @@ public class DiagramService {
             relation.put("id", String.valueOf(rel.id()));
             relation.put("sourceId", String.valueOf(src.id()));
             relation.put("destinationId", String.valueOf(dst.id()));
-            relation.put("description", rel.get("description").asString(null));
+            relation.put("description", rel.get("description").asString(null) + String.valueOf(rel.id()));
             relation.put("technology", rel.get("technology").asString(null));
-            ((ArrayList) dnMap.get(dst.get("id")).get("relationships")).add(relation);
+            ((HashSet) dnMap.get(String.valueOf(dst.id())).get("relationships")).add(relation);
             relMap.put(String.valueOf(rel.id()), relation);
 
-            if(!inMap.containsKey(src.get("id"))) {
+            if(!inMap.containsKey(String.valueOf(src.id()))) {
                 Map<String, Object> InfrastructureNode = new HashMap<>();
-                InfrastructureNode.put("id", src.get("id").asString());
+                InfrastructureNode.put("id", String.valueOf(src.id()));
                 InfrastructureNode.put("name", src.get("name").asString());
                 InfrastructureNode.put("environment", "BY BEEATLAS");
-                Result dnToIn = genericRepository.findDeploymentNodesByInfrastructureId(Long.parseLong(String.valueOf(src.get("id"))));
+                Result dnToIn =
+                        genericRepository.findDeploymentNodesByInfrastructureId(Long.parseLong(String.valueOf(src.id())));
                 while (dnToIn.hasNext()) {
                     var dnToInRec = dnToIn.next();
                     var subDn = dnToInRec.get("dn").asNode();
-                    if (dnMap.containsKey(subDn.get("id"))) {
-                        ((ArrayList) dnMap.get(subDn.get("id")).get("infrastructureNodes")).add(InfrastructureNode);
+                    if (dnMap.containsKey(String.valueOf(subDn.id()))) {
+                        ((ArrayList) dnMap.get(String.valueOf(subDn.id())).get("infrastructureNodes")).add(InfrastructureNode);
                     } else {
                         Map<String, Object> newDeploymentNode = new HashMap<>();
-                        newDeploymentNode.put("id", src.get("id").asString());
+                        newDeploymentNode.put("id", String.valueOf(src.id()));
                         newDeploymentNode.put("name", src.get("name").asString());
                         newDeploymentNode.put("environment", "BY BEEATLAS");
                         deploymentNodes.add(newDeploymentNode);
@@ -690,7 +485,7 @@ public class DiagramService {
         Result resultDn = genericRepository.findIncomingDeploymentNodeRelationships(Long.parseLong(String.valueOf(dn.get("id"))));
         while (resultDn.hasNext()) {
             var rec = resultDn.next();
-            var rel = rec.get("r").asNode();
+            var rel = rec.get("r").asRelationship();
             var src = rec.get("src").asNode();
             var dst = rec.get("dst").asNode();
 
@@ -698,17 +493,17 @@ public class DiagramService {
             relation.put("id", String.valueOf(rel.id()));
             relation.put("sourceId", String.valueOf(src.id()));
             relation.put("destinationId", String.valueOf(dst.id()));
-            relation.put("description", rel.get("description").asString(null));
+            relation.put("description", rel.get("description").asString(null) + String.valueOf(rel.id()));
             relation.put("technology", rel.get("technology").asString(null));
 
             if(!dnMap.containsKey(src.get("id"))) {
                 Map<String, Object> newDeploymentNode = new HashMap<>();
-                newDeploymentNode.put("id", src.get("id").asString());
+                newDeploymentNode.put("id", String.valueOf(src.id()));
                 newDeploymentNode.put("name", src.get("name").asString());
                 newDeploymentNode.put("environment", "BY BEEATLAS");
                 deploymentNodes.add(newDeploymentNode);
             }
-            ((ArrayList) dnMap.get(dst.get("id")).get("relationships")).add(relation);
+            ((HashSet) dnMap.get(dst.get("id")).get("relationships")).add(relation);
             relMap.put(String.valueOf(rel.id()), relation);
 
         }
@@ -728,7 +523,7 @@ public class DiagramService {
         deploymentNode.put("environment", "BY BEEATLAS");
 
         Result containerInstancesWithContainers = genericRepository.getContainerInstancesWithContainersAndSoftwareSystems(dnNode.id());
-        List<Map<String, Object>> containerInstances = new ArrayList<>();
+        Set<Map<String, Object>> containerInstances = new HashSet<>();
         List<Map<String, Object>> containers = new ArrayList<>();
         List<Map<String, Object>> softwareSystems = new ArrayList<>();
         while (containerInstancesWithContainers.hasNext()) {
@@ -741,18 +536,19 @@ public class DiagramService {
             containerInstance.put("id", String.valueOf(ciNode.id()));
             containerInstance.put("environment", "BY BEEATLAS");
             containerInstance.put("containerId", String.valueOf(cNode != null ? cNode.id() : ciNode.id()));
+            containerInstance.put("relationships", new HashSet<>());
             containerInstances.add(containerInstance);
             ciMap.put(String.valueOf(ciNode.id()), containerInstance);
 
             Map<String, Object> container = new HashMap<>();
             container.put("id", String.valueOf(cNode.id()));
             container.put("name", cNode.get("name").asString());
-            container.put("relationships", new ArrayList<>());
+            container.put("relationships", new HashSet<>());
             containers.add(container);
             cMap.put(String.valueOf(cNode.id()), container);
 
             if(ssMap.containsKey(String.valueOf(ssNode.id()))){
-                ((ArrayList) ssMap.get(String.valueOf(ssNode.id())).get(containers)).add(container);
+                ((HashSet) ssMap.get(String.valueOf(ssNode.id())).get("containers")).add(container);
             }else {
                 Map<String, Object> softwareSystem = new HashMap<>();
                 softwareSystem.put("id", String.valueOf(ssNode.id()));
@@ -789,7 +585,7 @@ public class DiagramService {
             infrastructure.put("id", String.valueOf(infNode.id()));
             infrastructure.put("name", infNode.get("name").asString());
             infrastructure.put("environment", "BY BEEATLAS");
-            infrastructure.put("relationships", new ArrayList<>());
+            infrastructure.put("relationships", new HashSet<>());
 
             infrastructureNodes.add(infrastructure);
             inMap.put(String.valueOf(infNode.id()), infrastructure);
@@ -803,7 +599,7 @@ public class DiagramService {
         Map<String, Object> softwareSystemObj = new HashMap<>();
         softwareSystemObj.put("id", String.valueOf(ssNode.id()));
         softwareSystemObj.put("name", ssNode.get("cmdb").asString());
-        softwareSystemObj.put("containers", new ArrayList<>());
+        softwareSystemObj.put("containers", new HashSet<>());
         return softwareSystemObj;
     }
 
@@ -814,7 +610,6 @@ public class DiagramService {
                                                      List<Map<String, String>> elements,
                                                      List<Map<String, String>> relations) {
         Map<String, Object> diagram = new HashMap<>();
-
         Map<String, Object> model = new HashMap<>();
         model.put("deploymentNodes", deploymentNodes);
         model.put("softwareSystems", new ArrayList<>(softwareSystem.values()));
@@ -831,13 +626,15 @@ public class DiagramService {
         Map<String, Object> systemContextView = new HashMap<>();
         systemContextView.put("automaticLayout", automaticLayout);
         systemContextView.put("elements", elements);
-        systemContextView.put("key", "context");
+        systemContextView.put("environment", "BY-BEEATLAS");
+        systemContextView.put("key", "BY-BEEATLAS-01");
+        systemContextView.put("paperSize", "A6_Portrait");
         systemContextView.put("relationships", relations);
 
         Map<String, Object> views = new HashMap<>();
         List<Map<String, Object>> systemContextViews = new ArrayList<>();
         systemContextViews.add(systemContextView);
-        views.put("systemContextViews", systemContextViews);
+        views.put("deploymentViews", systemContextViews);
 
         diagram.put("model", model);
         diagram.put("views", views);
