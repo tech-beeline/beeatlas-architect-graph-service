@@ -4,6 +4,9 @@ package ru.beeline.architecting_graph.service.createDiagrams;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.graphstream.graph.Graph;
+import org.graphstream.graph.implementations.SingleGraph;
+import org.graphstream.stream.file.FileSinkDOT;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.types.Node;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +18,10 @@ import ru.beeline.architecting_graph.client.StructurizrClient;
 import ru.beeline.architecting_graph.model.GraphObject;
 import ru.beeline.architecting_graph.model.Workspace;
 import ru.beeline.architecting_graph.repository.neo4j.*;
+import java.io.ByteArrayOutputStream;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -642,4 +648,95 @@ public class DiagramService {
         return diagram;
     }
 
+    public ResponseEntity<String> getDiagramDeploymentDot(Long nodeId) {
+        var record = genericRepository.getNodeTypeAndNameById(nodeId);
+        org. neo4j. driver. Record rec = record.next();
+        String nodeType = rec.get("nodeType").asString("");
+        String rootName = rec.get("name").asString("Unnamed");
+
+        if (nodeType.isEmpty())
+            throw new IllegalArgumentException("Node with id " + nodeId + " does not exist");
+
+        Graph graph = new SingleGraph("Neo4j Graph");
+        org. graphstream. graph. Node centralNode = graph.addNode("central");
+        centralNode.setAttribute("ui.label", rootName);
+        centralNode.setAttribute("color", "green");
+
+        switch (nodeType) {
+            case "DeploymentNode":
+                var depResults = genericRepository.getDeploymentNodeDependencies(nodeId);
+                if (depResults.hasNext()) {
+                    var depRecord = depResults.next();
+                    addNodesFromCollection(graph, depRecord, "deploymentSources", "red", "Вызов", "central");
+                    addNodesFromCollection(graph, depRecord, "infrastructureSources", "red", "Вызов", "central");
+                    addNodesFromCollection(graph, depRecord, "deploymentTargets", "blue", "Deploy", "central");
+                    addNodesFromCollection(graph, depRecord, "infrastructureNodes", "blue", "Deploy", "central");
+                    addNodesFromCollection(graph, depRecord, "containerInstances", "blue", "Deploy", "central");
+                    addNodesFromCollection(graph, depRecord, "containers", "blue", "Deploy", "central");
+                }
+                break;
+
+            case "Container":
+                var containerResults = genericRepository.getContainerDependencies(nodeId);
+                if (containerResults.hasNext()) {
+                    var containerRecord = containerResults.next();
+                    addNodesFromCollection(graph, containerRecord, "containersSources", "red", "Вызов", "central");
+                }
+                break;
+
+            case "InfrastructureNode":
+                var infraResults = genericRepository.getInfrastructureNodeDependencies(nodeId);
+                if (infraResults.hasNext()) {
+                    var infraRecord = infraResults.next();
+                    addNodesFromCollection(graph, infraRecord, "infrastructureSources", "red", "Вызов", "central");
+                    addNodesFromCollection(graph, infraRecord, "deploymentSources", "red", "Вызов", "central");
+                }
+                break;
+
+            default:
+                throw new IllegalArgumentException("Unsupported node type: " + nodeType);
+        }
+
+        return ResponseEntity.ok(convertToDotFormat(graph));
+    }
+
+    private void addNodesFromCollection(Graph graph, org.neo4j.driver.Record record,
+                                        String key, String color, String edgeLabel, String centralNodeId) {
+        List<Object> nodeObjects = record.get(key).asList();
+        if (nodeObjects.isEmpty()) return;
+
+        for (Object obj : nodeObjects) {
+            if (!(obj instanceof org.neo4j.driver.types.Node)) continue;
+
+            org.neo4j.driver.types.Node node = (org.neo4j.driver.types.Node) obj;
+            String nodeId = key + "_" + node.id();
+            org.graphstream.graph.Node graphNode;
+            if (graph.getNode(nodeId) == null) {
+                graphNode = graph.addNode(nodeId);
+            } else {
+                graphNode = graph.getNode(nodeId);
+            }
+            String label = node.get("name") != null ? node.get("name").asString() : "Unnamed";
+            graphNode.setAttribute("ui.label", label);
+            graphNode.setAttribute("color", color);
+
+            String edgeId = nodeId + "_" + centralNodeId;
+            if (graph.getEdge(edgeId) == null) {
+                graph.addEdge(edgeId, nodeId, centralNodeId, true)
+                        .setAttribute("ui.label", edgeLabel);
+            }
+        }
+    }
+
+    private String convertToDotFormat(Graph graph) {
+        try {
+            FileSinkDOT sink = new FileSinkDOT();
+            sink.setDirected(true);
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            sink.writeAll(graph, outputStream);
+            return outputStream.toString(StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new RuntimeException("Error converting graph to DOT format", e);
+        }
+    }
 }

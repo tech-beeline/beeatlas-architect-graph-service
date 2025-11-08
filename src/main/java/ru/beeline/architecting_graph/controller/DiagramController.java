@@ -55,4 +55,10 @@ public class DiagramController {
                                                        @RequestParam(name = "deployment-name") String deploymentName) {
         return diagramService.getDiagramDeployment(cmdb, env, rankDirection, deploymentName);
     }
+
+    @GetMapping("/diagram/dot")
+    @Operation(summary = "Построение Deployment диаграммы dot")
+    public ResponseEntity<String> getDiagramDeploymentDot(@RequestParam Long id) {
+        return diagramService.getDiagramDeploymentDot(id);
+    }
 }
