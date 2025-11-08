@@ -14,6 +14,7 @@ env:
   SPRING_REDIS_PORT: "vault:eafdmmart/data/dev/fdm#redisport"
   SPRING_REDIS_PASSWORD: "vault:eafdmmart/data/dev/fdm#redispassword"
   INTEGRATION_AUTHSSO_SERVER_URL: "vault:eafdmmart/data/dev/ambassador#authsso"
+  INTEGRATION_PRODUCT_SERVER_URL: "vault:eafdmmart/data/dev/fdm#productsserver"
   OTEL_EXPORTER_OTLP_ENDPOINT: "vault:eafdmmart/data/dev/fdm#opentelemetry"
 
 podAnnotations:

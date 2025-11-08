@@ -133,6 +133,7 @@ public class GraphConstructionService {
             Record system = getParentSoftwareSystem(deployment.get("n").asNode().id());
             Record environment = getParentEnvironment(deployment.get("n").asNode().id());
             result.add(DeploymentNodeDTO.builder()
+                               .id(deployment.get("n").asNode().id())
                                .deploymentName(deployment.get("n").asNode().get("name").asString())
                                .environmentName(environment.get("parent.name").asString())
                                .cmdb(system.get("d").asNode().get("cmdb").asString())

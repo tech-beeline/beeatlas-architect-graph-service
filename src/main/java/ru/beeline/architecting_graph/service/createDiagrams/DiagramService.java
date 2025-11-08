@@ -14,7 +14,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import ru.beeline.architecting_graph.client.ProductClient;
 import ru.beeline.architecting_graph.client.StructurizrClient;
+import ru.beeline.architecting_graph.dto.ProductInfoShortDTO;
 import ru.beeline.architecting_graph.model.GraphObject;
 import ru.beeline.architecting_graph.model.Workspace;
 import ru.beeline.architecting_graph.repository.neo4j.*;
@@ -56,8 +58,9 @@ public class DiagramService {
 
     @Autowired
     InfrastructureNodesRepository infrastructureNodesRepository;
+
     @Autowired
-    private ContainerInstanceRepository containerInstanceRepository;
+    private ProductClient productClient;
 
     public Boolean checkifContainerExists(String softwareSystemMnemonic, String containerMnemonic) {
         Result result = containerRepository.checkIfContainerExists(softwareSystemMnemonic, containerMnemonic);
@@ -739,4 +742,124 @@ public class DiagramService {
             throw new RuntimeException("Error converting graph to DOT format", e);
         }
     }
+
+    public ResponseEntity<List<Map<String, Object>>> getDiagramDeploymentElements(Long nodeId) {
+            var record = genericRepository.getNodeTypeAndNameById(nodeId);
+            if (!record.hasNext()) {
+                return ResponseEntity.badRequest().build();
+            }
+            var rec = record.next();
+            String nodeType = rec.get("nodeType").asString("");
+            if (nodeType.isEmpty()) {
+                return ResponseEntity.badRequest().build();
+            }
+
+            List<org.neo4j.driver.Record> dependencyRecords = new ArrayList<>();
+
+            switch (nodeType) {
+                case "DeploymentNode":
+                    var depResults = genericRepository.getDeploymentNodeDependencies(nodeId);
+                    if (depResults.hasNext()) dependencyRecords.add(depResults.next());
+                    break;
+
+                case "Container":
+                    var containerResults = genericRepository.getContainerDependencies(nodeId);
+                    if (containerResults.hasNext()) dependencyRecords.add(containerResults.next());
+                    break;
+
+                case "InfrastructureNode":
+                    var infraResults = genericRepository.getInfrastructureNodeDependencies(nodeId);
+                    if (infraResults.hasNext()) dependencyRecords.add(infraResults.next());
+                    break;
+
+                default:
+                    return ResponseEntity.badRequest()
+                            .body(List.of(Map.of("error", "Unsupported node type: " + nodeType)));
+            }
+
+            List<Map<String, Object>> dependentElements = new ArrayList<>();
+
+            if (dependencyRecords.isEmpty()) {
+                return ResponseEntity.ok(dependentElements);
+            }
+
+            var recordDeps = dependencyRecords.get(0);
+
+            Map<String, List<org.neo4j.driver.types.Node>> nodesMap = new HashMap<>();
+
+            switch (nodeType) {
+                case "DeploymentNode":
+                    putIfNotEmpty(nodesMap, "deploymentSources", recordDeps);
+                    putIfNotEmpty(nodesMap, "infrastructureSources", recordDeps);
+                    putIfNotEmpty(nodesMap, "deploymentTargets", recordDeps);
+                    putIfNotEmpty(nodesMap, "infrastructureNodes", recordDeps);
+                    putIfNotEmpty(nodesMap, "containerInstances", recordDeps);
+                    putIfNotEmpty(nodesMap, "containers", recordDeps);
+                    break;
+
+                case "Container":
+                    putIfNotEmpty(nodesMap, "containersSources", recordDeps);
+                    break;
+
+                case "InfrastructureNode":
+                    putIfNotEmpty(nodesMap, "infrastructureSources", recordDeps);
+                    putIfNotEmpty(nodesMap, "deploymentSources", recordDeps);
+                    break;
+            }
+        List<ProductInfoShortDTO> products = productClient.getAllProductsInfo();
+            for (List<org.neo4j.driver.types.Node> nodeList : nodesMap.values()) {
+                for (org.neo4j.driver.types.Node node : nodeList) {
+                    Map<String, Object> element = new HashMap<>();
+                    Long id = node.id();
+                    String fullName = node.get("name") != null ? node.get("name").asString() : "Unnamed";
+
+                    element.put("id", id);
+                    element.put("name", trimAfterFirstDot(fullName));
+                    element.put("dependentCount", genericRepository.getDependentCountByNodeId(id));
+                    String cmdb = trimAfterLastDot(fullName);
+                    element.put("cmdb", cmdb);
+
+                    ProductInfoShortDTO productInfo = products.stream()
+                            .filter(product -> product.getAlias().equalsIgnoreCase(cmdb))
+                            .findFirst()
+                            .orElse(null);                    if (productInfo != null) {
+                        element.put("critical", productInfo.getCritical());
+                        element.put("ownerName", productInfo.getOwnerName());
+                    } else {
+                        element.put("critical", "");
+                        element.put("ownerName", "");
+                    }
+
+                    dependentElements.add(element);
+                }
+            }
+
+            return ResponseEntity.ok(dependentElements);
+        }
+
+    private void putIfNotEmpty(Map<String, List<org.neo4j.driver.types.Node>> map, String key, org.neo4j.driver.Record record) {
+        if (record == null || !record.containsKey(key)) return;
+
+        List<org.neo4j.driver.types.Node> nodes = new ArrayList<>();
+        var list = record.get(key).asList();
+
+        for (Object obj : list) {
+            if (obj instanceof org.neo4j.driver.types.Node) {
+                nodes.add((org.neo4j.driver.types.Node) obj);
+            }
+        }
+
+        if (!nodes.isEmpty()) {
+            map.put(key, nodes);
+        }
+    }
+        private String trimAfterFirstDot(String s) {
+            int index = s.indexOf('.');
+            return index < 0 ? s : s.substring(0, index);
+        }
+
+        private String trimAfterLastDot(String s) {
+            int index = s.lastIndexOf('.');
+            return index < 0 ? s : s.substring(index + 1);
+        }
 }

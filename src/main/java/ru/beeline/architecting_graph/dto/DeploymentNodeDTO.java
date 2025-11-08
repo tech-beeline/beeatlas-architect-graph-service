@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class DeploymentNodeDTO {
+    private Long id;
     private String deploymentName;
     private String cmdb;
     private String environmentName;

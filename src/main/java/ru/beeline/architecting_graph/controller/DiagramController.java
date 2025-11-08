@@ -6,6 +6,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.beeline.architecting_graph.service.createDiagrams.DiagramService;
 
+import java.util.List;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/v1")
 public class DiagramController {
@@ -60,5 +63,11 @@ public class DiagramController {
     @Operation(summary = "Построение Deployment диаграммы dot")
     public ResponseEntity<String> getDiagramDeploymentDot(@RequestParam Long id) {
         return diagramService.getDiagramDeploymentDot(id);
+    }
+
+    @GetMapping("/diagram/elements")
+    @Operation(summary = "Построение elements")
+    public ResponseEntity<List<Map<String, Object>>> getDiagramDeploymentElements(@RequestParam Long id) {
+        return diagramService.getDiagramDeploymentElements(id);
     }
 }

@@ -173,4 +173,21 @@ public class GenericRepository {
         return neo4jSessionManager.getSession().run(cypher, params);
     }
 
+    public int getDependentCountByNodeId(Long nodeId) {
+        String cypher = """
+        MATCH (n)
+        WHERE id(n) = $nodeId
+        OPTIONAL MATCH (dependent)-[:Relationship|:Child|:Deploy]->(n)
+        RETURN count(DISTINCT dependent) AS dependentCount
+    """;
+        Value params = Values.parameters("nodeId", nodeId);
+        var result = neo4jSessionManager.getSession().run(cypher, params);
+
+        if (result.hasNext()) {
+            var record = result.next();
+            return record.get("dependentCount").asInt(0);
+        } else {
+            return 0;
+        }
+    }
 }
