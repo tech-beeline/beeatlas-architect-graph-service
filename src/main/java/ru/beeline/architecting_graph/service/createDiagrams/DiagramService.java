@@ -681,7 +681,6 @@ public class DiagramService {
                     addNodesFromCollection(graph, depRecord, "deploymentTargets", "blue", "lightblue", "Deploy",
                                            "central");
                     addNodesFromCollection(graph, depRecord, "infrastructureNodes", "blue", "lightblue", "Deploy", "central");
-                    addNodesFromCollection(graph, depRecord, "containerInstances", "blue", "lightblue", "Deploy", "central");
                     addNodesFromCollection(graph, depRecord, "containers", "blue", "lightblue", "Deploy", "central");
                 }
                 break;
@@ -806,7 +805,6 @@ public class DiagramService {
                     putIfNotEmpty(nodesMap, "infrastructureSources", recordDeps);
                     putIfNotEmpty(nodesMap, "deploymentTargets", recordDeps);
                     putIfNotEmpty(nodesMap, "infrastructureNodes", recordDeps);
-                    putIfNotEmpty(nodesMap, "containerInstances", recordDeps);
                     putIfNotEmpty(nodesMap, "containers", recordDeps);
                     break;
 
