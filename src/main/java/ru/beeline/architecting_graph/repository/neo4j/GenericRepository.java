@@ -177,15 +177,17 @@ public class GenericRepository {
         String cypher = """
         MATCH (n)
         WHERE id(n) = $nodeId
-        OPTIONAL MATCH (dependent)-[:Relationship|:Child|:Deploy]->(n)
-        RETURN count(DISTINCT dependent) AS dependentCount
+        OPTIONAL MATCH (n)<-[incoming_rel:Relationship]-()
+        WITH n, count(DISTINCT incoming_rel) AS incomingCount
+        OPTIONAL MATCH (n)-[outgoing_child:Child]->()
+        RETURN incomingCount + count(DISTINCT outgoing_child) AS totalConnections
     """;
         Value params = Values.parameters("nodeId", nodeId);
         var result = neo4jSessionManager.getSession().run(cypher, params);
 
         if (result.hasNext()) {
             var record = result.next();
-            return record.get("dependentCount").asInt(0);
+            return record.get("totalConnections").asInt(0);
         } else {
             return 0;
         }
