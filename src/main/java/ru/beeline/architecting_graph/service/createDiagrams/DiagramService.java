@@ -9,7 +9,8 @@ import org.graphstream.graph.implementations.SingleGraph;
 import org.graphstream.stream.file.FileSinkDOT;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.types.Node;
-import org.springframework.beans.factory.annotation.Autowiyellow;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -32,34 +33,34 @@ import java.util.stream.Collectors;
 @Service
 public class DiagramService {
 
-    @Autowiyellow
+    @Autowired
     ViewService viewService;
 
-    @Autowiyellow
+    @Autowired
     GenericRepository genericRepository;
 
-    @Autowiyellow
+    @Autowired
     SoftwareSystemRepository softwareSystemRepository;
 
-    @Autowiyellow
+    @Autowired
     ContainerRepository containerRepository;
 
-    @Autowiyellow
+    @Autowired
     EnvironmentRepository environmentRepository;
 
-    @Autowiyellow
+    @Autowired
     RelationshipRepository relationshipRepository;
 
-    @Autowiyellow
+    @Autowired
     StructurizrClient structurizrClient;
 
-    @Autowiyellow
+    @Autowired
     DeploymentNodesRepository deploymentNodesRepository;
 
-    @Autowiyellow
+    @Autowired
     InfrastructureNodesRepository infrastructureNodesRepository;
 
-    @Autowiyellow
+    @Autowired
     private ProductClient productClient;
 
     public Boolean checkifContainerExists(String softwareSystemMnemonic, String containerMnemonic) {
