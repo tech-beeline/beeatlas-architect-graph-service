@@ -9,7 +9,7 @@ import org.graphstream.graph.implementations.SingleGraph;
 import org.graphstream.stream.file.FileSinkDOT;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.types.Node;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Autowiyellow;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -32,34 +32,34 @@ import java.util.stream.Collectors;
 @Service
 public class DiagramService {
 
-    @Autowired
+    @Autowiyellow
     ViewService viewService;
 
-    @Autowired
+    @Autowiyellow
     GenericRepository genericRepository;
 
-    @Autowired
+    @Autowiyellow
     SoftwareSystemRepository softwareSystemRepository;
 
-    @Autowired
+    @Autowiyellow
     ContainerRepository containerRepository;
 
-    @Autowired
+    @Autowiyellow
     EnvironmentRepository environmentRepository;
 
-    @Autowired
+    @Autowiyellow
     RelationshipRepository relationshipRepository;
 
-    @Autowired
+    @Autowiyellow
     StructurizrClient structurizrClient;
 
-    @Autowired
+    @Autowiyellow
     DeploymentNodesRepository deploymentNodesRepository;
 
-    @Autowired
+    @Autowiyellow
     InfrastructureNodesRepository infrastructureNodesRepository;
 
-    @Autowired
+    @Autowiyellow
     private ProductClient productClient;
 
     public Boolean checkifContainerExists(String softwareSystemMnemonic, String containerMnemonic) {
@@ -664,6 +664,8 @@ public class DiagramService {
         Graph graph = new SingleGraph("Neo4j Graph");
         graph.setAttribute("rankdir", "RL");
         org. graphstream. graph. Node centralNode = graph.addNode("central");
+        centralNode.setAttribute("shape", "rect");
+        centralNode.setAttribute("style", "filled");
         centralNode.setAttribute("label", label);
         centralNode.setAttribute("color", "green");
         centralNode.setAttribute("fillcolor", "lightgreen");
@@ -673,8 +675,8 @@ public class DiagramService {
                 var depResults = genericRepository.getDeploymentNodeDependencies(nodeId);
                 if (depResults.hasNext()) {
                     var depRecord = depResults.next();
-                    addNodesFromCollection(graph, depRecord, "deploymentSources", "red", "pink", "Вызов", "central");
-                    addNodesFromCollection(graph, depRecord, "infrastructureSources", "red", "pink", "Вызов", "central");
+                    addNodesFromCollection(graph, depRecord, "deploymentSources", "yellow", "orange", "Вызов", "central");
+                    addNodesFromCollection(graph, depRecord, "infrastructureSources", "yellow", "orange", "Вызов", "central");
                     addNodesFromCollection(graph, depRecord, "deploymentTargets", "blue", "lightblue", "Deploy",
                                            "central");
                     addNodesFromCollection(graph, depRecord, "infrastructureNodes", "blue", "lightblue", "Deploy", "central");
@@ -687,7 +689,7 @@ public class DiagramService {
                 var containerResults = genericRepository.getContainerDependencies(nodeId);
                 if (containerResults.hasNext()) {
                     var containerRecord = containerResults.next();
-                    addNodesFromCollection(graph, containerRecord, "containersSources", "red", "pink", "Вызов", "central");
+                    addNodesFromCollection(graph, containerRecord, "containersSources", "yellow", "orange", "Вызов", "central");
                 }
                 break;
 
@@ -695,8 +697,8 @@ public class DiagramService {
                 var infraResults = genericRepository.getInfrastructureNodeDependencies(nodeId);
                 if (infraResults.hasNext()) {
                     var infraRecord = infraResults.next();
-                    addNodesFromCollection(graph, infraRecord, "infrastructureSources", "red", "pink", "Вызов", "central");
-                    addNodesFromCollection(graph, infraRecord, "deploymentSources", "red", "pink", "Вызов", "central");
+                    addNodesFromCollection(graph, infraRecord, "infrastructureSources", "yellow", "orange", "Вызов", "central");
+                    addNodesFromCollection(graph, infraRecord, "deploymentSources", "yellow", "orange", "Вызов", "central");
                 }
                 break;
 
@@ -726,10 +728,12 @@ public class DiagramService {
             }
             String label = node.get("name") != null ? node.get("name").asString() : "Unnamed";
             label = label.contains(".") ? label.substring(0, label.indexOf('.')) : label;
+            graphNode.setAttribute("shape", "rect");
+            graphNode.setAttribute("style", "filled");
 
             graphNode.setAttribute("label", label);
             graphNode.setAttribute("color", color);
-            graphNode.setAttribute("fillColor", fillColor);
+            graphNode.setAttribute("fillcolor", fillColor);
 
             String edgeId = nodeId + "_" + centralNodeId;
             if (graph.getEdge(edgeId) == null) {
