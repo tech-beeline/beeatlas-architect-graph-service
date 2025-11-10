@@ -656,26 +656,30 @@ public class DiagramService {
         org. neo4j. driver. Record rec = record.next();
         String nodeType = rec.get("nodeType").asString("");
         String rootName = rec.get("name").asString("Unnamed");
+        String label = rootName.contains(".") ? rootName.substring(0, rootName.indexOf('.')) : rootName;
 
         if (nodeType.isEmpty())
             throw new IllegalArgumentException("Node with id " + nodeId + " does not exist");
 
         Graph graph = new SingleGraph("Neo4j Graph");
+        graph.setAttribute("rankdir", "RL");
         org. graphstream. graph. Node centralNode = graph.addNode("central");
-        centralNode.setAttribute("ui.label", rootName);
+        centralNode.setAttribute("label", label);
         centralNode.setAttribute("color", "green");
+        centralNode.setAttribute("fillcolor", "lightgreen");
 
         switch (nodeType) {
             case "DeploymentNode":
                 var depResults = genericRepository.getDeploymentNodeDependencies(nodeId);
                 if (depResults.hasNext()) {
                     var depRecord = depResults.next();
-                    addNodesFromCollection(graph, depRecord, "deploymentSources", "red", "Вызов", "central");
-                    addNodesFromCollection(graph, depRecord, "infrastructureSources", "red", "Вызов", "central");
-                    addNodesFromCollection(graph, depRecord, "deploymentTargets", "blue", "Deploy", "central");
-                    addNodesFromCollection(graph, depRecord, "infrastructureNodes", "blue", "Deploy", "central");
-                    addNodesFromCollection(graph, depRecord, "containerInstances", "blue", "Deploy", "central");
-                    addNodesFromCollection(graph, depRecord, "containers", "blue", "Deploy", "central");
+                    addNodesFromCollection(graph, depRecord, "deploymentSources", "red", "pink", "Вызов", "central");
+                    addNodesFromCollection(graph, depRecord, "infrastructureSources", "red", "pink", "Вызов", "central");
+                    addNodesFromCollection(graph, depRecord, "deploymentTargets", "blue", "lightblue", "Deploy",
+                                           "central");
+                    addNodesFromCollection(graph, depRecord, "infrastructureNodes", "blue", "lightblue", "Deploy", "central");
+                    addNodesFromCollection(graph, depRecord, "containerInstances", "blue", "lightblue", "Deploy", "central");
+                    addNodesFromCollection(graph, depRecord, "containers", "blue", "lightblue", "Deploy", "central");
                 }
                 break;
 
@@ -683,7 +687,7 @@ public class DiagramService {
                 var containerResults = genericRepository.getContainerDependencies(nodeId);
                 if (containerResults.hasNext()) {
                     var containerRecord = containerResults.next();
-                    addNodesFromCollection(graph, containerRecord, "containersSources", "red", "Вызов", "central");
+                    addNodesFromCollection(graph, containerRecord, "containersSources", "red", "pink", "Вызов", "central");
                 }
                 break;
 
@@ -691,8 +695,8 @@ public class DiagramService {
                 var infraResults = genericRepository.getInfrastructureNodeDependencies(nodeId);
                 if (infraResults.hasNext()) {
                     var infraRecord = infraResults.next();
-                    addNodesFromCollection(graph, infraRecord, "infrastructureSources", "red", "Вызов", "central");
-                    addNodesFromCollection(graph, infraRecord, "deploymentSources", "red", "Вызов", "central");
+                    addNodesFromCollection(graph, infraRecord, "infrastructureSources", "red", "pink", "Вызов", "central");
+                    addNodesFromCollection(graph, infraRecord, "deploymentSources", "red", "pink", "Вызов", "central");
                 }
                 break;
 
@@ -704,7 +708,8 @@ public class DiagramService {
     }
 
     private void addNodesFromCollection(Graph graph, org.neo4j.driver.Record record,
-                                        String key, String color, String edgeLabel, String centralNodeId) {
+                                        String key, String color, String fillColor, String edgeLabel,
+                                        String centralNodeId) {
         List<Object> nodeObjects = record.get(key).asList();
         if (nodeObjects.isEmpty()) return;
 
@@ -720,13 +725,16 @@ public class DiagramService {
                 graphNode = graph.getNode(nodeId);
             }
             String label = node.get("name") != null ? node.get("name").asString() : "Unnamed";
-            graphNode.setAttribute("ui.label", label);
+            label = label.contains(".") ? label.substring(0, label.indexOf('.')) : label;
+
+            graphNode.setAttribute("label", label);
             graphNode.setAttribute("color", color);
+            graphNode.setAttribute("fillColor", fillColor);
 
             String edgeId = nodeId + "_" + centralNodeId;
             if (graph.getEdge(edgeId) == null) {
                 graph.addEdge(edgeId, nodeId, centralNodeId, true)
-                        .setAttribute("ui.label", edgeLabel);
+                        .setAttribute("label", edgeLabel);
             }
         }
     }
