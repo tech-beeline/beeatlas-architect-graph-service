@@ -65,6 +65,12 @@ public class DiagramController {
         return diagramService.getDiagramDeploymentDot(id);
     }
 
+    @GetMapping("/context/dot")
+    @Operation(summary = "Построение Deployment диаграммы с зависимыми систетмами в формате DOT")
+    public ResponseEntity<String> getContextDiagramDot(@RequestParam String cmdb) {
+        return diagramService.getContextDiagramDot(cmdb);
+    }
+
     @GetMapping("/diagram/elements")
     @Operation(summary = "Построение elements")
     public ResponseEntity<List<Map<String, Object>>> getDiagramDeploymentElements(@RequestParam Long id) {
