@@ -176,11 +176,12 @@ public class GenericRepository {
     public int getDependentCountByNodeId(Long nodeId) {
         String cypher = """
             MATCH (n)
-            WHERE id(n) = $nodeId
-            OPTIONAL MATCH (n)<-[incoming_rel:Relationship]-()
-            OPTIONAL MATCH (n)-[outgoing_child:Child]->()
-            WITH count(DISTINCT incoming_rel) AS incomingCount, count(DISTINCT outgoing_child) AS outgoingCount
-            RETURN incomingCount + outgoingCount AS totalConnections
+                        WHERE id(n) = $nodeId
+                        OPTIONAL MATCH (n)<-[incoming_rel:Relationship]-(incoming_node)
+                        WITH n, collect(DISTINCT incoming_node) as unique_incoming_nodes
+                        OPTIONAL MATCH (n)-[outgoing_child:Child]->()
+                        WITH n, unique_incoming_nodes, count(DISTINCT outgoing_child) as outgoing_child_count
+                        RETURN size(unique_incoming_nodes) + outgoing_child_count as totalConnections
     """;
         Value params = Values.parameters("nodeId", nodeId);
         var result = neo4jSessionManager.getSession().run(cypher, params);
