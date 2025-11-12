@@ -35,7 +35,8 @@ public class DeploymentNodesRepository {
     public Result findDeploymentNodesBySearch(String search) {
         String cypher = "MATCH (n:DeploymentNode) " +
                 "WHERE toLower(n.graphTag) = toLower('Global')" +
-                "AND (toLower(n.host) = toLower($search) OR toLower(n.ip) = toLower($search) OR toLower(n.IP) = " +
+                "AND (toLower(n.host) = toLower($search) OR toLower(n.ip) = toLower($search) OR toLower(n.name) = " +
+                "toLower($search) OR toLower(n.IP) = " +
                 "toLower($search)) " +
                 "RETURN n";
         Value parameters = Values.parameters("search", search);

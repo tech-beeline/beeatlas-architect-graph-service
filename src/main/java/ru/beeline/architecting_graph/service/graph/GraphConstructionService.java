@@ -127,7 +127,7 @@ public class GraphConstructionService {
 
     public ResponseEntity<List<DeploymentNodeDTO>> getDeploymentNode(String search) {
         List<DeploymentNodeDTO> result = new ArrayList<>();
-        Result deploymentNodes = getGlobalDeploymentNodeLikeName(search);
+        Result deploymentNodes = deploymentNodesRepository.findDeploymentNodesBySearch(search);
         while (deploymentNodes.hasNext()) {
             Record deployment = deploymentNodes.next();
             Record system = getParentSoftwareSystem(deployment.get("n").asNode().id());
@@ -141,10 +141,6 @@ public class GraphConstructionService {
         }
 
         return ResponseEntity.ok(result);
-    }
-
-    private Result getGlobalDeploymentNodeLikeName(String search) {
-        return deploymentNodesRepository.findDeploymentNodesBySearch(search);
     }
 
     private Record getParentSoftwareSystem(Long id) {
