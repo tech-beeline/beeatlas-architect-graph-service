@@ -1,9 +1,13 @@
 package ru.beeline.architecting_graph.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.beeline.architecting_graph.dto.DiagramElementDTO;
 import ru.beeline.architecting_graph.service.createDiagrams.DiagramService;
 
 import java.util.List;
@@ -72,8 +76,16 @@ public class DiagramController {
     }
 
     @GetMapping("/diagram/elements")
-    @Operation(summary = "Построение elements")
-    public ResponseEntity<List<Map<String, Object>>> getDiagramDeploymentElements(@RequestParam Long id) {
+    @Operation(
+            summary = "Построение elements",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Успешный ответ",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = DiagramElementDTO.class))),
+                    @ApiResponse(responseCode = "400", description = "Неверный запрос")
+            }
+    )
+    public ResponseEntity<List<DiagramElementDTO>> getDiagramDeploymentElements(@RequestParam Long id) {
         return diagramService.getDiagramDeploymentElements(id);
     }
 }

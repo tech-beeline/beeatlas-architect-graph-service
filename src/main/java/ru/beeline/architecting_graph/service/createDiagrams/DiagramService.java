@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import ru.beeline.architecting_graph.client.ProductClient;
 import ru.beeline.architecting_graph.client.StructurizrClient;
+import ru.beeline.architecting_graph.dto.DiagramElementDTO;
 import ru.beeline.architecting_graph.dto.ProductInfoShortDTO;
 import ru.beeline.architecting_graph.model.GraphObject;
 import ru.beeline.architecting_graph.model.Workspace;
@@ -755,7 +756,7 @@ public class DiagramService {
         }
     }
 
-    public ResponseEntity<List<Map<String, Object>>> getDiagramDeploymentElements(Long nodeId) {
+    public ResponseEntity<List<DiagramElementDTO>> getDiagramDeploymentElements(Long nodeId) {
             var record = genericRepository.getNodeTypeAndNameById(nodeId);
             if (!record.hasNext()) {
                 return ResponseEntity.badRequest().build();
@@ -785,11 +786,10 @@ public class DiagramService {
                     break;
 
                 default:
-                    return ResponseEntity.badRequest()
-                            .body(List.of(Map.of("error", "Unsupported node type: " + nodeType)));
+                    return ResponseEntity.badRequest().build();
             }
 
-            List<Map<String, Object>> dependentElements = new ArrayList<>();
+            List<DiagramElementDTO> dependentElements = new ArrayList<>();
 
             if (dependencyRecords.isEmpty()) {
                 return ResponseEntity.ok(dependentElements);
@@ -820,28 +820,23 @@ public class DiagramService {
         List<ProductInfoShortDTO> products = productClient.getAllProductsInfo();
             for (List<org.neo4j.driver.types.Node> nodeList : nodesMap.values()) {
                 for (org.neo4j.driver.types.Node node : nodeList) {
-                    Map<String, Object> element = new HashMap<>();
                     Long id = node.id();
                     String fullName = node.get("name") != null ? node.get("name").asString() : "Unnamed";
-
-                    element.put("id", id);
-                    element.put("name", trimAfterFirstDot(fullName));
-                    element.put("dependentCount", genericRepository.getDependentCountByNodeId(id));
                     String cmdb = trimAfterLastDot(fullName);
-                    element.put("cmdb", cmdb);
 
                     ProductInfoShortDTO productInfo = products.stream()
                             .filter(product -> product.getAlias().equalsIgnoreCase(cmdb))
                             .findFirst()
-                            .orElse(null);                    if (productInfo != null) {
-                        element.put("critical", productInfo.getCritical());
-                        element.put("ownerName", productInfo.getOwnerName());
-                    } else {
-                        element.put("critical", "");
-                        element.put("ownerName", "");
-                    }
+                            .orElse(null);
 
-                    dependentElements.add(element);
+                    dependentElements.add(DiagramElementDTO.builder()
+                                                  .id(id)
+                                                  .name(trimAfterFirstDot(fullName))
+                                                  .dependentCount(genericRepository.getDependentCountByNodeId(id))
+                                                  .cmdb(cmdb)
+                                                  .critical(productInfo != null ? productInfo.getCritical() : "")
+                                                  .ownerName(productInfo != null ? productInfo.getOwnerName() : "")
+                                                  .build());
                 }
             }
 
