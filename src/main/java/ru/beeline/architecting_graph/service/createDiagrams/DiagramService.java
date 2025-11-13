@@ -19,6 +19,7 @@ import ru.beeline.architecting_graph.client.ProductClient;
 import ru.beeline.architecting_graph.client.StructurizrClient;
 import ru.beeline.architecting_graph.dto.DiagramElementDTO;
 import ru.beeline.architecting_graph.dto.ProductInfoShortDTO;
+import ru.beeline.architecting_graph.exception.ValidationException;
 import ru.beeline.architecting_graph.model.GraphObject;
 import ru.beeline.architecting_graph.model.Workspace;
 import ru.beeline.architecting_graph.repository.neo4j.*;
@@ -704,7 +705,7 @@ public class DiagramService {
                 break;
 
             default:
-                throw new IllegalArgumentException("Unsupported node type: " + nodeType);
+                throw new ValidationException("Unsupported node type: " + nodeType);
         }
 
         return ResponseEntity.ok(convertToDotFormat(graph));

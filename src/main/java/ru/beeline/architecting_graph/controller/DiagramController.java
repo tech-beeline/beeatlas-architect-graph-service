@@ -64,8 +64,15 @@ public class DiagramController {
     }
 
     @GetMapping("/diagram/dot")
-    @Operation(summary = "Построение Deployment диаграммы dot")
-    public ResponseEntity<String> getDiagramDeploymentDot(@RequestParam Long id) {
+    @Operation(
+            summary = "Построение Deployment диаграммы dot",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Успешный ответ",
+                            content = @Content(mediaType = "text/plain")),
+                    @ApiResponse(responseCode = "400", description = "Неверный запрос: Unsupported node type или другие ошибки",
+                            content = @Content(mediaType = "text/plain"))
+            }
+    )    public ResponseEntity<String> getDiagramDeploymentDot(@RequestParam Long id) {
         return diagramService.getDiagramDeploymentDot(id);
     }
 
