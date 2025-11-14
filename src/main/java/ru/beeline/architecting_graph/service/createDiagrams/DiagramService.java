@@ -705,6 +705,9 @@ public class DiagramService {
 
     public ResponseEntity<String> getDiagramDeploymentDot(Long nodeId) {
         var record = genericRepository.getNodeTypeAndNameById(nodeId);
+        if (!record.hasNext())
+            throw new ValidationException("Node with id " + nodeId + " does not exist");
+
         org.neo4j.driver.Record rec = record.next();
         String nodeType = rec.get("nodeType").asString("");
         String rootName = rec.get("name").asString("Unnamed");
