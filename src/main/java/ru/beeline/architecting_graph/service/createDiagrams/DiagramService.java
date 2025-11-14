@@ -711,7 +711,7 @@ public class DiagramService {
         String label = rootName.contains(".") ? rootName.substring(0, rootName.indexOf('.')) : rootName;
 
         if (nodeType.isEmpty())
-            throw new IllegalArgumentException("Node with id " + nodeId + " does not exist");
+            throw new ValidationException("Node with id " + nodeId + " does not exist");
 
         Graph graph = new SingleGraph("Neo4j Graph");
         graph.setAttribute("rankdir", "RL");
