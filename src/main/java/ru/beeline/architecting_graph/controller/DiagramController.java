@@ -92,7 +92,9 @@ public class DiagramController {
                     @ApiResponse(responseCode = "200", description = "Успешный ответ",
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = DiagramElementDTO.class))),
-                    @ApiResponse(responseCode = "400", description = "Неверный запрос")
+                    @ApiResponse(responseCode = "400", description = "Неверный запрос",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = String.class)))
             }
     )
     public ResponseEntity<List<DiagramElementDTO>> getDiagramDeploymentElements(@RequestParam Long id) {
