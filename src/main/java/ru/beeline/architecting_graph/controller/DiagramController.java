@@ -101,7 +101,7 @@ public class DiagramController {
         return diagramService.getDiagramDeploymentElements(id);
     }
 
-    @GetMapping("context/elements")
+    @GetMapping("/context/elements")
     @Operation(
             summary = "Построение elements",
             responses = {
@@ -113,5 +113,19 @@ public class DiagramController {
     )
     public ResponseEntity<List<ContextElementDTO>> getContextElements(@RequestParam String cmdb) {
         return diagramService.getContextElements(cmdb);
+    }
+
+    @GetMapping("/influence/dot")
+    @Operation(
+            summary = "ПОлучение DOT диаграммы",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Успешный ответ",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = String.class))),
+                    @ApiResponse(responseCode = "400", description = "Неверный запрос")
+            }
+    )
+    public ResponseEntity<String> getInfluenceDot(@RequestParam Long id) {
+        return diagramService.getInfluenceDot(id);
     }
 }

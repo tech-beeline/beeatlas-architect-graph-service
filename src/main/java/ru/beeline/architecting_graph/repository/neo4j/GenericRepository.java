@@ -149,12 +149,44 @@ public class GenericRepository {
         return neo4jSessionManager.getSession().run(cypher, params);
     }
 
+    public Result getDeploymentNodeDependenciesShort(Long nodeId) {
+        String cypher = """
+                MATCH (start)
+                WHERE id(start) = $nodeId
+                OPTIONAL MATCH (deploymentSource:DeploymentNode)<-[:Relationship]-(start)
+                OPTIONAL MATCH (infrastructureSource:InfrastructureNode)<-[:Relationship]-(start)
+                OPTIONAL MATCH (start)<-[:Child]-(deploymentTarget:DeploymentNode)
+                RETURN 
+                  collect(DISTINCT deploymentSource) as deploymentSources,
+                  collect(DISTINCT infrastructureSource) as infrastructureSources,
+                  collect(DISTINCT deploymentTarget) as deploymentTargets
+        """;
+        Value params = Values.parameters("nodeId", nodeId);
+        return neo4jSessionManager.getSession().run(cypher, params);
+    }
+
     public Result getContainerDependencies(Long nodeId) {
         String cypher = """
             MATCH (start) WHERE id(start) = $nodeId
             MATCH (directContainer:Container)-[:Deploy]->(:ContainerInstance)
             WHERE (directContainer)-[:Relationship]->(start)
             RETURN collect(DISTINCT directContainer) AS containersSources
+        """;
+        Value params = Values.parameters("nodeId", nodeId);
+        return neo4jSessionManager.getSession().run(cypher, params);
+    }
+
+    public Result getContainerDependenciesShort(Long nodeId) {
+        String cypher = """
+                MATCH (start)
+                WHERE id(start) = $nodeId
+                OPTIONAL MATCH (directContainer:Container)-[:Deploy]->(:ContainerInstance)
+                WHERE (directContainer)<-[:Relationship]-(start)
+                OPTIONAL MATCH (deploymentParent:DeploymentNode)-[:Child]->(instance:ContainerInstance)
+                WHERE (instance)<-[:Deploy]-(start)
+                RETURN 
+                  collect(DISTINCT directContainer) as containersSources,
+                  collect(DISTINCT deploymentParent) as deploymentParent
         """;
         Value params = Values.parameters("nodeId", nodeId);
         return neo4jSessionManager.getSession().run(cypher, params);
@@ -168,6 +200,21 @@ public class GenericRepository {
             RETURN 
                 collect(DISTINCT infrastructureSource) AS infrastructureSources,
                 collect(DISTINCT deploymentSource) AS deploymentSources
+        """;
+        Value params = Values.parameters("nodeId", nodeId);
+        return neo4jSessionManager.getSession().run(cypher, params);
+    }
+
+    public Result getInfrastructureNodeDependenciesShort(Long nodeId) {
+        String cypher = """
+            MATCH (start) WHERE id(start) = $nodeId
+            OPTIONAL MATCH (infrastructureSource:InfrastructureNode)<-[:Relationship]-(start)
+            OPTIONAL MATCH (deploymentSource:DeploymentNode)<-[:Relationship]-(start)
+            OPTIONAL MATCH (deploymentParent:DeploymentNode)-[:Child]->(start)
+            RETURN
+                   collect(DISTINCT infrastructureSource) as infrastructureSources,
+                   collect(DISTINCT deploymentSource) as deploymentSources,
+                   collect(DISTINCT deploymentParent) as deploymentParent
         """;
         Value params = Values.parameters("nodeId", nodeId);
         return neo4jSessionManager.getSession().run(cypher, params);

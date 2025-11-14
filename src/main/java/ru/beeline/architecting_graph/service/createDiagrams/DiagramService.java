@@ -962,11 +962,6 @@ public class DiagramService {
         }
     }
 
-    private String trimAfterFirstDot(String s) {
-        int index = s.indexOf('.');
-        return index < 0 ? s : s.substring(0, index);
-    }
-
     private String trimAfterLastDot(String s) {
         int index = s.lastIndexOf('.');
         return index < 0 ? s : s.substring(index + 1);
@@ -1050,5 +1045,107 @@ public class DiagramService {
                                                  .ownerName(product.getOwnerName())
                                                  .build())
                                          .toList());
+    }
+
+    public ResponseEntity<String> getInfluenceDot(Long Id) {
+        var record = genericRepository.getNodeTypeAndNameById(Id);
+        if (!record.hasNext()) {
+            return ResponseEntity.badRequest().build();
+        }
+        var rec = record.next();
+        String nodeType = rec.get("nodeType").asString("");
+        String rootName = rec.get("name").asString("Unnamed");
+        if (nodeType.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        List<org.neo4j.driver.Record> dependencyRecords = new ArrayList<>();
+
+        switch (nodeType) {
+            case "DeploymentNode":
+                var depResults = genericRepository.getDeploymentNodeDependenciesShort(Id);
+                if (depResults.hasNext())
+                    dependencyRecords.add(depResults.next());
+                break;
+
+            case "Container":
+                var containerResults = genericRepository.getContainerDependenciesShort(Id);
+                if (containerResults.hasNext())
+                    dependencyRecords.add(containerResults.next());
+                break;
+
+            case "InfrastructureNode":
+                var infraResults = genericRepository.getInfrastructureNodeDependenciesShort(Id);
+                if (infraResults.hasNext())
+                    dependencyRecords.add(infraResults.next());
+                break;
+
+            default:
+                return ResponseEntity.badRequest().build();
+        }
+
+        Graph graph = new SingleGraph("InfluenceGraph");
+        graph.setAttribute("rankdir", "RL");
+
+        String rootLabel = trimAfterFirstDot(rootName);
+        org.graphstream.graph.Node centralNode = graph.addNode("central");
+        centralNode.setAttribute("label", rootLabel);
+        centralNode.setAttribute("shape", "rect");
+        centralNode.setAttribute("style", "filled");
+        centralNode.setAttribute("color", "green");
+        centralNode.setAttribute("fillcolor", "lightgreen");
+
+        org.neo4j.driver.Record dependencyRecord = dependencyRecords.get(0);
+
+        addNodesFromCollection(graph, dependencyRecord, "deploymentSources", "deploymentSources_", "orange", "red", "Вызов", "central");
+        addNodesFromCollection(graph, dependencyRecord, "infrastructureSources", "infrastructureSources_", "orange", "red", "Вызов", "central");
+        addNodesFromCollection(graph, dependencyRecord, "deploymentTargets", "deploymentParent_", "lightblue", "blue", "Deploy", "central");
+        addNodesFromCollection(graph, dependencyRecord, "deploymentParent", "deploymentParent_", "lightblue", "blue", "Deploy", "central");
+        addNodesFromCollection(graph, dependencyRecord, "containersSources", "containersSources_", "orange", "red", "Вызов", "central");
+
+        String dotString = convertToDotFormat(graph);
+        return ResponseEntity.ok(dotString);
+    }
+
+    private void addNodesFromCollection(Graph graph, org.neo4j.driver.Record record,
+                                        String key, String idPrefix, String fillColor, String borderColor,
+                                        String edgeLabel, String centralNodeId) {
+
+        if (record.get("deploymentSources").toString().equals("[]")) return;
+        List<Object> nodeObjects = record.get(key).asList();
+
+        for (Object obj : nodeObjects) {
+            if (!(obj instanceof org.neo4j.driver.types.Node)) continue;
+
+            org.neo4j.driver.types.Node node = (org.neo4j.driver.types.Node) obj;
+            String neo4jNodeId = String.valueOf(node.id());
+            String nodeId = idPrefix + neo4jNodeId;
+
+            org.graphstream.graph.Node graphNode;
+            if (graph.getNode(nodeId) == null) {
+                graphNode = graph.addNode(nodeId);
+            } else {
+                graphNode = graph.getNode(nodeId);
+            }
+
+            String name = node.get("name") != null ? node.get("name").asString("Unnamed") : "Unnamed";
+            String label = trimAfterFirstDot(name);
+
+            graphNode.setAttribute("label", label);
+            graphNode.setAttribute("shape", "rect");
+            graphNode.setAttribute("style", "filled");
+            graphNode.setAttribute("fillcolor", fillColor);
+            graphNode.setAttribute("color", borderColor);
+
+            String edgeId = nodeId + "_" + centralNodeId;
+            if (graph.getEdge(edgeId) == null) {
+                graph.addEdge(edgeId, centralNodeId, nodeId, true).setAttribute("label", edgeLabel);
+            }
+        }
+    }
+
+    private String trimAfterFirstDot(String s) {
+        int idx = s.indexOf('.');
+        return (idx > 0) ? s.substring(0, idx) : s;
     }
 }
