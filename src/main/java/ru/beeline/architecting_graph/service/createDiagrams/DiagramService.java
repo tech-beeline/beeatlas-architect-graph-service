@@ -1,4 +1,3 @@
-
 package ru.beeline.architecting_graph.service.createDiagrams;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -10,21 +9,21 @@ import org.graphstream.stream.file.FileSinkDOT;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.types.Node;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import ru.beeline.architecting_graph.client.ProductClient;
 import ru.beeline.architecting_graph.client.StructurizrClient;
+import ru.beeline.architecting_graph.dto.ContextElementDTO;
 import ru.beeline.architecting_graph.dto.DiagramElementDTO;
 import ru.beeline.architecting_graph.dto.ProductInfoShortDTO;
 import ru.beeline.architecting_graph.exception.ValidationException;
 import ru.beeline.architecting_graph.model.GraphObject;
 import ru.beeline.architecting_graph.model.Workspace;
 import ru.beeline.architecting_graph.repository.neo4j.*;
-import java.io.ByteArrayOutputStream;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -142,24 +141,27 @@ public class DiagramService {
         Set<Long> allNodeIds = softwareSystemRepository.getContainerAndComponentChildIds(cmdb);
         allNodeIds.add(softwareSystemId);
 
-        List<Map<String, Object>> relationships = "in".equalsIgnoreCase(communicationDirection) ?
-                relationshipRepository.getIncomingRelationships(allNodeIds,softwareSystemId) :
-                relationshipRepository.getOutgoingRelationships(allNodeIds, softwareSystemId);
+        List<Map<String, Object>> relationships = "in".equalsIgnoreCase(communicationDirection) ? relationshipRepository.getIncomingRelationships(
+                allNodeIds,
+                softwareSystemId) : relationshipRepository.getOutgoingRelationships(allNodeIds, softwareSystemId);
         Set<Long> relIds = relationships.stream()
-                .map(rel -> Long.parseLong((String) rel.get("in".equalsIgnoreCase(communicationDirection) ?
-                                                                    "sourceId" : "destinationId")))
+                .map(rel -> Long.parseLong((String) rel.get("in".equalsIgnoreCase(communicationDirection) ? "sourceId" : "destinationId")))
                 .collect(Collectors.toSet());
 
-        Set<Map<String, Object>> softwareSystems = softwareSystemRepository.getSoftwareSystemsFromRelationships(new ArrayList<>(relIds));
+        Set<Map<String, Object>> softwareSystems = softwareSystemRepository.getSoftwareSystemsFromRelationships(new ArrayList<>(
+                relIds));
 
-        Map<Long, Map<String, String>> containerToParentSS = softwareSystemRepository.findParentSoftwareSystemsByContainers(relIds);
-        Map<Long, Map<String, String>> componentToParentSS = softwareSystemRepository.getParentSoftwareSystemsForComponents(relIds);
+        Map<Long, Map<String, String>> containerToParentSS = softwareSystemRepository.findParentSoftwareSystemsByContainers(
+                relIds);
+        Map<Long, Map<String, String>> componentToParentSS = softwareSystemRepository.getParentSoftwareSystemsForComponents(
+                relIds);
 
-        Set<String> existingNames = softwareSystems.stream().map(ss -> ss.get("name").toString()).collect(Collectors.toSet());
+        Set<String> existingNames = softwareSystems.stream()
+                .map(ss -> ss.get("name").toString())
+                .collect(Collectors.toSet());
 
         for (Map<String, Object> rel : relationships) {
-            Long relId = Long.parseLong((String) rel.get("in".equalsIgnoreCase(communicationDirection) ?
-                                                                       "sourceId" : "destinationId"));
+            Long relId = Long.parseLong((String) rel.get("in".equalsIgnoreCase(communicationDirection) ? "sourceId" : "destinationId"));
 
             Map<String, String> parentSS = null;
             if (containerToParentSS.containsKey(relId)) {
@@ -169,16 +171,17 @@ public class DiagramService {
                 parentSS = componentToParentSS.get(relId);
             }
             if (parentSS != null) {
-                rel.put("in".equalsIgnoreCase(communicationDirection) ?
-                                "sourceId" : "destinationId", parentSS.get("id"));
+                rel.put("in".equalsIgnoreCase(communicationDirection) ? "sourceId" : "destinationId",
+                        parentSS.get("id"));
                 if (!existingNames.contains(parentSS.get("name"))) {
                     softwareSystems.add(Map.of("id", parentSS.get("id").toString(), "name", parentSS.get("name")));
                     existingNames.add(parentSS.get("name"));
                 }
             }
         }
-        relationships =
-                relationships.stream().filter(rel -> !rel.get("sourceId").equals(rel.get("destinationId"))).collect(Collectors.toList());
+        relationships = relationships.stream()
+                .filter(rel -> !rel.get("sourceId").equals(rel.get("destinationId")))
+                .collect(Collectors.toList());
         try {
             ObjectMapper mapper = new ObjectMapper();
             String json = mapper.writeValueAsString(createDiagram(rankDirection,
@@ -190,15 +193,16 @@ public class DiagramService {
             return ResponseEntity.ok(json);
         } catch (Exception e) {
             log.error(e.getMessage(), e.getStackTrace());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Ошибка сериализации JSON" + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Ошибка сериализации JSON" + e.getMessage());
         }
     }
 
     private static Map<String, Object> createDiagram(String rankDirection,
-                                                          Long softwareSystemId,
-                                                          String softwareSystemName,
-                                                          List<Map<String, Object>> relationships,
-                                                          Set<Map<String, Object>> softwareSystems) {
+                                                     Long softwareSystemId,
+                                                     String softwareSystemName,
+                                                     List<Map<String, Object>> relationships,
+                                                     Set<Map<String, Object>> softwareSystems) {
         Map<String, Object> diagram = new HashMap<>();
 
         Map<String, Object> model = new HashMap<>();
@@ -235,15 +239,20 @@ public class DiagramService {
         return diagram;
     }
 
-    public ResponseEntity<String> getDiagramDeployment(String cmdb, String env, String rankDirection, String deploymentName) {
+    public ResponseEntity<String> getDiagramDeployment(String cmdb,
+                                                       String env,
+                                                       String rankDirection,
+                                                       String deploymentName) {
         if (rankDirection == null) {
             rankDirection = "LeftRight";
         }
         if (!rankDirection.equals("TopBottom") && !rankDirection.equals("LeftRight")) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Недопустимая ориентация диаграммы");
         }
-        Result deploymentNodeAndSoftwareSystem =
-                deploymentNodesRepository.findDeploymentNodeByNameEnvCmdb(deploymentName, env, cmdb);
+        Result deploymentNodeAndSoftwareSystem = deploymentNodesRepository.findDeploymentNodeByNameEnvCmdb(
+                deploymentName,
+                env,
+                cmdb);
         if (!deploymentNodeAndSoftwareSystem.hasNext()) {
             throw new RuntimeException("SoftwareSystem не найден");
         }
@@ -261,12 +270,12 @@ public class DiagramService {
         Map<String, Object> deploymentNode = recursiveConstructDnCiIn(dnNode, ssMap, dnMap, inMap, ciMap, cMap);
         List<Map<String, Object>> deploymentNodes = Arrays.asList(deploymentNode);
 
-        dnMap.values().forEach(dn->{
+        dnMap.values().forEach(dn -> {
             processDnToDn(dn, dnMap, deploymentNodes, relMap);
             processInToDn(dn, dnMap, inMap, deploymentNodes, relMap);
         });
 
-        inMap.values().forEach(in->{
+        inMap.values().forEach(in -> {
             processDntoIn(in, dnMap, deploymentNodes, inMap, relMap);
             processIntoIn(in, dnMap, deploymentNodes, inMap, relMap);
         });
@@ -279,21 +288,41 @@ public class DiagramService {
         ciMap.putAll(containersInstances);
 
         List<Map<String, String>> elements = new ArrayList<>();
-         elements.addAll(dnMap.keySet().stream().map(id -> Map.of("id", String.valueOf(id))).collect(Collectors.toList()));
-         elements.addAll(ciMap.keySet().stream().map(id -> Map.of("id", String.valueOf(id))).collect(Collectors.toList()));
-         elements.addAll(inMap.keySet().stream().map(id -> Map.of("id", String.valueOf(id))).collect(Collectors.toList()));
-         elements.addAll(ssMap.keySet().stream().map(id -> Map.of("id", String.valueOf(id))).collect(Collectors.toList()));
+        elements.addAll(dnMap.keySet()
+                                .stream()
+                                .map(id -> Map.of("id", String.valueOf(id)))
+                                .collect(Collectors.toList()));
+        elements.addAll(ciMap.keySet()
+                                .stream()
+                                .map(id -> Map.of("id", String.valueOf(id)))
+                                .collect(Collectors.toList()));
+        elements.addAll(inMap.keySet()
+                                .stream()
+                                .map(id -> Map.of("id", String.valueOf(id)))
+                                .collect(Collectors.toList()));
+        elements.addAll(ssMap.keySet()
+                                .stream()
+                                .map(id -> Map.of("id", String.valueOf(id)))
+                                .collect(Collectors.toList()));
 
-        List<Map<String, String>> relations = relMap.keySet().stream().map(id -> Map.of("id", String.valueOf(id))).collect(Collectors.toList());
+        List<Map<String, String>> relations = relMap.keySet()
+                .stream()
+                .map(id -> Map.of("id", String.valueOf(id)))
+                .collect(Collectors.toList());
 
         try {
             ObjectMapper mapper = new ObjectMapper();
-            String json = mapper.writeValueAsString(createDiagram(rankDirection, deploymentNodes, ssMap, elements, relations));
+            String json = mapper.writeValueAsString(createDiagram(rankDirection,
+                                                                  deploymentNodes,
+                                                                  ssMap,
+                                                                  elements,
+                                                                  relations));
             json = structurizrClient.changeJson(json);
             return ResponseEntity.ok(json);
         } catch (Exception e) {
             log.error(e.getMessage(), e.getStackTrace());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Ошибка сериализации JSON" + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Ошибка сериализации JSON" + e.getMessage());
         }
     }
 
@@ -304,9 +333,8 @@ public class DiagramService {
                            Map<String, Map<String, Object>> cMap,
                            Map<String, Map<String, Object>> dnMap,
                            Map<String, Map<String, Object>> containersInstances) {
-        Result resultSet =
-                genericRepository.findIncomingRelationshipsByContainerInstance(Long.parseLong(String.valueOf(
-                        containerInstance.get("id"))));
+        Result resultSet = genericRepository.findIncomingRelationshipsByContainerInstance(Long.parseLong(String.valueOf(
+                containerInstance.get("id"))));
         while (resultSet.hasNext()) {
             var rec = resultSet.next();
             var rel = rec.get("r").asRelationship();
@@ -348,7 +376,10 @@ public class DiagramService {
                 ssMap.put(String.valueOf(src.id()), newSoftwareSystem);
             }
             if (dnMap.containsKey(String.valueOf(dn.id()))) {
-                if (!dnMap.get(String.valueOf(dn.id())).get("containerInstances").toString().contains(String.valueOf(src.id()))) {
+                if (!dnMap.get(String.valueOf(dn.id()))
+                        .get("containerInstances")
+                        .toString()
+                        .contains(String.valueOf(src.id()))) {
                     Map<String, Object> ci = new HashMap<>();
                     ci.put("id", String.valueOf(src.id()));
                     ci.put("environment", "BY BEEATLAS");
@@ -380,8 +411,10 @@ public class DiagramService {
     private void processIntoIn(Map<String, Object> in,
                                Map<String, Map<String, Object>> dnMap,
                                List<Map<String, Object>> deploymentNodes,
-                               Map<String, Map<String, Object>> inMap, Map<String, Map<String, Object>> relMap) {
-        Result resultIn = genericRepository.findIncomingDeploymentNodeRelationshipsFromIncomingDeploymentNode(Long.parseLong(String.valueOf(in.get("id"))));
+                               Map<String, Map<String, Object>> inMap,
+                               Map<String, Map<String, Object>> relMap) {
+        Result resultIn = genericRepository.findIncomingDeploymentNodeRelationshipsFromIncomingDeploymentNode(Long.parseLong(
+                String.valueOf(in.get("id"))));
         while (resultIn.hasNext()) {
             var rec = resultIn.next();
             var rel = rec.get("r").asRelationship();
@@ -397,17 +430,19 @@ public class DiagramService {
             ((HashSet) inMap.get(String.valueOf(dst.id())).get("relationships")).add(relation);
             relMap.put(String.valueOf(rel.id()), relation);
 
-            if(!inMap.containsKey(String.valueOf(src.id()))) {
+            if (!inMap.containsKey(String.valueOf(src.id()))) {
                 Map<String, Object> InfrastructureNode = new HashMap<>();
                 InfrastructureNode.put("id", String.valueOf(src.id()));
                 InfrastructureNode.put("name", src.get("name").asString());
                 InfrastructureNode.put("environment", "BY BEEATLAS");
-                Result dnToIn = genericRepository.findDeploymentNodesByInfrastructureId(Long.parseLong(String.valueOf(src.id())));
+                Result dnToIn = genericRepository.findDeploymentNodesByInfrastructureId(Long.parseLong(String.valueOf(
+                        src.id())));
                 while (dnToIn.hasNext()) {
                     var dnToInRec = dnToIn.next();
                     var subDn = dnToInRec.get("dn").asNode();
                     if (dnMap.containsKey(String.valueOf(subDn.id()))) {
-                        ((ArrayList) dnMap.get(String.valueOf(subDn.id())).get("infrastructureNodes")).add(InfrastructureNode);
+                        ((ArrayList) dnMap.get(String.valueOf(subDn.id())).get("infrastructureNodes")).add(
+                                InfrastructureNode);
                     } else {
                         Map<String, Object> newDeploymentNode = new HashMap<>();
                         newDeploymentNode.put("id", String.valueOf(src.id()));
@@ -420,9 +455,13 @@ public class DiagramService {
         }
     }
 
-    private void processDntoIn(Map<String, Object> in, Map<String, Map<String, Object>> dnMap, List<Map<String, Object>> deploymentNodes,
-                               Map<String, Map<String, Object>> inMap, Map<String, Map<String, Object>> relMap) {
-        Result resultDn = genericRepository.findRelationshipsFromDeploymentNode(Long.parseLong(String.valueOf(in.get("id"))));
+    private void processDntoIn(Map<String, Object> in,
+                               Map<String, Map<String, Object>> dnMap,
+                               List<Map<String, Object>> deploymentNodes,
+                               Map<String, Map<String, Object>> inMap,
+                               Map<String, Map<String, Object>> relMap) {
+        Result resultDn = genericRepository.findRelationshipsFromDeploymentNode(Long.parseLong(String.valueOf(in.get(
+                "id"))));
         while (resultDn.hasNext()) {
             var rec = resultDn.next();
             var rel = rec.get("r").asRelationship();
@@ -436,7 +475,7 @@ public class DiagramService {
             relation.put("description", rel.get("description").asString(null) + String.valueOf(rel.id()));
             relation.put("technology", rel.get("technology").asString(null));
 
-            if(!dnMap.containsKey(String.valueOf(src.id()))) {
+            if (!dnMap.containsKey(String.valueOf(src.id()))) {
                 Map<String, Object> newDeploymentNode = new HashMap<>();
                 newDeploymentNode.put("id", String.valueOf(src.id()));
                 newDeploymentNode.put("name", src.get("name").asString());
@@ -452,8 +491,10 @@ public class DiagramService {
     private void processInToDn(Map<String, Object> dn,
                                Map<String, Map<String, Object>> dnMap,
                                Map<String, Map<String, Object>> inMap,
-                               List<Map<String, Object>> deploymentNodes, Map<String, Map<String, Object>> relMap) {
-        Result resultIn = genericRepository.findIncomingDeploymentNodeRelationshipsFromInfrastructureNode(Long.parseLong(String.valueOf(dn.get("id"))));
+                               List<Map<String, Object>> deploymentNodes,
+                               Map<String, Map<String, Object>> relMap) {
+        Result resultIn = genericRepository.findIncomingDeploymentNodeRelationshipsFromInfrastructureNode(Long.parseLong(
+                String.valueOf(dn.get("id"))));
         while (resultIn.hasNext()) {
             var rec = resultIn.next();
             var rel = rec.get("r").asRelationship();
@@ -469,18 +510,19 @@ public class DiagramService {
             ((HashSet) dnMap.get(String.valueOf(dst.id())).get("relationships")).add(relation);
             relMap.put(String.valueOf(rel.id()), relation);
 
-            if(!inMap.containsKey(String.valueOf(src.id()))) {
+            if (!inMap.containsKey(String.valueOf(src.id()))) {
                 Map<String, Object> InfrastructureNode = new HashMap<>();
                 InfrastructureNode.put("id", String.valueOf(src.id()));
                 InfrastructureNode.put("name", src.get("name").asString());
                 InfrastructureNode.put("environment", "BY BEEATLAS");
-                Result dnToIn =
-                        genericRepository.findDeploymentNodesByInfrastructureId(Long.parseLong(String.valueOf(src.id())));
+                Result dnToIn = genericRepository.findDeploymentNodesByInfrastructureId(Long.parseLong(String.valueOf(
+                        src.id())));
                 while (dnToIn.hasNext()) {
                     var dnToInRec = dnToIn.next();
                     var subDn = dnToInRec.get("dn").asNode();
                     if (dnMap.containsKey(String.valueOf(subDn.id()))) {
-                        ((ArrayList) dnMap.get(String.valueOf(subDn.id())).get("infrastructureNodes")).add(InfrastructureNode);
+                        ((ArrayList) dnMap.get(String.valueOf(subDn.id())).get("infrastructureNodes")).add(
+                                InfrastructureNode);
                     } else {
                         Map<String, Object> newDeploymentNode = new HashMap<>();
                         newDeploymentNode.put("id", String.valueOf(src.id()));
@@ -493,8 +535,12 @@ public class DiagramService {
         }
     }
 
-    private void processDnToDn(Map<String, Object> dn, Map<String, Map<String, Object>> dnMap, List<Map<String, Object>> deploymentNodes, Map<String, Map<String, Object>> relMap) {
-        Result resultDn = genericRepository.findIncomingDeploymentNodeRelationships(Long.parseLong(String.valueOf(dn.get("id"))));
+    private void processDnToDn(Map<String, Object> dn,
+                               Map<String, Map<String, Object>> dnMap,
+                               List<Map<String, Object>> deploymentNodes,
+                               Map<String, Map<String, Object>> relMap) {
+        Result resultDn = genericRepository.findIncomingDeploymentNodeRelationships(Long.parseLong(String.valueOf(dn.get(
+                "id"))));
         while (resultDn.hasNext()) {
             var rec = resultDn.next();
             var rel = rec.get("r").asRelationship();
@@ -508,7 +554,7 @@ public class DiagramService {
             relation.put("description", rel.get("description").asString(null) + String.valueOf(rel.id()));
             relation.put("technology", rel.get("technology").asString(null));
 
-            if(!dnMap.containsKey(src.get("id"))) {
+            if (!dnMap.containsKey(src.get("id"))) {
                 Map<String, Object> newDeploymentNode = new HashMap<>();
                 newDeploymentNode.put("id", String.valueOf(src.id()));
                 newDeploymentNode.put("name", src.get("name").asString());
@@ -526,7 +572,7 @@ public class DiagramService {
                                                         Map<String, Map<String, Object>> dnMap,
                                                         Map<String, Map<String, Object>> inMap,
                                                         Map<String, Map<String, Object>> ciMap,
-                                                        Map<String, Map<String, Object>> cMap){
+                                                        Map<String, Map<String, Object>> cMap) {
         String dnName = dnNode.get("name").asString();
         String dnId = String.valueOf(dnNode.id());
         Map<String, Object> deploymentNode = new HashMap<>();
@@ -534,7 +580,8 @@ public class DiagramService {
         deploymentNode.put("name", dnName);
         deploymentNode.put("environment", "BY BEEATLAS");
 
-        Result containerInstancesWithContainers = genericRepository.getContainerInstancesWithContainersAndSoftwareSystems(dnNode.id());
+        Result containerInstancesWithContainers = genericRepository.getContainerInstancesWithContainersAndSoftwareSystems(
+                dnNode.id());
         Set<Map<String, Object>> containerInstances = new HashSet<>();
         List<Map<String, Object>> containers = new ArrayList<>();
         List<Map<String, Object>> softwareSystems = new ArrayList<>();
@@ -559,9 +606,9 @@ public class DiagramService {
             containers.add(container);
             cMap.put(String.valueOf(cNode.id()), container);
 
-            if(ssMap.containsKey(String.valueOf(ssNode.id()))){
+            if (ssMap.containsKey(String.valueOf(ssNode.id()))) {
                 ((HashSet) ssMap.get(String.valueOf(ssNode.id())).get("containers")).add(container);
-            }else {
+            } else {
                 Map<String, Object> softwareSystem = new HashMap<>();
                 softwareSystem.put("id", String.valueOf(ssNode.id()));
                 softwareSystem.put("name", ssNode.get("cmdb").asString());
@@ -571,7 +618,9 @@ public class DiagramService {
 
         }
         deploymentNode.put("containerInstances", containerInstances);
-        deploymentNode.put("infrastructureNodes", mapInfrastructureNodes(infrastructureNodesRepository.getInfrastructureNodesByDeploymentNodeId(dnNode.id()), inMap));
+        deploymentNode.put("infrastructureNodes",
+                           mapInfrastructureNodes(infrastructureNodesRepository.getInfrastructureNodesByDeploymentNodeId(
+                                   dnNode.id()), inMap));
 
         List<Map<String, Object>> children = new ArrayList<>();
         Result kids = deploymentNodesRepository.getChildDeploymentNodesById(dnNode.id());
@@ -584,7 +633,7 @@ public class DiagramService {
         deploymentNode.put("children", children);
 
         return deploymentNode;
-        }
+    }
 
     public List<Map<String, Object>> mapInfrastructureNodes(Result result, Map<String, Map<String, Object>> inMap) {
         List<Map<String, Object>> infrastructureNodes = new ArrayList<>();
@@ -618,7 +667,7 @@ public class DiagramService {
 
     private static Map<String, Object> createDiagram(String rankDirection,
                                                      List<Map<String, Object>> deploymentNodes,
-                                                     Map<String,Map<String, Object>> softwareSystem,
+                                                     Map<String, Map<String, Object>> softwareSystem,
                                                      List<Map<String, String>> elements,
                                                      List<Map<String, String>> relations) {
         Map<String, Object> diagram = new HashMap<>();
@@ -656,7 +705,7 @@ public class DiagramService {
 
     public ResponseEntity<String> getDiagramDeploymentDot(Long nodeId) {
         var record = genericRepository.getNodeTypeAndNameById(nodeId);
-        org. neo4j. driver. Record rec = record.next();
+        org.neo4j.driver.Record rec = record.next();
         String nodeType = rec.get("nodeType").asString("");
         String rootName = rec.get("name").asString("Unnamed");
         String label = rootName.contains(".") ? rootName.substring(0, rootName.indexOf('.')) : rootName;
@@ -666,7 +715,7 @@ public class DiagramService {
 
         Graph graph = new SingleGraph("Neo4j Graph");
         graph.setAttribute("rankdir", "RL");
-        org. graphstream. graph. Node centralNode = graph.addNode("central");
+        org.graphstream.graph.Node centralNode = graph.addNode("central");
         centralNode.setAttribute("shape", "rect");
         centralNode.setAttribute("style", "filled");
         centralNode.setAttribute("label", label);
@@ -678,11 +727,34 @@ public class DiagramService {
                 var depResults = genericRepository.getDeploymentNodeDependencies(nodeId);
                 if (depResults.hasNext()) {
                     var depRecord = depResults.next();
-                    addNodesFromCollection(graph, depRecord, "deploymentSources", "yellow", "orange", "Вызов", "central");
-                    addNodesFromCollection(graph, depRecord, "infrastructureSources", "yellow", "orange", "Вызов", "central");
-                    addNodesFromCollection(graph, depRecord, "deploymentTargets", "blue", "lightblue", "Deploy",
+                    addNodesFromCollection(graph,
+                                           depRecord,
+                                           "deploymentSources",
+                                           "yellow",
+                                           "orange",
+                                           "Вызов",
                                            "central");
-                    addNodesFromCollection(graph, depRecord, "infrastructureNodes", "blue", "lightblue", "Deploy", "central");
+                    addNodesFromCollection(graph,
+                                           depRecord,
+                                           "infrastructureSources",
+                                           "yellow",
+                                           "orange",
+                                           "Вызов",
+                                           "central");
+                    addNodesFromCollection(graph,
+                                           depRecord,
+                                           "deploymentTargets",
+                                           "blue",
+                                           "lightblue",
+                                           "Deploy",
+                                           "central");
+                    addNodesFromCollection(graph,
+                                           depRecord,
+                                           "infrastructureNodes",
+                                           "blue",
+                                           "lightblue",
+                                           "Deploy",
+                                           "central");
                     addNodesFromCollection(graph, depRecord, "containers", "blue", "lightblue", "Deploy", "central");
                 }
                 break;
@@ -691,7 +763,13 @@ public class DiagramService {
                 var containerResults = genericRepository.getContainerDependencies(nodeId);
                 if (containerResults.hasNext()) {
                     var containerRecord = containerResults.next();
-                    addNodesFromCollection(graph, containerRecord, "containersSources", "yellow", "orange", "Вызов", "central");
+                    addNodesFromCollection(graph,
+                                           containerRecord,
+                                           "containersSources",
+                                           "yellow",
+                                           "orange",
+                                           "Вызов",
+                                           "central");
                 }
                 break;
 
@@ -699,8 +777,20 @@ public class DiagramService {
                 var infraResults = genericRepository.getInfrastructureNodeDependencies(nodeId);
                 if (infraResults.hasNext()) {
                     var infraRecord = infraResults.next();
-                    addNodesFromCollection(graph, infraRecord, "infrastructureSources", "yellow", "orange", "Вызов", "central");
-                    addNodesFromCollection(graph, infraRecord, "deploymentSources", "yellow", "orange", "Вызов", "central");
+                    addNodesFromCollection(graph,
+                                           infraRecord,
+                                           "infrastructureSources",
+                                           "yellow",
+                                           "orange",
+                                           "Вызов",
+                                           "central");
+                    addNodesFromCollection(graph,
+                                           infraRecord,
+                                           "deploymentSources",
+                                           "yellow",
+                                           "orange",
+                                           "Вызов",
+                                           "central");
                 }
                 break;
 
@@ -711,14 +801,20 @@ public class DiagramService {
         return ResponseEntity.ok(convertToDotFormat(graph));
     }
 
-    private void addNodesFromCollection(Graph graph, org.neo4j.driver.Record record,
-                                        String key, String color, String fillColor, String edgeLabel,
+    private void addNodesFromCollection(Graph graph,
+                                        org.neo4j.driver.Record record,
+                                        String key,
+                                        String color,
+                                        String fillColor,
+                                        String edgeLabel,
                                         String centralNodeId) {
         List<Object> nodeObjects = record.get(key).asList();
-        if (nodeObjects.isEmpty()) return;
+        if (nodeObjects.isEmpty())
+            return;
 
         for (Object obj : nodeObjects) {
-            if (!(obj instanceof org.neo4j.driver.types.Node)) continue;
+            if (!(obj instanceof org.neo4j.driver.types.Node))
+                continue;
 
             org.neo4j.driver.types.Node node = (org.neo4j.driver.types.Node) obj;
             String nodeId = key + "_" + node.id();
@@ -739,8 +835,7 @@ public class DiagramService {
 
             String edgeId = nodeId + "_" + centralNodeId;
             if (graph.getEdge(edgeId) == null) {
-                graph.addEdge(edgeId, nodeId, centralNodeId, true)
-                        .setAttribute("label", edgeLabel);
+                graph.addEdge(edgeId, nodeId, centralNodeId, true).setAttribute("label", edgeLabel);
             }
         }
     }
@@ -758,94 +853,100 @@ public class DiagramService {
     }
 
     public ResponseEntity<List<DiagramElementDTO>> getDiagramDeploymentElements(Long nodeId) {
-            var record = genericRepository.getNodeTypeAndNameById(nodeId);
-            if (!record.hasNext()) {
+        var record = genericRepository.getNodeTypeAndNameById(nodeId);
+        if (!record.hasNext()) {
+            return ResponseEntity.badRequest().build();
+        }
+        var rec = record.next();
+        String nodeType = rec.get("nodeType").asString("");
+        if (nodeType.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        List<org.neo4j.driver.Record> dependencyRecords = new ArrayList<>();
+
+        switch (nodeType) {
+            case "DeploymentNode":
+                var depResults = genericRepository.getDeploymentNodeDependencies(nodeId);
+                if (depResults.hasNext())
+                    dependencyRecords.add(depResults.next());
+                break;
+
+            case "Container":
+                var containerResults = genericRepository.getContainerDependencies(nodeId);
+                if (containerResults.hasNext())
+                    dependencyRecords.add(containerResults.next());
+                break;
+
+            case "InfrastructureNode":
+                var infraResults = genericRepository.getInfrastructureNodeDependencies(nodeId);
+                if (infraResults.hasNext())
+                    dependencyRecords.add(infraResults.next());
+                break;
+
+            default:
                 return ResponseEntity.badRequest().build();
-            }
-            var rec = record.next();
-            String nodeType = rec.get("nodeType").asString("");
-            if (nodeType.isEmpty()) {
-                return ResponseEntity.badRequest().build();
-            }
+        }
 
-            List<org.neo4j.driver.Record> dependencyRecords = new ArrayList<>();
+        List<DiagramElementDTO> dependentElements = new ArrayList<>();
 
-            switch (nodeType) {
-                case "DeploymentNode":
-                    var depResults = genericRepository.getDeploymentNodeDependencies(nodeId);
-                    if (depResults.hasNext()) dependencyRecords.add(depResults.next());
-                    break;
-
-                case "Container":
-                    var containerResults = genericRepository.getContainerDependencies(nodeId);
-                    if (containerResults.hasNext()) dependencyRecords.add(containerResults.next());
-                    break;
-
-                case "InfrastructureNode":
-                    var infraResults = genericRepository.getInfrastructureNodeDependencies(nodeId);
-                    if (infraResults.hasNext()) dependencyRecords.add(infraResults.next());
-                    break;
-
-                default:
-                    return ResponseEntity.badRequest().build();
-            }
-
-            List<DiagramElementDTO> dependentElements = new ArrayList<>();
-
-            if (dependencyRecords.isEmpty()) {
-                return ResponseEntity.ok(dependentElements);
-            }
-
-            var recordDeps = dependencyRecords.get(0);
-
-            Map<String, List<org.neo4j.driver.types.Node>> nodesMap = new HashMap<>();
-
-            switch (nodeType) {
-                case "DeploymentNode":
-                    putIfNotEmpty(nodesMap, "deploymentSources", recordDeps);
-                    putIfNotEmpty(nodesMap, "infrastructureSources", recordDeps);
-                    putIfNotEmpty(nodesMap, "deploymentTargets", recordDeps);
-                    putIfNotEmpty(nodesMap, "infrastructureNodes", recordDeps);
-                    putIfNotEmpty(nodesMap, "containers", recordDeps);
-                    break;
-
-                case "Container":
-                    putIfNotEmpty(nodesMap, "containersSources", recordDeps);
-                    break;
-
-                case "InfrastructureNode":
-                    putIfNotEmpty(nodesMap, "infrastructureSources", recordDeps);
-                    putIfNotEmpty(nodesMap, "deploymentSources", recordDeps);
-                    break;
-            }
-        List<ProductInfoShortDTO> products = productClient.getAllProductsInfo();
-            for (List<org.neo4j.driver.types.Node> nodeList : nodesMap.values()) {
-                for (org.neo4j.driver.types.Node node : nodeList) {
-                    Long id = node.id();
-                    String fullName = node.get("name") != null ? node.get("name").asString() : "Unnamed";
-                    String cmdb = trimAfterLastDot(fullName);
-
-                    ProductInfoShortDTO productInfo = products.stream()
-                            .filter(product -> product.getAlias().equalsIgnoreCase(cmdb))
-                            .findFirst()
-                            .orElse(null);
-
-                    dependentElements.add(DiagramElementDTO.builder()
-                                                  .id(id)
-                                                  .name(trimAfterFirstDot(fullName))
-                                                  .dependentCount(genericRepository.getDependentCountByNodeId(id))
-                                                  .cmdb(cmdb)
-                                                  .critical(productInfo != null ? productInfo.getCritical() : "")
-                                                  .ownerName(productInfo != null ? productInfo.getOwnerName() : "")
-                                                  .build());
-                }
-            }
-
+        if (dependencyRecords.isEmpty()) {
             return ResponseEntity.ok(dependentElements);
         }
 
-    private void putIfNotEmpty(Map<String, List<org.neo4j.driver.types.Node>> map, String key, org.neo4j.driver.Record record) {
-        if (record == null || !record.containsKey(key)) return;
+        var recordDeps = dependencyRecords.get(0);
+
+        Map<String, List<org.neo4j.driver.types.Node>> nodesMap = new HashMap<>();
+
+        switch (nodeType) {
+            case "DeploymentNode":
+                putIfNotEmpty(nodesMap, "deploymentSources", recordDeps);
+                putIfNotEmpty(nodesMap, "infrastructureSources", recordDeps);
+                putIfNotEmpty(nodesMap, "deploymentTargets", recordDeps);
+                putIfNotEmpty(nodesMap, "infrastructureNodes", recordDeps);
+                putIfNotEmpty(nodesMap, "containers", recordDeps);
+                break;
+
+            case "Container":
+                putIfNotEmpty(nodesMap, "containersSources", recordDeps);
+                break;
+
+            case "InfrastructureNode":
+                putIfNotEmpty(nodesMap, "infrastructureSources", recordDeps);
+                putIfNotEmpty(nodesMap, "deploymentSources", recordDeps);
+                break;
+        }
+        List<ProductInfoShortDTO> products = productClient.getAllProductsInfo();
+        for (List<org.neo4j.driver.types.Node> nodeList : nodesMap.values()) {
+            for (org.neo4j.driver.types.Node node : nodeList) {
+                Long id = node.id();
+                String fullName = node.get("name") != null ? node.get("name").asString() : "Unnamed";
+                String cmdb = trimAfterLastDot(fullName);
+
+                ProductInfoShortDTO productInfo = products.stream()
+                        .filter(product -> product.getAlias().equalsIgnoreCase(cmdb))
+                        .findFirst()
+                        .orElse(null);
+
+                dependentElements.add(DiagramElementDTO.builder()
+                                              .id(id)
+                                              .name(trimAfterFirstDot(fullName))
+                                              .dependentCount(genericRepository.getDependentCountByNodeId(id))
+                                              .cmdb(cmdb)
+                                              .critical(productInfo != null ? productInfo.getCritical() : "")
+                                              .ownerName(productInfo != null ? productInfo.getOwnerName() : "")
+                                              .build());
+            }
+        }
+
+        return ResponseEntity.ok(dependentElements);
+    }
+
+    private void putIfNotEmpty(Map<String, List<org.neo4j.driver.types.Node>> map,
+                               String key,
+                               org.neo4j.driver.Record record) {
+        if (record == null || !record.containsKey(key))
+            return;
 
         List<org.neo4j.driver.types.Node> nodes = new ArrayList<>();
         var list = record.get(key).asList();
@@ -860,15 +961,16 @@ public class DiagramService {
             map.put(key, nodes);
         }
     }
-        private String trimAfterFirstDot(String s) {
-            int index = s.indexOf('.');
-            return index < 0 ? s : s.substring(0, index);
-        }
 
-        private String trimAfterLastDot(String s) {
-            int index = s.lastIndexOf('.');
-            return index < 0 ? s : s.substring(index + 1);
-        }
+    private String trimAfterFirstDot(String s) {
+        int index = s.indexOf('.');
+        return index < 0 ? s : s.substring(0, index);
+    }
+
+    private String trimAfterLastDot(String s) {
+        int index = s.lastIndexOf('.');
+        return index < 0 ? s : s.substring(index + 1);
+    }
 
     public ResponseEntity<String> getContextDiagramDot(String cmdb) {
         Set<String> cmdbList = collectUniqueDependentCmdb(cmdb);
@@ -929,5 +1031,24 @@ public class DiagramService {
                 set.add(cmdbValue);
             }
         }
+    }
+
+    public ResponseEntity<List<ContextElementDTO>> getContextElements(String cmdb) {
+        Set<String> dependentCmdbSet = new HashSet<>();
+
+        addCmdbFromResult(dependentCmdbSet, genericRepository.getDependentSystemsRelationship(cmdb));
+        addCmdbFromResult(dependentCmdbSet, genericRepository.getDependentSystemsChildContainerRelationship(cmdb));
+        addCmdbFromResult(dependentCmdbSet, genericRepository.getDependentSystemsChildContainerChildRelationship(cmdb));
+
+        return ResponseEntity.ok(productClient.getAllProductsInfo()
+                                         .stream()
+                                         .filter(product -> dependentCmdbSet.contains(product.getAlias().toLowerCase()))
+                                         .map(product -> ContextElementDTO.builder()
+                                                 .id(Long.parseLong(product.getId()))
+                                                 .cmdb(product.getAlias())
+                                                 .critical(product.getCritical())
+                                                 .ownerName(product.getOwnerName())
+                                                 .build())
+                                         .toList());
     }
 }

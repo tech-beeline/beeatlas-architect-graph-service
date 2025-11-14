@@ -7,11 +7,13 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.beeline.architecting_graph.dto.ContextElementDTO;
 import ru.beeline.architecting_graph.dto.DiagramElementDTO;
 import ru.beeline.architecting_graph.service.createDiagrams.DiagramService;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -72,7 +74,8 @@ public class DiagramController {
                     @ApiResponse(responseCode = "400", description = "Неверный запрос: Unsupported node type или другие ошибки",
                             content = @Content(mediaType = "text/plain"))
             }
-    )    public ResponseEntity<String> getDiagramDeploymentDot(@RequestParam Long id) {
+    )
+    public ResponseEntity<String> getDiagramDeploymentDot(@RequestParam Long id) {
         return diagramService.getDiagramDeploymentDot(id);
     }
 
@@ -94,5 +97,19 @@ public class DiagramController {
     )
     public ResponseEntity<List<DiagramElementDTO>> getDiagramDeploymentElements(@RequestParam Long id) {
         return diagramService.getDiagramDeploymentElements(id);
+    }
+
+    @GetMapping("context/elements")
+    @Operation(
+            summary = "Построение elements",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Успешный ответ",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = DiagramElementDTO.class))),
+                    @ApiResponse(responseCode = "400", description = "Неверный запрос")
+            }
+    )
+    public ResponseEntity<List<ContextElementDTO>> getContextElements(@RequestParam String cmdb) {
+        return diagramService.getContextElements(cmdb);
     }
 }

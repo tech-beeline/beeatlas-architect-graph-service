@@ -10,7 +10,6 @@ import org.springframework.web.client.RestTemplate;
 import ru.beeline.architecting_graph.dto.ProductInfoShortDTO;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 
 @Slf4j
