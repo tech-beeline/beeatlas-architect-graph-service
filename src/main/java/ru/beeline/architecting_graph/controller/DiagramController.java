@@ -107,8 +107,7 @@ public class DiagramController {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Успешный ответ",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = DiagramElementDTO.class))),
-                    @ApiResponse(responseCode = "400", description = "Неверный запрос")
+                                    schema = @Schema(implementation = DiagramElementDTO.class)))
             }
     )
     public ResponseEntity<List<ContextElementDTO>> getContextElements(@RequestParam String cmdb) {
