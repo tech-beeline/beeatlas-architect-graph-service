@@ -17,6 +17,7 @@ import ru.beeline.architecting_graph.client.ProductClient;
 import ru.beeline.architecting_graph.client.StructurizrClient;
 import ru.beeline.architecting_graph.dto.ContextElementDTO;
 import ru.beeline.architecting_graph.dto.DiagramElementDTO;
+import ru.beeline.architecting_graph.dto.DiagramElementInfluenceDTO;
 import ru.beeline.architecting_graph.dto.ProductInfoShortDTO;
 import ru.beeline.architecting_graph.exception.ValidationException;
 import ru.beeline.architecting_graph.model.GraphObject;
@@ -1151,4 +1152,84 @@ public class DiagramService {
         int idx = s.indexOf('.');
         return (idx > 0) ? s.substring(0, idx) : s;
     }
+
+    public ResponseEntity<List<DiagramElementInfluenceDTO>> getInfluenceElements(Long id) {
+        var record = genericRepository.getNodeTypeAndNameById(id);
+        if (!record.hasNext()) {
+            return ResponseEntity.badRequest().build();
+        }
+        var rec = record.next();
+        String nodeType = rec.get("nodeType").asString("");
+        if (nodeType.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        List<org.neo4j.driver.Record> dependencyRecords = new ArrayList<>();
+        Map<String, List<org.neo4j.driver.types.Node>> nodesMap = new HashMap<>();
+
+        switch (nodeType) {
+            case "DeploymentNode":
+                var depResults = genericRepository.getDeploymentNodeDependenciesShort(id);
+                if (depResults.hasNext())
+                    dependencyRecords.add(depResults.next());
+                break;
+
+            case "Container":
+                var containerResults = genericRepository.getContainerDependenciesShort(id);
+                if (containerResults.hasNext())
+                    dependencyRecords.add(containerResults.next());
+                break;
+
+            case "InfrastructureNode":
+                var infraResults = genericRepository.getInfrastructureNodeDependenciesShort(id);
+                if (infraResults.hasNext())
+                    dependencyRecords.add(infraResults.next());
+                break;
+
+            default:
+                return ResponseEntity.badRequest().build();
+        }
+        org.neo4j.driver.Record dependencyRecord = dependencyRecords.get(0);
+
+        List<String> keys = List.of("deploymentSources", "infrastructureSources", "deploymentParent", "containersSources");
+
+        for (String key : keys) {
+            if (dependencyRecord.containsKey(key) && !dependencyRecord.get(key).isNull()) {
+                List<org.neo4j.driver.types.Node> nodeList = dependencyRecord.get(key).asList(value -> value.asNode());
+                if (!nodeList.isEmpty()) {
+                    nodesMap.put(key, nodeList);
+                }
+            }
+        }
+
+        List<ProductInfoShortDTO> products = productClient.getAllProductsInfo();
+        List<DiagramElementInfluenceDTO> dependentElements = new ArrayList<>();
+
+        for (List<org.neo4j.driver.types.Node> nodeList : nodesMap.values()) {
+            for (org.neo4j.driver.types.Node node : nodeList) {
+                Long nodeId = node.id();
+                String fullName = node.get("name") != null ? node.get("name").asString() : "Unnamed";
+
+                String cmdb = trimAfterLastDot(fullName);
+
+                ProductInfoShortDTO productInfo = products.stream()
+                        .filter(product -> product.getAlias().equalsIgnoreCase(cmdb))
+                        .findFirst()
+                        .orElse(null);
+
+                int influenceCount = genericRepository.getDependentCountByNodeId(nodeId);
+
+                dependentElements.add(DiagramElementInfluenceDTO.builder()
+                                              .id(nodeId)
+                                              .name(trimAfterFirstDot(fullName))
+                                              .influenceCount(influenceCount)
+                                              .cmdb(cmdb)
+                                              .critical(productInfo != null ? productInfo.getCritical() : "")
+                                              .ownerName(productInfo != null ? productInfo.getOwnerName() : "")
+                                              .build());
+            }
+        }
+        return ResponseEntity.ok(dependentElements);
+    }
+
 }

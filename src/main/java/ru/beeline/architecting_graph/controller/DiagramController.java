@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.beeline.architecting_graph.dto.ContextElementDTO;
 import ru.beeline.architecting_graph.dto.DiagramElementDTO;
+import ru.beeline.architecting_graph.dto.DiagramElementInfluenceDTO;
 import ru.beeline.architecting_graph.service.createDiagrams.DiagramService;
 
 import java.util.List;
@@ -126,5 +127,19 @@ public class DiagramController {
     )
     public ResponseEntity<String> getInfluenceDot(@RequestParam Long id) {
         return diagramService.getInfluenceDot(id);
+    }
+
+    @GetMapping("/influence/elements")
+    @Operation(
+            summary = "Получение элементов от которых зависит элемент инфраструктуры",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Успешный ответ",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = String.class))),
+                    @ApiResponse(responseCode = "400", description = "Неверный запрос")
+            }
+    )
+    public ResponseEntity<List<DiagramElementInfluenceDTO>> getInfluenceElements(@RequestParam Long id) {
+        return diagramService.getInfluenceElements(id);
     }
 }

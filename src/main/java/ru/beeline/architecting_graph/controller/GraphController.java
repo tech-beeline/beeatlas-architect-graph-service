@@ -61,6 +61,7 @@ public class GraphController {
             @RequestParam String name) {
         return graphConstructionService.getContainerInfluence(cmdb, name);
     }
+
     @GetMapping("/graph/{graph-type}/task/{task-id}")
     @Operation(summary = "Получение статуса графа по taskKey и типу графа")
     public ResponseEntity<TaskCacheDTO> getGraphByTask(@PathVariable("graph-type") String graphType,
