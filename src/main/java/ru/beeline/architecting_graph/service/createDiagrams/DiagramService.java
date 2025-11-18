@@ -1114,7 +1114,7 @@ public class DiagramService {
                                         String key, String idPrefix, String fillColor, String borderColor,
                                         String edgeLabel, String centralNodeId) {
 
-        if (record.get("deploymentSources").toString().equals("[]")) return;
+        if (record.get(key).toString().equals("[]") || record.get(key).toString().equals("NULL")) return;
         List<Object> nodeObjects = record.get(key).asList();
 
         for (Object obj : nodeObjects) {
