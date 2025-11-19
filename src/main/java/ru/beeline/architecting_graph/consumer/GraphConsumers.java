@@ -78,6 +78,48 @@ public class GraphConsumers {
                 TaskCacheDTO newCache = TaskCacheDTO.builder()
                         .id(docId)
                         .taskKey(taskKey)
+                        .status("QUEUE")
+                        .type("local")
+                        .cachedAt(LocalDateTime.now())
+                        .build();
+
+                redisTemplate.opsForValue().set(redisKey, newCache, Duration.ofHours(24));
+                try {
+                        rabbitService.sendMessage("result_local_graph", message);
+                } catch (Exception e) {
+                    log.error("Error send to build-global-graph", taskKey, docId, e);
+                }
+            } else {
+                log.info("Message does not match the required format");
+            }
+        } catch (Exception e) {
+            log.error("Internal server Error: {}", e.getMessage(), e);
+            log.info(e.getMessage());
+        }
+    }
+
+    @RabbitListener(queues = "${queue.build-local-graph.name}")
+    public void buildGlobalGraph(String message) {
+        log.info("Received from build_global_graph: {}", message);
+        try {
+            JsonNode jsonNode = objectMapper.readTree(message);
+            if (jsonNode.has("taskKey") && jsonNode.has("docId")) {
+                String taskKey = jsonNode.get("taskKey").asText();
+                Long docId = jsonNode.get("docId").asLong();
+
+                String redisKey = "graph:" + taskKey;
+
+                TaskCacheDTO existingDto = redisTemplate.opsForValue().get(redisKey);
+                if (existingDto == null || !"local".equalsIgnoreCase(existingDto.getType())
+                        || taskKey.equals(existingDto.getTaskKey())
+                        || !existingDto.getStatus().equals("QUEUE")) {
+                    log.info("Record with taskKey={} and type=local already exists, skipping processing", taskKey);
+                    return;
+                }
+
+                TaskCacheDTO newCache = TaskCacheDTO.builder()
+                        .id(docId)
+                        .taskKey(taskKey)
                         .status("PROCESS")
                         .type("local")
                         .cachedAt(LocalDateTime.now())
@@ -87,6 +129,7 @@ public class GraphConsumers {
                 try {
                     ResponseEntity<String> result = graphConstructionService.graphConstruct(docId, "Local");
                     if (result.getStatusCode().is2xxSuccessful()) {
+                        newCache.setType("local");
                         newCache.setStatus("DONE");
                         redisTemplate.opsForValue().set(redisKey, newCache, Duration.ofHours(24));
 
@@ -101,7 +144,7 @@ public class GraphConsumers {
                 } catch (Exception e) {
                     log.error("Error building graph for taskKey={}, docId={}: {}", taskKey, docId, e);
                     log.info(e.getMessage());
-
+                    newCache.setType("local");
                     newCache.setStatus("ERROR");
                     redisTemplate.opsForValue().set(redisKey, newCache, Duration.ofHours(24));
 
@@ -112,11 +155,10 @@ public class GraphConsumers {
                     ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Документ не найден");
                 }
             } else {
-                log.info("Message does not match the required format");
+                log.error("Message does not match the required format");
             }
         } catch (Exception e) {
             log.error("Internal server Error: {}", e.getMessage(), e);
-            log.info(e.getMessage());
         }
     }
 
