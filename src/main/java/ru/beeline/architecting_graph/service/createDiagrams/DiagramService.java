@@ -1085,7 +1085,7 @@ public class DiagramService {
                 break;
 
             default:
-                return ResponseEntity.badRequest().build();
+                return ResponseEntity.badRequest().body("Unsupported node type: " + nodeType);
         }
 
         Graph graph = new SingleGraph("InfluenceGraph");

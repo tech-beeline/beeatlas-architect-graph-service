@@ -122,7 +122,8 @@ public class DiagramController {
                     @ApiResponse(responseCode = "200", description = "Успешный ответ",
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = String.class))),
-                    @ApiResponse(responseCode = "400", description = "Неверный запрос")
+                    @ApiResponse(responseCode = "400", description = "Неверный запрос: Unsupported node type или другие ошибки",
+                            content = @Content(mediaType = "text/plain"))
             }
     )
     public ResponseEntity<String> getInfluenceDot(@RequestParam Long id) {
