@@ -99,8 +99,8 @@ public class GraphConsumers {
     }
 
     @RabbitListener(queues = "${queue.build-local-graph.name}")
-    public void buildGlobalGraph(String message) {
-        log.info("Received from build_global_graph: {}", message);
+    public void buildLocalGraph(String message) {
+        log.info("Received from build_local_graph: {}", message);
         try {
             JsonNode jsonNode = objectMapper.readTree(message);
             if (jsonNode.has("taskKey") && jsonNode.has("docId")) {
@@ -163,7 +163,7 @@ public class GraphConsumers {
     }
 
     @RabbitListener(queues = "${queue.create-global-graph.name}")
-    public void resultGlobalGraph(String message) {
+    public void createGlobalGraph(String message) {
         log.info("Received from create_global_graph: {}", message);
         try {
             JsonNode jsonNode = objectMapper.readTree(message);
@@ -182,6 +182,48 @@ public class GraphConsumers {
                 TaskCacheDTO newCache = TaskCacheDTO.builder()
                         .id(docId)
                         .taskKey(taskKey)
+                        .status("QUEUE")
+                        .type("global")
+                        .cachedAt(LocalDateTime.now())
+                        .build();
+
+                redisTemplate.opsForValue().set(redisKey, newCache, Duration.ofHours(24));
+                try {
+                    rabbitService.sendMessage("create_global_graph", message);
+                } catch (Exception e) {
+                    log.error("Error sending create_global_graph for taskKey={}, docId={}: {}", taskKey, docId, e);
+
+                }
+            } else {
+                log.error("Message does not match the required format");
+            }
+        } catch (Exception e) {
+            log.error("Internal server Error: {}", e.getMessage(), e);
+        }
+    }
+
+    @RabbitListener(queues = "${queue.build-global-graph.name}")
+    public void buildGlobalGraph(String message) {
+        log.info("Received from build_global_graph: {}", message);
+        try {
+            JsonNode jsonNode = objectMapper.readTree(message);
+            if (jsonNode.has("taskKey") && jsonNode.has("docId")) {
+                String taskKey = jsonNode.get("taskKey").asText();
+                Long docId = jsonNode.get("docId").asLong();
+
+                String redisKey = "graph:" + taskKey;
+
+                TaskCacheDTO existingDto = redisTemplate.opsForValue().get(redisKey);
+                if (existingDto == null
+                        || !"global".equalsIgnoreCase(existingDto.getType())
+                        || !existingDto.getStatus().equals("QUEUE")) {
+                    log.info("Record with taskKey={} and type=global already exists, skipping processing", taskKey);
+                    return;
+                }
+
+                TaskCacheDTO newCache = TaskCacheDTO.builder()
+                        .id(docId)
+                        .taskKey(taskKey)
                         .status("PROCESS")
                         .type("global")
                         .cachedAt(LocalDateTime.now())
@@ -191,6 +233,7 @@ public class GraphConsumers {
                 try {
                     if (graphConstructionService.graphConstruct(docId, "Global").getStatusCode().is2xxSuccessful()) {
 
+                        newCache.setType("global");
                         newCache.setStatus("DONE");
                         redisTemplate.opsForValue().set(redisKey, newCache, Duration.ofHours(24));
 
@@ -202,6 +245,7 @@ public class GraphConsumers {
                 } catch (Exception e) {
                     log.error("Error building graph for taskKey={}, docId={}: {}", taskKey, docId, e);
 
+                    newCache.setType("global");
                     newCache.setStatus("ERROR");
                     redisTemplate.opsForValue().set(redisKey, newCache, Duration.ofHours(24));
 
