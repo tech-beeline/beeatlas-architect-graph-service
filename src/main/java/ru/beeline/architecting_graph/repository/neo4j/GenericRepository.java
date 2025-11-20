@@ -159,7 +159,7 @@ public class GenericRepository {
                 RETURN 
                   collect(DISTINCT deploymentSource) as deploymentSources,
                   collect(DISTINCT infrastructureSource) as infrastructureSources,
-                  collect(DISTINCT deploymentTarget) as deploymentTargets
+                  collect(DISTINCT deploymentTarget) as deploymentParent
         """;
         Value params = Values.parameters("nodeId", nodeId);
         return neo4jSessionManager.getSession().run(cypher, params);
