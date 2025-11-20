@@ -85,7 +85,7 @@ public class GraphConsumers {
 
                 redisTemplate.opsForValue().set(redisKey, newCache, Duration.ofHours(24));
                 try {
-                        rabbitService.sendMessage("result_local_graph", message);
+                        rabbitService.sendMessage("build_local_graph", message);
                 } catch (Exception e) {
                     log.error("Error send to build-global-graph", taskKey, docId, e);
                 }
@@ -189,7 +189,7 @@ public class GraphConsumers {
 
                 redisTemplate.opsForValue().set(redisKey, newCache, Duration.ofHours(24));
                 try {
-                    rabbitService.sendMessage("create_global_graph", message);
+                    rabbitService.sendMessage("build_global_graph", message);
                 } catch (Exception e) {
                     log.error("Error sending create_global_graph for taskKey={}, docId={}: {}", taskKey, docId, e);
 
