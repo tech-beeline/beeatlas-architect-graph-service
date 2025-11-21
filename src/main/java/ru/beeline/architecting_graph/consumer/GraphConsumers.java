@@ -111,7 +111,6 @@ public class GraphConsumers {
 
                 TaskCacheDTO existingDto = redisTemplate.opsForValue().get(redisKey);
                 if (existingDto == null || !"local".equalsIgnoreCase(existingDto.getType())
-                        || taskKey.equals(existingDto.getTaskKey())
                         || !existingDto.getStatus().equals("QUEUE")) {
                     log.info("Record with taskKey={} and type=local already exists, skipping processing", taskKey);
                     return;
