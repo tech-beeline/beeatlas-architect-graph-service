@@ -972,7 +972,11 @@ public class DiagramService {
     }
 
     public ResponseEntity<String> getContextDiagramDot(String cmdb) {
-        Set<String> cmdbList = collectUniqueDependentCmdb(cmdb);
+        Set<String> cmdbList = new HashSet<>();
+        addCmdbFromResult(cmdbList, genericRepository.getDependentSystemsRelationship(cmdb));
+        addCmdbFromResult(cmdbList, genericRepository.getDependentSystemsChildContainerRelationship(cmdb));
+        addCmdbFromResult(cmdbList, genericRepository.getDependentSystemsChildContainerChildRelationship(cmdb));
+
         Graph graph = new SingleGraph("Neo4j Graph");
         graph.setAttribute("rankdir", "RL");
 
@@ -1004,21 +1008,6 @@ public class DiagramService {
 
         String dotFormat = convertToDotFormat(graph);
         return ResponseEntity.ok(dotFormat);
-    }
-
-    public Set<String> collectUniqueDependentCmdb(String cmdb) {
-        Set<String> dependentCmdbSet = new HashSet<>();
-
-        var result1 = genericRepository.getDependentSystemsRelationship(cmdb);
-        addCmdbFromResult(dependentCmdbSet, result1);
-
-        var result2 = genericRepository.getDependentSystemsChildContainerRelationship(cmdb);
-        addCmdbFromResult(dependentCmdbSet, result2);
-
-        var result3 = genericRepository.getDependentSystemsChildContainerChildRelationship(cmdb);
-        addCmdbFromResult(dependentCmdbSet, result3);
-
-        return dependentCmdbSet;
     }
 
     private void addCmdbFromResult(Set<String> set, Result result) {
@@ -1249,6 +1238,45 @@ public class DiagramService {
             .ownerName(product.getOwnerName())
             .build())
             .toList());
+    }
+
+    public ResponseEntity<String> getContextInfluenceDiagramDot(String cmdb) {
+        Set<String> cmdbList = new HashSet<>();
+        addCmdbFromResult(cmdbList, genericRepository.getDependentInfluenceSystem(cmdb));
+        addCmdbFromResult(cmdbList, genericRepository.getDependentSystemsChildContainerRelationship(cmdb));
+        addCmdbFromResult(cmdbList, genericRepository.getDependentSystemsChildContainerChildRelationshipInfluenceSystem(cmdb));
+
+        Graph graph = new SingleGraph("Neo4j Graph");
+        graph.setAttribute("rankdir", "RL");
+
+        org.graphstream.graph.Node centralNode = graph.addNode("central");
+        centralNode.setAttribute("label", cmdb);
+        centralNode.setAttribute("shape", "rect");
+        centralNode.setAttribute("style", "filled");
+        centralNode.setAttribute("color", "green");
+        centralNode.setAttribute("fillcolor", "lightgreen");
+
+        for (String depCmdb : cmdbList) {
+            org.graphstream.graph.Node node;
+            if (graph.getNode(depCmdb) == null) {
+                node = graph.addNode(depCmdb);
+            } else {
+                node = graph.getNode(depCmdb);
+            }
+            node.setAttribute("label", depCmdb);
+            node.setAttribute("shape", "rect");
+            node.setAttribute("style", "filled");
+            node.setAttribute("color", "red");
+            node.setAttribute("fillcolor", "orange");
+
+            String edgeId = depCmdb + "_central";
+            if (graph.getEdge(edgeId) == null) {
+                graph.addEdge(edgeId, depCmdb, "central", true).setAttribute("label", "Вызов");
+            }
+        }
+
+        String dotFormat = convertToDotFormat(graph);
+        return ResponseEntity.ok(dotFormat);
     }
 }
 

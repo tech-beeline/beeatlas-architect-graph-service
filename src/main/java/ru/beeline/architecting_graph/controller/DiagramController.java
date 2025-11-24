@@ -86,6 +86,12 @@ public class DiagramController {
         return diagramService.getContextDiagramDot(cmdb);
     }
 
+    @GetMapping("/context/influence/dot")
+    @Operation(summary = "Построение Deployment диаграммы с влияемыми систетмами в формате DOT")
+    public ResponseEntity<String> getContextInfluenceDiagramDot(@RequestParam String cmdb) {
+        return diagramService.getContextInfluenceDiagramDot(cmdb);
+    }
+
     @GetMapping("/diagram/elements")
     @Operation(
             summary = "Построение elements",
@@ -132,7 +138,7 @@ public class DiagramController {
 
     @GetMapping("/context/influence/elements")
     @Operation(
-            summary = "Получение элементов от которых зависит элемент инфраструктуры",
+            summary = "Получение список влияющих систем",
             responses = {
                     @ApiResponse(responseCode = "200", description = "Успешный ответ",
                             content = @Content(mediaType = "application/json",
