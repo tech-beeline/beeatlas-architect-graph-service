@@ -1232,4 +1232,23 @@ public class DiagramService {
         return ResponseEntity.ok(dependentElements);
     }
 
+    public ResponseEntity<List<ContextElementDTO>> getContextInfluenceElements(String cmdb) {
+    Set<String> dependentCmdbSet = new HashSet<>();
+
+    addCmdbFromResult(dependentCmdbSet, genericRepository.getDependentInfluenceSystem(cmdb));
+    addCmdbFromResult(dependentCmdbSet, genericRepository.getDependentSystemsChildContainerRelationship(cmdb));
+    addCmdbFromResult(dependentCmdbSet, genericRepository.getDependentSystemsChildContainerChildRelationshipInfluenceSystem(cmdb));
+
+        return ResponseEntity.ok(productClient.getAllProductsInfo()
+                .stream()
+                                         .filter(product -> dependentCmdbSet.contains(product.getAlias().toLowerCase()))
+            .map(product -> ContextElementDTO.builder()
+            .id(Long.parseLong(product.getId()))
+            .cmdb(product.getAlias())
+            .critical(product.getCritical())
+            .ownerName(product.getOwnerName())
+            .build())
+            .toList());
+    }
 }
+

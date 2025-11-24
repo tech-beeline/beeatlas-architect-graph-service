@@ -130,7 +130,7 @@ public class DiagramController {
         return diagramService.getInfluenceDot(id);
     }
 
-    @GetMapping("/influence/elements")
+    @GetMapping("/context/influence/elements")
     @Operation(
             summary = "Получение элементов от которых зависит элемент инфраструктуры",
             responses = {
@@ -141,7 +141,7 @@ public class DiagramController {
                             content = @Content(mediaType = "text/plain"))
             }
     )
-    public ResponseEntity<List<DiagramElementInfluenceDTO>> getInfluenceElements(@RequestParam Long id) {
-        return diagramService.getInfluenceElements(id);
+    public ResponseEntity<List<ContextElementDTO>> getInfluenceElements(@RequestParam String cmdb) {
+        return diagramService.getContextInfluenceElements(cmdb);
     }
 }
