@@ -1225,7 +1225,7 @@ public class DiagramService {
     Set<String> dependentCmdbSet = new HashSet<>();
 
     addCmdbFromResult(dependentCmdbSet, genericRepository.getDependentInfluenceSystem(cmdb));
-    addCmdbFromResult(dependentCmdbSet, genericRepository.getDependentSystemsChildContainerRelationship(cmdb));
+    addCmdbFromResult(dependentCmdbSet, genericRepository.getDependentSystemsChildContainerRelationshipInfluence(cmdb));
     addCmdbFromResult(dependentCmdbSet, genericRepository.getDependentSystemsChildContainerChildRelationshipInfluenceSystem(cmdb));
 
         return ResponseEntity.ok(productClient.getAllProductsInfo()
@@ -1243,7 +1243,7 @@ public class DiagramService {
     public ResponseEntity<String> getContextInfluenceDiagramDot(String cmdb) {
         Set<String> cmdbList = new HashSet<>();
         addCmdbFromResult(cmdbList, genericRepository.getDependentInfluenceSystem(cmdb));
-        addCmdbFromResult(cmdbList, genericRepository.getDependentSystemsChildContainerRelationship(cmdb));
+        addCmdbFromResult(cmdbList, genericRepository.getDependentSystemsChildContainerRelationshipInfluence(cmdb));
         addCmdbFromResult(cmdbList, genericRepository.getDependentSystemsChildContainerChildRelationshipInfluenceSystem(cmdb));
 
         Graph graph = new SingleGraph("Neo4j Graph");

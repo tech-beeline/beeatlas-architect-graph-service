@@ -286,6 +286,21 @@ public class GenericRepository {
         Value params = Values.parameters("cmdb", cmdb);
         return neo4jSessionManager.getSession().run(cypher, params);
     }
+ public Result getDependentSystemsChildContainerRelationshipInfluence(String cmdb) {
+        String cypher = """
+        MATCH (softwareSystem2:SoftwareSystem)
+        WHERE toLower(softwareSystem2.cmdb) = toLower($cmdb) AND softwareSystem2.graphTag = "Global"
+        MATCH (softwareSystem2)-[:Child*0..]->(target)
+        WHERE target:Container OR target:Component
+        WITH softwareSystem2, COLLECT(DISTINCT target) + softwareSystem2 AS allTargets
+        MATCH (dependentSystem:SoftwareSystem)-[:Child]->(container:Container)<-[:Relationship]-(target)
+        WHERE target IN allTargets AND dependentSystem <> softwareSystem2
+        RETURN DISTINCT dependentSystem
+        ORDER BY dependentSystem.id
+    """;
+        Value params = Values.parameters("cmdb", cmdb);
+        return neo4jSessionManager.getSession().run(cypher, params);
+    }
 
     public Result getDependentSystemsChildContainerChildRelationship(String cmdb) {
         String cypher = """
