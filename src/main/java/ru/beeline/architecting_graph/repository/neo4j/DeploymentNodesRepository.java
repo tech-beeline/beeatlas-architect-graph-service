@@ -33,12 +33,7 @@ public class DeploymentNodesRepository {
     }
 
     public Result findDeploymentNodesBySearch(String search) {
-        String cypher = "MATCH (n:DeploymentNode) " +
-                "WHERE toLower(n.graphTag) = toLower('Global')" +
-                "AND (toLower(n.host) = toLower($search) OR toLower(n.ip) = toLower($search) OR toLower(n.name) = " +
-                "toLower($search) OR toLower(n.IP) = " +
-                "toLower($search)) " +
-                "RETURN n";
+        String cypher = "MATCH (n:DeploymentNode)\n" + "WHERE toLower(n.graphTag) = toLower('Global')\n" + "  AND (\n" + "    toLower(n.host) CONTAINS toLower($search)\n" + "    OR toLower(n.ip) CONTAINS toLower($search)\n" + "    OR toLower(n.name) CONTAINS toLower($search)\n" + "    OR toLower(n.IP) CONTAINS toLower($search)\n" + "  )\n" + "RETURN n";
         Value parameters = Values.parameters("search", search);
         return neo4jSessionManager.getSession().run(cypher, parameters);
     }
