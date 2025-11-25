@@ -135,6 +135,20 @@ public class DiagramController {
     public ResponseEntity<String> getInfluenceDot(@RequestParam Long id) {
         return diagramService.getInfluenceDot(id);
     }
+    @GetMapping("/influence/elements")
+    @Operation(
+            summary = "Получение элементов от которых зависит элемент инфраструктуры",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Успешный ответ",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = String.class))),
+                    @ApiResponse(responseCode = "400", description = "Неверный запрос",
+                            content = @Content(mediaType = "text/plain"))
+            }
+    )
+    public ResponseEntity<List<DiagramElementInfluenceDTO>> getInfluenceElements(@RequestParam Long id) {
+        return diagramService.getInfluenceElements(id);
+    }
 
     @GetMapping("/context/influence/elements")
     @Operation(
