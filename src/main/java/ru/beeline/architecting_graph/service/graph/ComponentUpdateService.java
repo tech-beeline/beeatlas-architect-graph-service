@@ -118,7 +118,7 @@ public class ComponentUpdateService {
                                  String curVersion, String containerExternalName, HashMap<String, GraphObject> objects) {
         if (container.getComponents() != null) {
             for (Component component : container.getComponents()) {
-                component.setName(component.getName() + "." + container.getName());
+                component.setName(component.getName() + "~" + container.getName());
                 if (component.getProperties() != null && component.getProperties().containsKey("external_name")
                         && component.getProperties().get("external_name") != null) {
                     String componentExternalName = component.getProperties().get("external_name").toString() + "."

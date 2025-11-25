@@ -72,7 +72,7 @@ public class DeploymentNodeUpdateFunctions {
         if (deploymentNode.getInfrastructureNodes() != null) {
             for (InfrastructureNode infrastructureNode : deploymentNode.getInfrastructureNodes()) {
 
-                infrastructureNode.setName(infrastructureNode.getName() + "."
+                infrastructureNode.setName(infrastructureNode.getName() + "~"
                         + deploymentNode.getName().toString());
                 infrastructureNodeUpdateFunctions.updateInfrastructureNode(graphTag, infrastructureNode, curVersion,
                         objects);
@@ -104,7 +104,7 @@ public class DeploymentNodeUpdateFunctions {
                                            String curVersion, String cmdb, Model model, HashMap<String, GraphObject> objects) {
         if (deploymentNode.getChildren() != null) {
             for (DeploymentNode childDeploymentNode : deploymentNode.getChildren()) {
-                childDeploymentNode.setName(childDeploymentNode.getName() + "." + deploymentNode.getName().toString());
+                childDeploymentNode.setName(childDeploymentNode.getName() + "~" + deploymentNode.getName().toString());
                 updateDeploymentNode(graphTag, childDeploymentNode, curVersion, cmdb, model, objects);
                 createExternalObjects.updateChildRelationship(graphTag, model, curVersion, deploymentNode.getId(),
                         childDeploymentNode.getId(), cmdb, objects);

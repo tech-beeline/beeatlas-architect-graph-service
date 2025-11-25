@@ -967,7 +967,7 @@ public class DiagramService {
     }
 
     private String trimAfterLastDot(String s) {
-        int index = s.lastIndexOf('.');
+        int index = s.lastIndexOf('~');
         return index < 0 ? s : s.substring(index + 1);
     }
 

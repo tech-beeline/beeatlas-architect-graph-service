@@ -208,7 +208,7 @@ public class ContainerUpdateFunctions {
                                  String cmdb, String curVersion, HashMap<String, GraphObject> objects) {
         if (softwareSystem.getContainers() != null) {
             for (Container container : softwareSystem.getContainers()) {
-                container.setName(container.getName() + "." + cmdb.toString());
+                container.setName(container.getName() + "~" + cmdb.toString());
                 String containerExternalName = cmdb;
                 if (container.getProperties() != null && container.getProperties().containsKey("external_name")
                         && container.getProperties().get("external_name") != null) {
@@ -312,7 +312,7 @@ public class ContainerUpdateFunctions {
                                       String cmdb, String curVersion, HashMap<String, GraphObject> objects) {
         if (model.getDeploymentNodes() != null) {
             for (DeploymentNode deploymentNode : model.getDeploymentNodes()) {
-                deploymentNode.setName(deploymentNode.getName() + "." + cmdb.toString());
+                deploymentNode.setName(deploymentNode.getName() + "~" + cmdb.toString());
                 deploymentNodeUpdateFunctions.updateDeploymentNode(graphTag, deploymentNode, curVersion, cmdb,
                         model,
                         objects);
