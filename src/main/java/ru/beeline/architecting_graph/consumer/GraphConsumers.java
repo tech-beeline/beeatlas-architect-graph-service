@@ -240,6 +240,8 @@ public class GraphConsumers {
                         item.put("taskKey", taskKey);
                         item.put("status", "DONE");
                         rabbitService.sendMessage("result_global_graph", objectMapper.writeValueAsString(item));
+                    } else {
+                        throw new Exception("graph does not created");
                     }
                 } catch (Exception e) {
                     log.error("Error building graph for taskKey={}, docId={}: {}", taskKey, docId, e);
