@@ -32,4 +32,9 @@ public class JwtUtils {
         return null;
     }
 
+    public static boolean isIpAddress(String input) {
+        String ipPattern =
+                "^((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.|$)){4}$";
+        return input != null && input.matches(ipPattern);
+    }
 }

@@ -12,10 +12,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.server.ResponseStatusException;
 import ru.beeline.architecting_graph.client.DocumentClient;
-import ru.beeline.architecting_graph.dto.DeploymentNodeDTO;
-import ru.beeline.architecting_graph.dto.InfluenceResponseDTO;
-import ru.beeline.architecting_graph.dto.SearchSoftwareSystemDTO;
-import ru.beeline.architecting_graph.dto.TaskCacheDTO;
+import ru.beeline.architecting_graph.client.ProductClient;
+import ru.beeline.architecting_graph.dto.*;
 import ru.beeline.architecting_graph.model.Workspace;
 import ru.beeline.architecting_graph.repository.neo4j.*;
 
@@ -24,6 +22,9 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+import static ru.beeline.architecting_graph.utils.JwtUtils.isIpAddress;
 
 @Slf4j
 @Service
@@ -53,6 +54,8 @@ public class GraphConstructionService {
     private ContainerRepository containerRepository;
     @Autowired
     private ComponentRepository componentRepository;
+    @Autowired
+    private ProductClient productClient;
 
     public ResponseEntity<String> graphConstruct(Long docId, String graphTag) {
         log.info("graphConstruct is running");
@@ -128,6 +131,20 @@ public class GraphConstructionService {
     public ResponseEntity<List<DeploymentNodeDTO>> getDeploymentNode(String search) {
         List<DeploymentNodeDTO> result = new ArrayList<>();
         Result deploymentNodes = deploymentNodesRepository.findDeploymentNodesBySearch(search);
+        if(!deploymentNodes.hasNext() && isIpAddress(search))
+        {
+            List<ProductInfraSearchDTO> products = productClient.getProductInfraByVimIp(search);
+            if(products.isEmpty()){
+                ResponseEntity.ok(result);
+            }
+            List<String> originNames = products.stream()
+                    .map(ProductInfraSearchDTO::getName)
+                    .collect(Collectors.toList());
+
+            deploymentNodesRepository.updateIpForDeploymentNodesByOriginNames(originNames, products.get(0).getValue());
+
+            deploymentNodes = deploymentNodesRepository.findDeploymentNodesBySearch(search);
+        }
         while (deploymentNodes.hasNext()) {
             Record deployment = deploymentNodes.next();
             Record system = getParentSoftwareSystem(deployment.get("n").asNode().id());

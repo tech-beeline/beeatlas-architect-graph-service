@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import ru.beeline.architecting_graph.dto.ProductInfoShortDTO;
+import ru.beeline.architecting_graph.dto.ProductInfraSearchDTO;
 
 import java.util.List;
 
@@ -44,6 +45,32 @@ public class ProductClient {
             return List.of();
         } catch (Exception e) {
             log.error("Exception calling product service: " + e.getMessage(), e);
+            return List.of();
+        }
+    }
+
+    public List<ProductInfraSearchDTO> getProductInfraByVimIp(String search) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            String url = String.format("%s/api/v1/product/infra/search?parameter=vimIp&value=%s", productServerUrl, search);
+
+            log.info("Request to Product ServerUrl: GET " + url);
+
+            ResponseEntity<List<ProductInfraSearchDTO>> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    new HttpEntity<>(headers),
+                    new ParameterizedTypeReference<List<ProductInfraSearchDTO>>() {}
+            );
+            log.info("Response from Product ServerUrl: " + response.getBody());
+            return response.getBody();
+        } catch (HttpClientErrorException.NotFound e) {
+            log.warn("Product infra search endpoint not found: " + e.getMessage());
+            return List.of();
+        } catch (Exception e) {
+            log.error("Exception calling product infra search service: " + e.getMessage(), e);
             return List.of();
         }
     }
