@@ -241,6 +241,29 @@ public class GenericRepository {
         }
     }
 
+    public int getDependentCount(Long nodeId) {
+        String cypher = """
+                MATCH (n)
+                 WHERE id(n) =$nodeId
+                 OPTIONAL MATCH (n)-[incoming_rel:Relationship]->(incoming_node)
+                 WITH n, collect(DISTINCT incoming_node) as unique_incoming_nodes
+                 OPTIONAL MATCH (n)<-[outgoing_child:Child]-(parent)
+                 WHERE NOT parent:Environment AND NOT parent:SoftwareSystem
+                 WITH n, unique_incoming_nodes, count(DISTINCT outgoing_child) as outgoing_child_count\s
+                 RETURN\s
+                 size(unique_incoming_nodes) + outgoing_child_count as totalConnections
+    """;
+        Value params = Values.parameters("nodeId", nodeId);
+        var result = neo4jSessionManager.getSession().run(cypher, params);
+
+        if (result.hasNext()) {
+            var record = result.next();
+            return record.get("totalConnections").asInt(0);
+        } else {
+            return 0;
+        }
+    }
+
     public Result getDependentSystemsRelationship(String cmdb) {
         String cypher = """
         MATCH (softwareSystem2:SoftwareSystem)

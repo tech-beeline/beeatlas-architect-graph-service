@@ -1206,7 +1206,7 @@ public class DiagramService {
                         .findFirst()
                         .orElse(null);
 
-                int influenceCount = genericRepository.getDependentCountByNodeId(nodeId);
+                int influenceCount = genericRepository.getDependentCount(nodeId);
 
                 dependentElements.add(DiagramElementInfluenceDTO.builder()
                                               .id(nodeId)
