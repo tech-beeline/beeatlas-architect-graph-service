@@ -1271,7 +1271,7 @@ public class DiagramService {
 
             String edgeId = depCmdb + "_central";
             if (graph.getEdge(edgeId) == null) {
-                graph.addEdge(edgeId, depCmdb, "central", true).setAttribute("label", "Вызов");
+                graph.addEdge(edgeId, "central", depCmdb, true).setAttribute("label", "Вызов");
             }
         }
 
