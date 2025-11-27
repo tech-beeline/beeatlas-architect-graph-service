@@ -154,6 +154,11 @@ public class GraphConstructionService {
                                .deploymentName(deployment.get("n").asNode().get("name").asString())
                                .environmentName(environment.get("parent.name").asString())
                                .cmdb(system.get("d").asNode().get("cmdb").asString())
+                               .ip(deployment.get("n").asNode().containsKey("ip") ? deployment.get("n").asNode().get(
+                                       "ip").asString() : null)
+                               .host(deployment.get("n").asNode().containsKey("host") ?
+                                             deployment.get("n").asNode().get(
+                                       "host").asString() : null)
                                .build());
         }
 

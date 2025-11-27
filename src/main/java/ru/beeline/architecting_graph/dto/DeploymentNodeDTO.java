@@ -14,4 +14,6 @@ public class DeploymentNodeDTO {
     private String deploymentName;
     private String cmdb;
     private String environmentName;
+    private String ip;
+    private String host;
 }
