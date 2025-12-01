@@ -11,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.server.ResponseStatusException;
-import ru.beeline.architecting_graph.client.DocumentClient;
 import ru.beeline.architecting_graph.client.ProductClient;
 import ru.beeline.architecting_graph.dto.*;
 import ru.beeline.architecting_graph.model.Workspace;
@@ -34,9 +33,6 @@ public class GraphConstructionService {
     EnvironmentRepository environmentRepository;
 
     @Autowired
-    DocumentClient documentClient;
-
-    @Autowired
     ContainerUpdateFunctions containerUpdateFunctions;
 
     @Autowired
@@ -57,9 +53,8 @@ public class GraphConstructionService {
     @Autowired
     private ProductClient productClient;
 
-    public ResponseEntity<String> graphConstruct(Long docId, String graphTag) {
+    public ResponseEntity<String> graphConstruct(String workspaceJson, String graphTag) {
         log.info("graphConstruct is running");
-        String workspaceJson = getWorkspaceJson(docId);
         if (workspaceJson == null) {
             log.info("Документ не найден");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Документ не найден");
@@ -80,16 +75,6 @@ public class GraphConstructionService {
         }
         log.info("graph constructed");
         return ResponseEntity.status(HttpStatus.CREATED).body("Граф построен");
-    }
-
-    private String getWorkspaceJson(Long docId) {
-        try {
-            return documentClient.getDocument(docId);
-        } catch (HttpClientErrorException e) {
-            return handleClientError(e);
-        } catch (Exception e) {
-            return null;
-        }
     }
 
     private String handleClientError(HttpClientErrorException e) {
@@ -131,10 +116,9 @@ public class GraphConstructionService {
     public ResponseEntity<List<DeploymentNodeDTO>> getDeploymentNode(String search) {
         List<DeploymentNodeDTO> result = new ArrayList<>();
         Result deploymentNodes = deploymentNodesRepository.findDeploymentNodesBySearch(search);
-        if(!deploymentNodes.hasNext() && isIpAddress(search))
-        {
+        if (!deploymentNodes.hasNext() && isIpAddress(search)) {
             List<ProductInfraSearchDTO> products = productClient.getProductInfraByVimIp(search);
-            if(products.isEmpty()){
+            if (products.isEmpty()) {
                 ResponseEntity.ok(result);
             }
             List<String> originNames = products.stream()
@@ -154,11 +138,14 @@ public class GraphConstructionService {
                                .deploymentName(deployment.get("n").asNode().get("name").asString())
                                .environmentName(environment.get("parent.name").asString())
                                .cmdb(system.get("d").asNode().get("cmdb").asString())
-                               .ip(deployment.get("n").asNode().containsKey("ip") ? deployment.get("n").asNode().get(
-                                       "ip").asString() : null)
-                               .host(deployment.get("n").asNode().containsKey("host") ?
-                                             deployment.get("n").asNode().get(
-                                       "host").asString() : null)
+                               .ip(deployment.get("n").asNode().containsKey("ip") ? deployment.get("n")
+                                       .asNode()
+                                       .get("ip")
+                                       .asString() : null)
+                               .host(deployment.get("n").asNode().containsKey("host") ? deployment.get("n")
+                                       .asNode()
+                                       .get("host")
+                                       .asString() : null)
                                .build());
         }
 
@@ -201,7 +188,8 @@ public class GraphConstructionService {
                                .cmdb(softwareSystem.get("n").asNode().get("cmdb").asString())
                                .build());
         }
-    return ResponseEntity.ok(result);}
+        return ResponseEntity.ok(result);
+    }
 
     public ResponseEntity<InfluenceResponseDTO> getContainerInfluence(String cmdb, String name) {
         if (!softwareSystemRepository.productExists(cmdb)) {
@@ -212,10 +200,11 @@ public class GraphConstructionService {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
 
-        Set<String> dependentSystems =
-                new HashSet<>(softwareSystemRepository.findDependentSystemsByContainerId(containerId));
+        Set<String> dependentSystems = new HashSet<>(softwareSystemRepository.findDependentSystemsByContainerId(
+                containerId));
 
-        Set<String> influencingSystems = new HashSet<>(softwareSystemRepository.findInfluencingSystemsByNodeId(containerId));
+        Set<String> influencingSystems = new HashSet<>(softwareSystemRepository.findInfluencingSystemsByNodeId(
+                containerId));
 
         List<Long> components = componentRepository.findComponentsByContainer(containerId);
         for (Long componentId : components) {
@@ -224,8 +213,8 @@ public class GraphConstructionService {
         }
 
         return ResponseEntity.ok(InfluenceResponseDTO.builder()
-                .dependentSystems(new ArrayList<>(dependentSystems))
-                .influencingSystems(new ArrayList<>(influencingSystems))
-                .build());
+                                         .dependentSystems(new ArrayList<>(dependentSystems))
+                                         .influencingSystems(new ArrayList<>(influencingSystems))
+                                         .build());
     }
 }

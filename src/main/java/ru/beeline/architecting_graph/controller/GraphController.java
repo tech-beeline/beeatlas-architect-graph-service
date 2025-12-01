@@ -69,16 +69,16 @@ public class GraphController {
         return graphConstructionService.getGraphByTask(graphType, taskId);
     }
 
-    @PostMapping("/graph/local/{docId}")
+    @PostMapping("/graph/local/json")
     @Operation(summary = "Пересоздание локального графа, используя документ, в котором описывается система (все вершины и связи помечаются graphTag: Local)")
-    public ResponseEntity<String> LocalGraph(@PathVariable("docId") Long docId) {
-        return graphConstructionService.graphConstruct(docId, "Local");
+    public ResponseEntity<String> LocalGraph(@RequestBody String json) {
+        return graphConstructionService.graphConstruct(json, "Local");
     }
 
-    @PostMapping("/graph/{docId}")
+    @PostMapping("/graph/json")
     @Operation(summary = "Добавление системы из указанного документа в глобальный граф (все вершины и связи помечаются graphTag: Global)")
-    public ResponseEntity<String> GlobalGraph(@PathVariable("docId") Long docId) {
-        return graphConstructionService.graphConstruct(docId, "Global");
+    public ResponseEntity<String> GlobalGraph(@RequestBody String json) {
+        return graphConstructionService.graphConstruct(json, "Global");
     }
 
     @GetMapping("/graph/product/{cmdb}/influence")
