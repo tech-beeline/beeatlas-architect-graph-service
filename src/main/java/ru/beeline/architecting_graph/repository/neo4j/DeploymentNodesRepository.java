@@ -141,7 +141,7 @@ public class DeploymentNodesRepository {
     public void updateIpForDeploymentNodesByOriginNames(List<String> originNames, String ipValue) {
         String cypher =
                 "MATCH (n:DeploymentNode {graphTag: 'Global'}) " +
-                        "WHERE n.nameSTARTS WITH $originNames " +
+                        "WHERE n.name STARTS WITH $originNames " +
                         "SET n.ip = $ipValue";
         Value params = Values.parameters("originNames", originNames, "ipValue", ipValue);
         neo4jSessionManager.getSession().run(cypher, params);
