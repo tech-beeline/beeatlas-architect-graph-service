@@ -140,8 +140,9 @@ public class GraphConstructionService {
             List<String> originNames = products.stream()
                     .map(ProductInfraSearchDTO::getName)
                     .collect(Collectors.toList());
-
-            deploymentNodesRepository.updateIpForDeploymentNodesByOriginNames(originNames, products.get(0).getValue());
+            originNames.forEach(name-> {
+                deploymentNodesRepository.updateIpForDeploymentNodesByOriginNames(name, products.get(0).getValue());
+            });
 
             deploymentNodes = deploymentNodesRepository.findDeploymentNodesBySearch(search);
         }

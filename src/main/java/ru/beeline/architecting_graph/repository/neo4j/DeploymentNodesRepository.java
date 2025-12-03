@@ -33,7 +33,11 @@ public class DeploymentNodesRepository {
     }
 
     public Result findDeploymentNodesBySearch(String search) {
-        String cypher = "MATCH (n:DeploymentNode)\n" + "WHERE toLower(n.graphTag) = toLower('Global')\n" + "  AND (\n" + "    toLower(n.host) CONTAINS toLower($search)\n" + "    OR toLower(n.ip) CONTAINS toLower($search)\n" + "    OR toLower(n.name) CONTAINS toLower($search)\n" + "    OR toLower(n.IP) CONTAINS toLower($search)\n" + "  )\n" + "RETURN n";
+        String cypher = "MATCH (n:DeploymentNode)\n" + "WHERE toLower(n.graphTag) = toLower('Global')\n" + "  AND (\n"
+                + "    toLower(n.host) CONTAINS toLower($search)\n" +
+                "    OR toLower(n.ip) CONTAINS toLower($search)\n" +
+                "    OR toLower(n.name) CONTAINS toLower($search)\n" +
+                "    OR toLower(n.IP) CONTAINS toLower($search)\n" + "  )\n" + "RETURN n";
         Value parameters = Values.parameters("search", search);
         return neo4jSessionManager.getSession().run(cypher, parameters);
     }
@@ -138,12 +142,12 @@ public class DeploymentNodesRepository {
         return neo4jSessionManager.getSession().run(cypher, params);
     }
 
-    public void updateIpForDeploymentNodesByOriginNames(List<String> originNames, String ipValue) {
+    public void updateIpForDeploymentNodesByOriginNames(String originName, String ipValue) {
         String cypher =
                 "MATCH (n:DeploymentNode {graphTag: 'Global'}) " +
-                        "WHERE n.name STARTS WITH $originNames " +
+                        "WHERE n.name STARTS WITH originName " +
                         "SET n.ip = $ipValue";
-        Value params = Values.parameters("originNames", originNames, "ipValue", ipValue);
+        Value params = Values.parameters("originName", originName, "ipValue", ipValue);
         neo4jSessionManager.getSession().run(cypher, params);
     }
 }
