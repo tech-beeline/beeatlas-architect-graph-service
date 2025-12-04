@@ -272,7 +272,7 @@ public class GenericRepository {
         WHERE target:Container OR target:Component
         WITH softwareSystem2, COLLECT(DISTINCT target) + softwareSystem2 AS allTargets
         MATCH (dependentSystem:SoftwareSystem)-[:Relationship]->(target)
-        WHERE target IN allTargets AND dependentSystem <> softwareSystem2
+        WHERE target IN allTargets AND dependentSystem <> softwareSystem2 AND target.endVersion IS NULL
         RETURN DISTINCT dependentSystem
     """;
         Value params = Values.parameters("cmdb", cmdb);
@@ -287,14 +287,14 @@ public class GenericRepository {
                 WHERE target:Container OR target:Component
                 WITH softwareSystem2, COLLECT(DISTINCT target) + softwareSystem2 AS allTargets
                 MATCH (dependentSystem:SoftwareSystem)<-[:Relationship]-(target)
-                WHERE target IN allTargets 
+                WHERE target IN allTargets AND target.endVersion IS NULL
                   AND dependentSystem <> softwareSystem2 RETURN DISTINCT dependentSystem
     """;
         Value params = Values.parameters("cmdb", cmdb);
         return neo4jSessionManager.getSession().run(cypher, params);
     }
 
-    public Result getDependentSystemsChildContainerRelationship(String cmdb) {
+    public Result  getDependentSystemsChildContainerRelationship(String cmdb) {
         String cypher = """
         MATCH (softwareSystem2:SoftwareSystem)
         WHERE toLower(softwareSystem2.cmdb) = toLower($cmdb) AND softwareSystem2.graphTag = "Global"
@@ -302,7 +302,7 @@ public class GenericRepository {
         WHERE target:Container OR target:Component
         WITH softwareSystem2, COLLECT(DISTINCT target) + softwareSystem2 AS allTargets
         MATCH (dependentSystem:SoftwareSystem)-[:Child]->(container:Container)-[:Relationship]->(target)
-        WHERE target IN allTargets AND dependentSystem <> softwareSystem2
+        WHERE target IN allTargets AND dependentSystem <> softwareSystem2 AND target.endVersion IS NULL
         RETURN DISTINCT dependentSystem
         ORDER BY dependentSystem.id
     """;
@@ -317,7 +317,7 @@ public class GenericRepository {
         WHERE target:Container OR target:Component
         WITH softwareSystem2, COLLECT(DISTINCT target) + softwareSystem2 AS allTargets
         MATCH (dependentSystem:SoftwareSystem)-[:Child]->(container:Container)<-[:Relationship]-(target)
-        WHERE target IN allTargets AND dependentSystem <> softwareSystem2
+        WHERE target IN allTargets AND dependentSystem <> softwareSystem2 AND target.endVersion IS NULL
         RETURN DISTINCT dependentSystem
         ORDER BY dependentSystem.id
     """;
@@ -333,7 +333,7 @@ public class GenericRepository {
         WHERE target:Container OR target:Component
         WITH softwareSystem2, COLLECT(DISTINCT target) + softwareSystem2 AS allTargets
         MATCH (dependentSystem:SoftwareSystem)-[:Child]->(:Container)-[:Child]->(component:Component)-[:Relationship]->(target)
-        WHERE target IN allTargets AND dependentSystem <> softwareSystem2
+        WHERE target IN allTargets AND dependentSystem <> softwareSystem2 AND target.endVersion IS NULL
         RETURN DISTINCT dependentSystem
         ORDER BY dependentSystem.id
     """;
@@ -348,7 +348,7 @@ public class GenericRepository {
         WHERE target:Container OR target:Component
         WITH softwareSystem2, COLLECT(DISTINCT target) + softwareSystem2 AS allTargets
         MATCH (dependentSystem:SoftwareSystem)-[:Child]->(:Container)-[:Child]->(component:Component)<-[:Relationship]-(target)
-        WHERE target IN allTargets AND dependentSystem <> softwareSystem2
+        WHERE target IN allTargets AND dependentSystem <> softwareSystem2 AND target.endVersion IS NULL
         RETURN DISTINCT dependentSystem
         ORDER BY dependentSystem.id
     """;
