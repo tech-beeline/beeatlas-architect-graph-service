@@ -173,6 +173,7 @@ public class GraphConstructionService {
             Long parentSystemId = record.get("parent").asNode().id();
             return softwareSystemRepository.getSystemById(parentSystemId).next();
         } else {
+            log.info("search ParentDeployment for id=" + id);
             Result parentNodeResult = deploymentNodesRepository.getParentDeploymentNodeId(id);
             Record record = parentNodeResult.next();
             Long parentNodeId = record.get("parent").asNode().id();
