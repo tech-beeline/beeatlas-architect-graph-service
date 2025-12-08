@@ -87,7 +87,7 @@ public class DiagramController {
     }
 
     @GetMapping("/context/influence/dot")
-    @Operation(summary = "Построение Deployment диаграммы с влияемыми систетмами в формате DOT")
+    @Operation(summary = "Построение Deployment диаграммы с влияемыми системами в формате DOT")
     public ResponseEntity<String> getContextInfluenceDiagramDot(@RequestParam String cmdb) {
         return diagramService.getContextInfluenceDiagramDot(cmdb);
     }

@@ -271,8 +271,8 @@ public class GenericRepository {
         MATCH (softwareSystem2)-[:Child*0..]->(target)
         WHERE target:Container OR target:Component
         WITH softwareSystem2, COLLECT(DISTINCT target) + softwareSystem2 AS allTargets
-        MATCH (dependentSystem:SoftwareSystem)-[:Relationship]->(target)
-        WHERE target IN allTargets AND dependentSystem <> softwareSystem2 AND target.endVersion IS NULL
+        MATCH (dependentSystem:SoftwareSystem)-[r:Relationship]->(target)
+        WHERE target IN allTargets AND dependentSystem <> softwareSystem2 AND target.endVersion IS NULL AND r.endVersion IS NULL
         RETURN DISTINCT dependentSystem
     """;
         Value params = Values.parameters("cmdb", cmdb);
@@ -286,8 +286,8 @@ public class GenericRepository {
                 MATCH (softwareSystem2)-[:Child*0..]->(target)
                 WHERE target:Container OR target:Component
                 WITH softwareSystem2, COLLECT(DISTINCT target) + softwareSystem2 AS allTargets
-                MATCH (dependentSystem:SoftwareSystem)<-[:Relationship]-(target)
-                WHERE target IN allTargets AND target.endVersion IS NULL
+                MATCH (dependentSystem:SoftwareSystem)<-[r:Relationship]-(target)
+                WHERE target IN allTargets AND target.endVersion IS NULL AND r.endVersion IS NULL
                   AND dependentSystem <> softwareSystem2 RETURN DISTINCT dependentSystem
     """;
         Value params = Values.parameters("cmdb", cmdb);
@@ -301,8 +301,8 @@ public class GenericRepository {
         MATCH (softwareSystem2)-[:Child*0..]->(target)
         WHERE target:Container OR target:Component
         WITH softwareSystem2, COLLECT(DISTINCT target) + softwareSystem2 AS allTargets
-        MATCH (dependentSystem:SoftwareSystem)-[:Child]->(container:Container)-[:Relationship]->(target)
-        WHERE target IN allTargets AND dependentSystem <> softwareSystem2 AND target.endVersion IS NULL
+        MATCH (dependentSystem:SoftwareSystem)-[:Child]->(container:Container)-[r:Relationship]->(target)
+        WHERE target IN allTargets AND dependentSystem <> softwareSystem2 AND target.endVersion IS NULL AND r.endVersion IS NULL
         RETURN DISTINCT dependentSystem
         ORDER BY dependentSystem.id
     """;
@@ -316,8 +316,8 @@ public class GenericRepository {
         MATCH (softwareSystem2)-[:Child*0..]->(target)
         WHERE target:Container OR target:Component
         WITH softwareSystem2, COLLECT(DISTINCT target) + softwareSystem2 AS allTargets
-        MATCH (dependentSystem:SoftwareSystem)-[:Child]->(container:Container)<-[:Relationship]-(target)
-        WHERE target IN allTargets AND dependentSystem <> softwareSystem2 AND target.endVersion IS NULL
+        MATCH (dependentSystem:SoftwareSystem)-[:Child]->(container:Container)<-[r:Relationship]-(target)
+        WHERE target IN allTargets AND dependentSystem <> softwareSystem2 AND target.endVersion IS NULL AND r.endVersion IS NULL
         RETURN DISTINCT dependentSystem
         ORDER BY dependentSystem.id
     """;
@@ -332,8 +332,8 @@ public class GenericRepository {
         MATCH (softwareSystem2)-[:Child*0..]->(target)
         WHERE target:Container OR target:Component
         WITH softwareSystem2, COLLECT(DISTINCT target) + softwareSystem2 AS allTargets
-        MATCH (dependentSystem:SoftwareSystem)-[:Child]->(:Container)-[:Child]->(component:Component)-[:Relationship]->(target)
-        WHERE target IN allTargets AND dependentSystem <> softwareSystem2 AND target.endVersion IS NULL
+        MATCH (dependentSystem:SoftwareSystem)-[:Child]->(:Container)-[:Child]->(component:Component)-[r:Relationship]->(target)
+        WHERE target IN allTargets AND dependentSystem <> softwareSystem2 AND target.endVersion IS NULL AND r.endVersion IS NULL
         RETURN DISTINCT dependentSystem
         ORDER BY dependentSystem.id
     """;
@@ -347,8 +347,8 @@ public class GenericRepository {
         MATCH (softwareSystem2)-[:Child*0..]->(target)
         WHERE target:Container OR target:Component
         WITH softwareSystem2, COLLECT(DISTINCT target) + softwareSystem2 AS allTargets
-        MATCH (dependentSystem:SoftwareSystem)-[:Child]->(:Container)-[:Child]->(component:Component)<-[:Relationship]-(target)
-        WHERE target IN allTargets AND dependentSystem <> softwareSystem2 AND target.endVersion IS NULL
+        MATCH (dependentSystem:SoftwareSystem)-[:Child]->(:Container)-[:Child]->(component:Component)<-[r:Relationship]-(target)
+        WHERE target IN allTargets AND dependentSystem <> softwareSystem2 AND target.endVersion IS NULL AND r.endVersion IS NULL
         RETURN DISTINCT dependentSystem
         ORDER BY dependentSystem.id
     """;
