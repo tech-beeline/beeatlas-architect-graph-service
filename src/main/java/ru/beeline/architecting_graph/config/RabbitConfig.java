@@ -20,6 +20,9 @@ import ru.beeline.architecting_graph.client.AuthSSOClient;
 public class RabbitConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(RabbitConfig.class);
 
+    @Value("${app.ambassador-auth}")
+    private Boolean ambassadorAuth;
+
     @Value("${spring.rabbitmq.username}")
     private String userName;
 
@@ -31,7 +34,6 @@ public class RabbitConfig {
 
     @Value("${queue.create-local-graph.name}")
     private String queueName;
-
 
     @Value("${spring.rabbitmq.template.exchange}")
     private String topicExchangeName;
@@ -63,8 +65,17 @@ public class RabbitConfig {
 
     @Bean
     public CachingConnectionFactory connectionFactory() {
-        return createConnectionFactoryWithToken();
+        return ambassadorAuth ? createConnectionFactoryWithToken() : createConnectionFactoryWithPass();
     }
+
+    public CachingConnectionFactory createConnectionFactoryWithPass() {
+        CachingConnectionFactory cachingConnectionFactory = new CachingConnectionFactory(connectFactoryName);
+        cachingConnectionFactory.setUsername(userName);
+        cachingConnectionFactory.setPassword(password);
+        cachingConnectionFactory.setVirtualHost(virtualHost);
+        return cachingConnectionFactory;
+    }
+
 
     private CachingConnectionFactory createConnectionFactoryWithToken() {
         CachingConnectionFactory factory = new CachingConnectionFactory(connectFactoryName);
