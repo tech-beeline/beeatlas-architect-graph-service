@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024 PJSC VimpelCom
+ */
+
 package ru.beeline.architecting_graph.controller;
 
 import io.swagger.v3.oas.annotations.Operation;

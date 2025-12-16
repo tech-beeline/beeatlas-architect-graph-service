@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024 PJSC VimpelCom
+ */
+
 package com.example.architecting_graph;
 
 import org.junit.jupiter.api.Test;

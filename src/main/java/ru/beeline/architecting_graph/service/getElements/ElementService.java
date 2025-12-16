@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024 PJSC VimpelCom
+ */
+
 package ru.beeline.architecting_graph.service.getElements;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
