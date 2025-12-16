@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024 PJSC VimpelCom
+ */
+
 package ru.beeline.architecting_graph;
 
 import org.springframework.boot.SpringApplication;
