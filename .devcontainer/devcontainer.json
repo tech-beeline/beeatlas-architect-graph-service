@@ -3,16 +3,16 @@
     "dockerComposeFile": "../docker-compose.yml",
     "service": "app",
     "workspaceFolder": "/app",
-    "postCreateCommand": "mvn clean install", // Команда, выполняемая после создания контейнера
+    "postCreateCommand": "mvn clean install",
     "customizations": {
         "vscode": {
             "settings": {
-                "java.home": "/usr/local/openjdk-17" // Указываем путь к Java 17
+                "java.home": "/usr/local/openjdk-17"
             },
             "extensions": [
-                "vscjava.vscode-java-pack", // Расширения для Java
-                "pivotal.vscode-spring-boot", // Расширение для Spring Boot
-                "vscjava.vscode-maven" // Расширение для Maven
+                "vscjava.vscode-java-pack",
+                "pivotal.vscode-spring-boot",
+                "vscjava.vscode-maven"
             ]
         }
     }
