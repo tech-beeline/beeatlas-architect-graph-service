@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -24,6 +26,7 @@ import java.util.Set;
 @Slf4j
 @Component
 @EnableRabbit
+@ConditionalOnProperty(name = "app.feature.use-doc-service", havingValue = "true")
 public class GraphConsumers {
 
     private final ObjectMapper objectMapper;
@@ -34,7 +37,7 @@ public class GraphConsumers {
     public GraphConsumers(ObjectMapper objectMapper,
                           RabbitService rabbitService,
                           GraphConstructionService graphConstructionService,
-                          RedisTemplate<String, TaskCacheDTO> redisTemplate) {
+                          @Autowired(required = false) RedisTemplate<String, TaskCacheDTO> redisTemplate) {
         this.objectMapper = objectMapper;
         this.rabbitService = rabbitService;
         this.graphConstructionService = graphConstructionService;

@@ -39,7 +39,7 @@ public class GraphConstructionService {
     @Autowired
     ContainerUpdateFunctions containerUpdateFunctions;
 
-    @Autowired
+    @Autowired(required = false)
     RedisTemplate<String, TaskCacheDTO> redisTemplate;
 
     @Autowired
