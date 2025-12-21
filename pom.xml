@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>ru.beeline</groupId>
 	<artifactId>architecting_graph</artifactId>
-	<version>1.1.10opensource</version>
+	<version>1.1.11opensource</version>
 	<name>architecting_graph</name>
 	<url/>
 	<licenses>
