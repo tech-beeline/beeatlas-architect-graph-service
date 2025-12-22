@@ -12,11 +12,17 @@ import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.amqp.support.converter.SimpleMessageConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import ru.beeline.architecting_graph.client.AuthSSOClient;
 
 @Configuration
+@ConditionalOnProperty(
+        name = "app.feature.use-doc-service",
+        havingValue = "true",
+        matchIfMissing = true
+)
 public class RabbitConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(RabbitConfig.class);
 
@@ -46,6 +52,10 @@ public class RabbitConfig {
 
     @Autowired
     private AuthSSOClient authSSOClient;
+
+    public RabbitConfig() {
+        System.out.println("=== RabbitConfig constructor called! ===");
+    }
 
     @Bean
     public Queue queue() {
