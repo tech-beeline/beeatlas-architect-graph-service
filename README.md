@@ -297,6 +297,59 @@ architect-graph-service/
 ├── pom.xml                          # Maven configuration
 └── README.md                        # This file
 ```
+## Graph Model (Graph Model)
+
+The model is based on a graph data structure where main entities are connected by relationships.
+
+#### Main entities of the graph model:
+
+1. **Software System** - Software System
+   - Central entity representing a software system
+   - Connected to containers, components, and infrastructure
+
+2. **Container** - Container
+   - Represents containerized applications
+   - Connected to container instances and deployment nodes
+
+3. **Component** - Component
+   - Architectural components of the system
+   - Connected to containers and interfaces
+
+4. **Container Instance** - Container Instance
+   - Specific running instances of containers
+   - Connected to infrastructure nodes
+
+5. **Infrastructure Node** - Infrastructure Node
+   - Physical or virtual infrastructure nodes
+   - Connected to deployment nodes
+
+6. **Deployment Node** - Deployment Node
+   - Target nodes for application deployment
+   - Connected to deployment environments
+
+7. **Deployment Environment** - Deployment Environment
+   - Environments (development, testing, production)
+   - Connected to deployment nodes
+
+#### Relationship types:
+
+- **Child** - Hierarchical relationships (parent-child)
+- **Deploy** - Deployment relationships
+- **Relationship** - Various types of connections between entities
+
+### Connections between different elements
+
+| Label | Connected elements (Child) | Connected elements (Relationship) | Connected elements (Deploy) |
+|-------|----------------------------|-----------------------------------|-----------------------------|
+| Software System|Container|Software System, Container, Component|Deployment Environment|
+| Container|Component|Software System, Container, Component|Container Instance|
+| Component|Component|Software System, Container, Component||
+| Container Instance||||
+| Infrastructure Node||Deployment Node, Infrastructure Node||
+| Deployment Node|Deployment Node, Infrastructure Node, Container Instance|Deployment Node,Infrastructure Node||
+| Deployment Environment|Deployment Node, Infrastructure Node|||
+
+---
 
 ## Examples
 
