@@ -1,5 +1,6 @@
 package ru.beeline.architecting_graph.service.graph;
 
+import jdk.internal.vm.annotation.Stable;
 import lombok.extern.slf4j.Slf4j;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.Result;
@@ -43,13 +44,17 @@ public class GraphUpdateFunctions {
     private ComponentRepository componentRepository;
 
     public void createGraph(String graphTag, Workspace workspace){
+        //Парсим JSON в модель
         Model model = workspace.getModel();
         String cmdb = model.getProperties().get("workspace_cmdb").toString();
         SoftwareSystem softwareSystem = getSoftwareSystem(model, cmdb);
         HashMap<String, GraphObject> objects = new HashMap<>();
-        
+
+        //сейвим вложенно системы, контейнеры, компоненты, и все связи
         String curVersion = updateSystem(model, graphTag, softwareSystem, cmdb, objects);
+        //сейвим деплоймент ноды
         updateDeploymentNodes(graphTag, model, softwareSystem.getId(), cmdb, curVersion, objects);
+        //прокидываем остаточные связи
         updateDeploymentNodeRelationships(graphTag, model, curVersion, cmdb, objects);
     }
 
