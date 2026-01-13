@@ -37,7 +37,7 @@ public class GraphConstructionService {
     DocumentClient documentClient;
 
     @Autowired
-    ContainerUpdateFunctions containerUpdateFunctions;
+    GraphUpdateFunctions graphUpdateFunctions;
 
     @Autowired(required = false)
     RedisTemplate<String, TaskCacheDTO> redisTemplate;
@@ -73,7 +73,7 @@ public class GraphConstructionService {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Полученный workspace не валиден");
         }
         try {
-            containerUpdateFunctions.createGraph(graphTag, workspace);
+            graphUpdateFunctions.createGraph(graphTag, workspace);
         } catch (Exception e) {
             log.info("Граф не построен: " + e.getMessage());
             return ResponseEntity.badRequest().body("Граф не построен\n" + e.getMessage());

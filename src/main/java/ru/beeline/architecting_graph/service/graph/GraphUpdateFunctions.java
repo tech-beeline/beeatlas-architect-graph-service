@@ -3,7 +3,6 @@ package ru.beeline.architecting_graph.service.graph;
 import lombok.extern.slf4j.Slf4j;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.Result;
-import org.neo4j.driver.Session;
 import org.neo4j.driver.Value;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -15,7 +14,7 @@ import java.util.Map;
 
 @Slf4j
 @Service
-public class ContainerUpdateFunctions {
+public class GraphUpdateFunctions {
 
     @Autowired
     DeploymentNodeUpdateFunctions deploymentNodeUpdateFunctions;
@@ -43,44 +42,37 @@ public class ContainerUpdateFunctions {
     @Autowired
     private ComponentRepository componentRepository;
 
-    public void createGraph(String graphTag, Workspace workspace) throws Exception {
-        log.info("createGraph 1");
+    public void createGraph(String graphTag, Workspace workspace){
         Model model = workspace.getModel();
         String cmdb = model.getProperties().get("workspace_cmdb").toString();
         SoftwareSystem softwareSystem = getSoftwareSystem(model, cmdb);
         HashMap<String, GraphObject> objects = new HashMap<>();
-        String curVersion = null;
-        log.info("createGraph 2");
-        if (graphTag.equals("Global")) {
-            curVersion = updateSystem(graphTag, softwareSystem, cmdb, objects);
-            Integer prevVersion = Integer.parseInt(curVersion) - 1;
-            setEndVersion(graphTag, cmdb, prevVersion.toString());
-        } else {
-            graphTag = "Local " + cmdb;
-            genericRepository.deleteGraph(graphTag);
-            updateSystem(graphTag, softwareSystem, cmdb, objects);
-        }
-        log.info("createGraph 4");
-        log.info("createGraph 4.1");
-        updateContainers(graphTag, model, softwareSystem, cmdb, curVersion, objects);
-        log.info("createGraph 4.2");
-        updateSystemRelationships(graphTag, model, cmdb, curVersion,
-                objects);
-        log.info("createGraph 4.3");
-        updateDeploymentNodes(graphTag, model, softwareSystem.getId(),
-                cmdb, curVersion, objects);
-        log.info("createGraph 5");
+        
+        String curVersion = updateSystem(model, graphTag, softwareSystem, cmdb, objects);
+        updateDeploymentNodes(graphTag, model, softwareSystem.getId(), cmdb, curVersion, objects);
+        updateDeploymentNodeRelationships(graphTag, model, curVersion, cmdb, objects);
+    }
+
+    private void updateDeploymentNodeRelationships(String graphTag,
+                           Model model,
+                           String curVersion,
+                           String cmdb,
+                           HashMap<String, GraphObject> objects) {
         if (model.getDeploymentNodes() != null) {
             for (DeploymentNode deploymentNode : model.getDeploymentNodes()) {
                 deploymentNodeUpdateFunctions.updateDeploymentNodeRelationships(graphTag, deploymentNode,
-                        curVersion, cmdb, model, objects);
+                                                                                curVersion,
+                                                                                cmdb,
+                                                                                model,
+                                                                                objects);
             }
         }
     }
 
     public SoftwareSystem getSoftwareSystem(Model model, String cmdb) {
         for (SoftwareSystem softwareSystem : model.getSoftwareSystems()) {
-            if (softwareSystem.getProperties() != null && softwareSystem.getProperties().get("cmdb") != null
+            if (softwareSystem.getProperties() != null
+                    && softwareSystem.getProperties().get("cmdb") != null
                     && softwareSystem.getProperties().get("cmdb").equals(cmdb)) {
                 return softwareSystem;
             }
@@ -88,15 +80,45 @@ public class ContainerUpdateFunctions {
         return null;
     }
 
-    public String updateSystem(String graphTag, SoftwareSystem softwareSystem, String cmdb,
+    public String updateSystem(Model model, String graphTag, SoftwareSystem softwareSystem, String cmdb,
                                HashMap<String, GraphObject> objects) {
+        deleteGraphIfIsLocal(graphTag, cmdb);
+        String curVersion = createSystemGraphObject(graphTag, softwareSystem, cmdb, objects);
+        curVersion = setEndVersionIfGlobal(graphTag, cmdb, curVersion);
+        updateContainers(graphTag, model, softwareSystem, cmdb, curVersion, objects);
+        updateSystemRelationships(graphTag, model, cmdb, curVersion, objects);
+        return curVersion;
+    }
+
+    private String setEndVersionIfGlobal(String graphTag, String cmdb, String curVersion) {
+        if (graphTag.equals("Global")) {
+            Integer prevVersion = Integer.parseInt(curVersion) - 1;
+            setEndVersion(graphTag, cmdb, prevVersion.toString());
+        } else {
+            curVersion = null;
+        }
+        return curVersion;
+    }
+
+    private String createSystemGraphObject(String graphTag,
+                             SoftwareSystem softwareSystem,
+                             String cmdb,
+                             HashMap<String, GraphObject> objects) {
         GraphObject systemGraphObject = new GraphObject("SoftwareSystem", "cmdb", cmdb);
         boolean exists = genericRepository.checkIfObjectExists(graphTag, systemGraphObject);
         if (!exists) {
             genericRepository.createObject(graphTag, systemGraphObject);
         }
         objects.put(softwareSystem.getId(), systemGraphObject);
-        return setParametersForSystem(graphTag, softwareSystem, cmdb, systemGraphObject);
+        String curVersion = setParametersForSystem(graphTag, softwareSystem, cmdb, systemGraphObject);
+        return curVersion;
+    }
+
+    private void deleteGraphIfIsLocal(String graphTag, String cmdb) {
+        if (!graphTag.equals("Global")) {
+            graphTag = "Local " + cmdb;
+            genericRepository.deleteGraph(graphTag);
+        }
     }
 
     public String setParametersForSystem(String graphTag, SoftwareSystem softwareSystem, String cmdb,
@@ -208,14 +230,7 @@ public class ContainerUpdateFunctions {
                                  String cmdb, String curVersion, HashMap<String, GraphObject> objects) {
         if (softwareSystem.getContainers() != null) {
             for (Container container : softwareSystem.getContainers()) {
-                container.setName(container.getName() + "~" + cmdb.toString());
-                String containerExternalName = cmdb;
-                if (container.getProperties() != null && container.getProperties().containsKey("external_name")
-                        && container.getProperties().get("external_name") != null) {
-                    containerExternalName = container.getProperties().get("external_name").toString() + "."
-                            + cmdb;
-                    container.getProperties().put("external_name", containerExternalName);
-                }
+                String containerExternalName = setNamesToContainer(cmdb, container);
                 updateContainer(graphTag, container, curVersion, objects);
                 createExternalObjects.updateChildRelationship(graphTag, model, curVersion,
                         softwareSystem.getId(), container.getId(), cmdb, objects);
@@ -223,6 +238,18 @@ public class ContainerUpdateFunctions {
                         containerExternalName, objects);
             }
         }
+    }
+
+    private static String setNamesToContainer(String cmdb, Container container) {
+        container.setName(container.getName() + "~" + cmdb.toString());
+        String containerExternalName = cmdb;
+        if (container.getProperties() != null && container.getProperties().containsKey("external_name")
+                && container.getProperties().get("external_name") != null) {
+            containerExternalName = container.getProperties().get("external_name").toString() + "."
+                    + cmdb;
+            container.getProperties().put("external_name", containerExternalName);
+        }
+        return containerExternalName;
     }
 
     public void setContainerEndVersion(String graphTag, String cmdb, String curVersion) {
@@ -313,6 +340,7 @@ public class ContainerUpdateFunctions {
         if (model.getDeploymentNodes() != null) {
             for (DeploymentNode deploymentNode : model.getDeploymentNodes()) {
                 deploymentNode.setName(deploymentNode.getName() + "~" + cmdb.toString());
+
                 deploymentNodeUpdateFunctions.updateDeploymentNode(graphTag, deploymentNode, curVersion, cmdb,
                         model,
                         objects);

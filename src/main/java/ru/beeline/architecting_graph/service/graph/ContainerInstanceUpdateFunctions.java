@@ -1,7 +1,6 @@
 package ru.beeline.architecting_graph.service.graph;
 
 import org.neo4j.driver.Result;
-import org.neo4j.driver.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.beeline.architecting_graph.model.*;
@@ -47,7 +46,7 @@ public class ContainerInstanceUpdateFunctions {
         setContainerInstanceProperties(graphTag, containerInstance, containerInstanceGraphObject.getValue());
     }
 
-    public static String getContainerforContainerInstance(Model model, String containerInstanceContainerId) {
+    public static String getContainerForContainerInstance(Model model, String containerInstanceContainerId) {
         for (SoftwareSystem softwareSystem : model.getSoftwareSystems()) {
             if (softwareSystem.getContainers() != null) {
                 for (Container container : softwareSystem.getContainers()) {
@@ -62,7 +61,7 @@ public class ContainerInstanceUpdateFunctions {
 
     public void updateContainerInstance(String graphTag, Model model, DeploymentNode deploymentNode,
                                         ContainerInstance containerInstance, String curVersion, HashMap<String, GraphObject> objects) {
-        String containerInstanceName = getContainerforContainerInstance(model, containerInstance.getContainerId());
+        String containerInstanceName = getContainerForContainerInstance(model, containerInstance.getContainerId());
         if (containerInstanceName == null) {
             return;
         }
