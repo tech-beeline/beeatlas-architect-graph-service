@@ -15,6 +15,10 @@ import org.springframework.web.server.ResponseStatusException;
 import ru.beeline.architecting_graph.client.DocumentClient;
 import ru.beeline.architecting_graph.client.ProductClient;
 import ru.beeline.architecting_graph.dto.*;
+import ru.beeline.architecting_graph.dto.search.ArchOperationDTO;
+import ru.beeline.architecting_graph.dto.search.DeploymentNodeSearchDTO;
+import ru.beeline.architecting_graph.dto.search.DiscoveredOperationDTO;
+import ru.beeline.architecting_graph.dto.search.OperationDeploymentNodeSearchDTO;
 import ru.beeline.architecting_graph.model.GraphObject;
 import ru.beeline.architecting_graph.model.Workspace;
 import ru.beeline.architecting_graph.repository.neo4j.*;
@@ -267,5 +271,41 @@ public class GraphConstructionService {
         }
 
         return ResponseEntity.ok("Tags added successfully");
+    }
+
+    public ResponseEntity<OperationDeploymentNodeSearchDTO> getOperationWithDeploymentNodeByMethods(String path,
+                                                                                                    String type) {
+        OperationDeploymentNodeSearchDTO operations = productClient.getOperations(path, type);
+        operations.getArchOperations().forEach(arcOperation -> {
+            fillDeploymentNode(arcOperation);
+        });
+        operations.getDiscoveredOperations().forEach(dsvrOperation -> {
+            fillDeploymentNode(dsvrOperation);
+        });
+        return ResponseEntity.ok(operations);
+    }
+
+    private void fillDeploymentNode(ArchOperationDTO arcOperation) {
+        if (arcOperation.getContainer() == null || arcOperation.getProduct() == null) {
+            return;
+        }
+
+        String containerName = arcOperation.getContainer().getName();
+        String productAlias = arcOperation.getProduct().getAlias();
+
+        List<DeploymentNodeSearchDTO> deploymentNodes = genericRepository.findDeploymentNodes(containerName, productAlias);
+        arcOperation.setDeploymentsNodes(deploymentNodes); // предполагаем setter
+    }
+
+    private void fillDeploymentNode(DiscoveredOperationDTO dsvrOperation) {
+        if (dsvrOperation.getContainer() == null || dsvrOperation.getProduct() == null) {
+            return;
+        }
+
+        String containerName = dsvrOperation.getContainer().getName();
+        String productAlias = dsvrOperation.getProduct().getAlias();
+
+        List<DeploymentNodeSearchDTO> deploymentNodes = genericRepository.findDeploymentNodes(containerName, productAlias);
+        dsvrOperation.setDeploymentsNodes(deploymentNodes);
     }
 }

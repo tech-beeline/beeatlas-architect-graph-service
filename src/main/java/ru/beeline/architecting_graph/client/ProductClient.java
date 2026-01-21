@@ -9,6 +9,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import ru.beeline.architecting_graph.dto.ProductInfoShortDTO;
 import ru.beeline.architecting_graph.dto.ProductInfraSearchDTO;
+import ru.beeline.architecting_graph.dto.search.OperationDeploymentNodeSearchDTO;
 
 import java.util.List;
 
@@ -72,6 +73,32 @@ public class ProductClient {
         } catch (Exception e) {
             log.error("Exception calling product infra search service: " + e.getMessage(), e);
             return List.of();
+        }
+    }
+
+    public OperationDeploymentNodeSearchDTO getOperations(String path, String type) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            String url = String.format("%s/api/v1/operation?path=%s&type=%s", productServerUrl, path, type);
+
+            log.info("Request to Product ServerUrl: GET " + url);
+
+            ResponseEntity<OperationDeploymentNodeSearchDTO> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    new HttpEntity<>(headers),
+                    OperationDeploymentNodeSearchDTO.class
+            );
+            log.info("Response from Product ServerUrl: " + response.getBody());
+            return response.getBody();
+        } catch (HttpClientErrorException.NotFound e) {
+            log.warn("operation search endpoint not found: " + e.getMessage());
+            return null;
+        } catch (Exception e) {
+            log.error("Exception calling operation search: " + e.getMessage(), e);
+            return null;
         }
     }
 }

@@ -6,8 +6,12 @@ import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
+import ru.beeline.architecting_graph.dto.search.DeploymentNodeSearchDTO;
 import ru.beeline.architecting_graph.model.GraphObject;
 import ru.beeline.architecting_graph.service.graph.Neo4jSessionManager;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Repository
@@ -354,5 +358,33 @@ public class GenericRepository {
     """;
         Value params = Values.parameters("cmdb", cmdb);
         return neo4jSessionManager.getSession().run(cypher, params);
+    }
+
+    public List<DeploymentNodeSearchDTO> findDeploymentNodes(String containerNamePrefix, String productCmdb) {
+        String cypher = """
+        MATCH (softwareSystem:SoftwareSystem {cmdb: $cmdb, graphTag: "Global"})
+        MATCH (container:Container {name: $containerPrefix + "~"})
+        WHERE softwareSystem-[:Child*0..]->(container)
+        
+        MATCH (container)-[:Deploy {endVersion: null}]->(containerInstance:ContainerInstance)
+        MATCH (containerInstance)<-[:Child {endVersion: null}]-(deploymentNode:DeploymentNode)
+        MATCH (deploymentNode)<-[:Child]-(environment:Environment)
+        
+        RETURN DISTINCT deploymentNode.id AS id,
+                       deploymentNode.name AS name,
+                       environment.name AS environmentName
+        ORDER BY deploymentNode.id
+        """;
+
+        Value params = Values.parameters("cmdb", productCmdb, "containerPrefix", containerNamePrefix);
+        Result result = neo4jSessionManager.getSession().run(cypher, params);
+
+        return result.stream()
+                .map(record -> new DeploymentNodeSearchDTO(
+                        record.get("id").asInt(),
+                        record.get("name").asString(),
+                        record.get("environmentName").asString()
+                ))
+                .collect(Collectors.toList());
     }
 }

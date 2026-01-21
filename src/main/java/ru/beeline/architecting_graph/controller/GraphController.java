@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import ru.beeline.architecting_graph.dto.*;
+import ru.beeline.architecting_graph.dto.search.OperationDeploymentNodeSearchDTO;
 import ru.beeline.architecting_graph.exception.ConflictValuesException;
 import ru.beeline.architecting_graph.service.compareVersions.CompareVersionsService;
 import ru.beeline.architecting_graph.service.createDiagrams.ContainerComponentBuilder;
@@ -74,6 +75,13 @@ public class GraphController {
             throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED);
         }
         return graphConstructionService.getGraphByTask(graphType, taskId);
+    }
+
+    @GetMapping("/deployment-nodes/operation")
+    @Operation(summary = "Поиск деплоймент нод по реализованным методам")
+    public ResponseEntity<OperationDeploymentNodeSearchDTO> getOperationWithDeploymentNodeByMethods(@RequestParam String path,
+                                                                                                    @RequestParam(required = false) String type) {
+        return graphConstructionService.getOperationWithDeploymentNodeByMethods(path, type);
     }
 
     @PostMapping("/graph/local/{docId}")
