@@ -363,8 +363,9 @@ public class GenericRepository {
     public List<DeploymentNodeSearchDTO> findDeploymentNodes(String containerNamePrefix, String productCmdb) {
         String cypher = """
         MATCH (softwareSystem:SoftwareSystem {cmdb: $cmdb, graphTag: "Global"})
-        MATCH (container:Container {name: $containerPrefix + "~"})
-        WHERE softwareSystem-[:Child*0..]->(container)
+        MATCH (container:Container)
+        WHERE container.name STARTS WITH $containerPrefix + "~"
+          AND (softwareSystem)-[:Child*0..]->(container)
         
         MATCH (container)-[:Deploy {endVersion: null}]->(containerInstance:ContainerInstance)
         MATCH (containerInstance)<-[:Child {endVersion: null}]-(deploymentNode:DeploymentNode)

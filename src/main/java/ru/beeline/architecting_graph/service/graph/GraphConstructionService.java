@@ -294,7 +294,7 @@ public class GraphConstructionService {
         String productAlias = arcOperation.getProduct().getAlias();
 
         List<DeploymentNodeSearchDTO> deploymentNodes = genericRepository.findDeploymentNodes(containerName, productAlias);
-        arcOperation.setDeploymentsNodes(deploymentNodes); // предполагаем setter
+        arcOperation.setDeploymentsNodes(deploymentNodes);
     }
 
     private void fillDeploymentNode(DiscoveredOperationDTO dsvrOperation) {
