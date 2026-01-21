@@ -85,6 +85,13 @@ public class GraphController {
         }
         return graphConstructionService.graphConstruct(docId, "Local");
     }
+    @PostMapping("/node/{id}/tag")
+    @Operation(summary = "Добавление кастомных тегов к нодам глобального графа")
+    public ResponseEntity<String> LocalGraph(@PathVariable("id") Long id,
+                                             @RequestBody List<String> tags) {
+
+        return graphConstructionService.postTags(id, tags);
+    }
 
     @PostMapping("/graph/{docId}")
     @Operation(summary = "Добавление системы из указанного документа в глобальный граф (все вершины и связи помечаются graphTag: Global)")

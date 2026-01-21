@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.Result;
+import org.neo4j.driver.Value;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
@@ -14,6 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 import ru.beeline.architecting_graph.client.DocumentClient;
 import ru.beeline.architecting_graph.client.ProductClient;
 import ru.beeline.architecting_graph.dto.*;
+import ru.beeline.architecting_graph.model.GraphObject;
 import ru.beeline.architecting_graph.model.Workspace;
 import ru.beeline.architecting_graph.repository.neo4j.*;
 
@@ -50,12 +52,18 @@ public class GraphConstructionService {
 
     @Autowired
     SoftwareSystemRepository softwareSystemRepository;
+
     @Autowired
-    private ContainerRepository containerRepository;
+    ContainerRepository containerRepository;
+
     @Autowired
-    private ComponentRepository componentRepository;
+    ComponentRepository componentRepository;
+
     @Autowired
-    private ProductClient productClient;
+    GenericRepository genericRepository;
+
+    @Autowired
+    ProductClient productClient;
 
     public ResponseEntity<String> graphConstruct(Long docId, String graphTag) {
         log.info("graphConstruct is running");
@@ -229,5 +237,35 @@ public class GraphConstructionService {
                 .dependentSystems(new ArrayList<>(dependentSystems))
                 .influencingSystems(new ArrayList<>(influencingSystems))
                 .build());
+    }
+
+    public ResponseEntity<String> postTags(Long id, List<String> tags) {
+        GraphObject graphObject = new GraphObject();
+        graphObject.setType("Node");
+        graphObject.setKey("id");
+        graphObject.setValue(id.toString());
+
+        if (!genericRepository.checkIfObjectExists("Global", graphObject)) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Value graphTagValue = genericRepository.getObjectParameter("Global", graphObject, "graphTag");
+        if (!"Global".equals(graphTagValue.asString())) {
+            return ResponseEntity.badRequest()
+                    .body("Node with id " + id + " must have graphTag='Global'");
+        }
+
+        String newTags = String.join(",", tags);
+
+        try {
+            Value existingTags = genericRepository.getObjectParameter("Global", graphObject, "specialTags");
+            String currentTags = existingTags.asString();
+            String updatedTags = currentTags.isEmpty() ? newTags : currentTags + "," + newTags;
+            genericRepository.setObjectParameter("Global", graphObject, "specialTags", updatedTags);
+        } catch (Exception e) {
+            genericRepository.setObjectParameter("Global", graphObject, "specialTags", newTags);
+        }
+
+        return ResponseEntity.ok("Tags added successfully");
     }
 }
