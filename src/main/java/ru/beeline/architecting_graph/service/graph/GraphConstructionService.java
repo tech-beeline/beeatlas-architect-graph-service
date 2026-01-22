@@ -275,13 +275,17 @@ public class GraphConstructionService {
 
     public ResponseEntity<OperationDeploymentNodeSearchDTO> getOperationWithDeploymentNodeByMethods(String path,
                                                                                                     String type) {
+        log.info("callProductClient");
         OperationDeploymentNodeSearchDTO operations = productClient.getOperations(path, type);
+        log.info("add to arch operations");
         operations.getArchOperations().forEach(arcOperation -> {
             fillDeploymentNode(arcOperation);
         });
+        log.info("add to discover operations");
         operations.getDiscoveredOperations().forEach(dsvrOperation -> {
             fillDeploymentNode(dsvrOperation);
         });
+        log.info("result");
         return ResponseEntity.ok(operations);
     }
 
