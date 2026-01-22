@@ -373,10 +373,11 @@ public class GenericRepository {
         WHERE child.endVersion IS NULL
         MATCH (deploymentNode)<-[:Child]-(environment:Environment)
         
-        RETURN DISTINCT deploymentNode.identity AS id,
-                       deploymentNode.name AS name,
-                       environment.name AS environmentName
-        ORDER BY deploymentNode.id
+                WITH DISTINCT deploymentNode, environment
+                        ORDER BY id(deploymentNode)
+                        RETURN id(deploymentNode) AS id,
+                               deploymentNode.name AS name,
+                               environment.name AS environmentName
         """;
 
         Value params = Values.parameters("cmdb", productCmdb, "containerPrefix", containerNamePrefix);
