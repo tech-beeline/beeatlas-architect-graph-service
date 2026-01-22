@@ -7,7 +7,6 @@ import org.neo4j.driver.Result;
 import org.neo4j.driver.Value;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.util.Pair;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -25,7 +24,10 @@ import ru.beeline.architecting_graph.model.Workspace;
 import ru.beeline.architecting_graph.repository.neo4j.*;
 
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static ru.beeline.architecting_graph.utils.JwtUtils.isIpAddress;
@@ -271,43 +273,43 @@ public class GraphConstructionService {
         return ResponseEntity.ok("Tags added successfully");
     }
 
-    public ResponseEntity<OperationDeploymentNodeSearchDTO> getOperationWithDeploymentNodeByMethods(String path, String type) {
+    public ResponseEntity<OperationDeploymentNodeSearchDTO> getOperationWithDeploymentNodeByMethods(String path,
+                                                                                                    String type) {
         log.info("callProductClient");
         OperationDeploymentNodeSearchDTO operations = productClient.getOperations(path, type);
-
-        // Собираем уникальные пары (containerName, productAlias)
-        Set<Pair<String, String>> uniquePairs = new HashSet<>();
-        operations.getArchOperations().stream()
-                .filter(op -> op.getContainer() != null && op.getProduct() != null)
-                .forEach(op -> uniquePairs.add(Pair.of(op.getContainer().getName(), op.getProduct().getAlias())));
-        operations.getDiscoveredOperations().stream()
-                .filter(op -> op.getContainer() != null && op.getProduct() != null)
-                .forEach(op -> uniquePairs.add(Pair.of(op.getContainer().getName(), op.getProduct().getAlias())));
-
-        log.info("Query deployment nodes for {} unique pairs", uniquePairs.size());
-
-        // Один запрос ко всем парам
-        Map<Pair<String, String>, List<DeploymentNodeSearchDTO>> nodesByPair =
-                genericRepository.findDeploymentNodesBatch(uniquePairs.stream()
-                                                                   .map(p -> Map.entry(p.getFirst(), p.getSecond()))
-                                                                   .collect(Collectors.toList()));
-
-        log.info("Assign deployment nodes");
-        // Распределяем результаты
-        operations.getArchOperations().forEach(op -> {
-            if (op.getContainer() != null && op.getProduct() != null) {
-                Pair<String, String> key = Pair.of(op.getContainer().getName(), op.getProduct().getAlias());
-                op.setDeploymentsNodes(nodesByPair.getOrDefault(key, List.of()));
-            }
+        log.info("add to arch operations");
+        operations.getArchOperations().forEach(arcOperation -> {
+            fillDeploymentNode(arcOperation);
         });
-        operations.getDiscoveredOperations().forEach(op -> {
-            if (op.getContainer() != null && op.getProduct() != null) {
-                Pair<String, String> key = Pair.of(op.getContainer().getName(), op.getProduct().getAlias());
-                op.setDeploymentsNodes(nodesByPair.getOrDefault(key, List.of()));
-            }
+        log.info("add to discover operations");
+        operations.getDiscoveredOperations().forEach(dsvrOperation -> {
+            fillDeploymentNode(dsvrOperation);
         });
-
         log.info("result");
         return ResponseEntity.ok(operations);
+    }
+
+    private void fillDeploymentNode(ArchOperationDTO arcOperation) {
+        if (arcOperation.getContainer() == null || arcOperation.getProduct() == null) {
+            return;
+        }
+
+        String containerName = arcOperation.getContainer().getName();
+        String productAlias = arcOperation.getProduct().getAlias();
+
+        List<DeploymentNodeSearchDTO> deploymentNodes = genericRepository.findDeploymentNodes(containerName, productAlias);
+        arcOperation.setDeploymentsNodes(deploymentNodes);
+    }
+
+    private void fillDeploymentNode(DiscoveredOperationDTO dsvrOperation) {
+        if (dsvrOperation.getContainer() == null || dsvrOperation.getProduct() == null) {
+            return;
+        }
+
+        String containerName = dsvrOperation.getContainer().getName();
+        String productAlias = dsvrOperation.getProduct().getAlias();
+
+        List<DeploymentNodeSearchDTO> deploymentNodes = genericRepository.findDeploymentNodes(containerName, productAlias);
+        dsvrOperation.setDeploymentsNodes(deploymentNodes);
     }
 }
