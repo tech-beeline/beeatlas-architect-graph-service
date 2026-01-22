@@ -12,4 +12,5 @@ public class DeploymentNodeSearchDTO {
     private Integer id;
     private String name;
     private String environmentName;
+
 }

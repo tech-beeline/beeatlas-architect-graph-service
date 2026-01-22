@@ -5,13 +5,18 @@ import org.neo4j.driver.Result;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Repository;
 import ru.beeline.architecting_graph.dto.search.DeploymentNodeSearchDTO;
 import ru.beeline.architecting_graph.model.GraphObject;
 import ru.beeline.architecting_graph.service.graph.Neo4jSessionManager;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toList;
 
 @Slf4j
 @Repository
@@ -360,35 +365,65 @@ public class GenericRepository {
         return neo4jSessionManager.getSession().run(cypher, params);
     }
 
-    public List<DeploymentNodeSearchDTO> findDeploymentNodes(String containerNamePrefix, String productCmdb) {
+    public Map<Pair<String, String>, List<DeploymentNodeSearchDTO>> findDeploymentNodesBatch(List<Map.Entry<String, String>> pairs) {
+        if (pairs.isEmpty())
+            return Collections.emptyMap();
+
+        List<String> containerNames = pairs.stream().map(Map.Entry::getKey).toList();
+        List<String> productAliases = pairs.stream().map(Map.Entry::getValue).toList();
+
         String cypher = """
-        MATCH (softwareSystem:SoftwareSystem {graphTag: "Global"})
-        MATCH (container:Container)
-        WHERE container.name STARTS WITH $containerPrefix + "~"
-          AND (softwareSystem)-[:Child*0..]->(container)
-          AND toLower(softwareSystem.cmdb) = toLower($cmdb)
-        MATCH (container)-[dep:Deploy]->(containerInstance:ContainerInstance)
-        WHERE dep.endVersion IS NULL
-        MATCH (containerInstance)<-[child:Child]-(deploymentNode:DeploymentNode)
-        WHERE child.endVersion IS NULL
-        MATCH (deploymentNode)<-[:Child]-(environment:Environment)
-        
-                WITH DISTINCT deploymentNode, environment
-                        ORDER BY id(deploymentNode)
-                        RETURN id(deploymentNode) AS id,
-                               deploymentNode.name AS name,
-                               environment.name AS environmentName
-        """;
+            UNWIND $containers as containerName
+            UNWIND $products as productAlias
+            WITH collect({container: containerName, product: productAlias}) as pairs
+            UNWIND pairs as pair
+            
+            MATCH (ss:SoftwareSystem {graphTag: 'Global'})
+            WHERE toLower(ss.cmdb) = toLower(pair.product)
+            MATCH (container:Container)
+            WHERE container.name STARTS WITH pair.container + '~'
+              AND (ss)-[:Child*0..]->(container)
+            MATCH (container)<-[:Child {endVersion: null}]-(ci:ContainerInstance)
+            OPTIONAL MATCH (ci)<-[:Child {endVersion: null}]-(dn:DeploymentNode)
+            OPTIONAL MATCH (dn)<-[:Child]-(env:Environment)
+            
+            RETURN pair.container as containerName,
+                   pair.product as productAlias,
+                   collect({
+                     id: id(dn),
+                     name: dn.name,
+                     environmentName: coalesce(env.name, '')
+                   }) as deploymentNodes
+            """;
 
-        Value params = Values.parameters("cmdb", productCmdb, "containerPrefix", containerNamePrefix);
-        Result result = neo4jSessionManager.getSession().run(cypher, params);
+        Map<String, Object> params = Map.of("containers", containerNames, "products", productAliases);
 
-        return result.stream()
-                .map(record -> new DeploymentNodeSearchDTO(
-                        record.get("id").asInt(),
-                        record.get("name").asString(),
-                        record.get("environmentName").asString()
-                ))
-                .collect(Collectors.toList());
+        return neo4jSessionManager.getSession().run(cypher, params)
+                .list(r -> {
+                    String cont = r.get("containerName").asString();
+                    String prod = r.get("productAlias").asString();
+
+                    List<Object> rawMaps = r.get("deploymentNodes").asList();
+                    List<DeploymentNodeSearchDTO> nodes = rawMaps.stream()
+                            .map(deploymentNodeMap -> {
+                                Integer id = ((Value)deploymentNodeMap).get("id").asInt();
+                                String name = ((Value)deploymentNodeMap).get("name").asString();
+                                String envName = ((Value)deploymentNodeMap).get("environmentName").asString();
+                                return DeploymentNodeSearchDTO.builder()
+                                        .id(id)
+                                        .name(name)
+                                        .environmentName(envName)
+                                        .build();
+                            })
+                            .collect(toList());
+
+                    return Map.entry(Pair.of(cont, prod), nodes);
+                })
+                .stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        (a, b) -> a
+                ));
     }
 }
