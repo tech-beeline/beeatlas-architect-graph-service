@@ -373,7 +373,7 @@ public class GenericRepository {
         WHERE child.endVersion IS NULL
         MATCH (deploymentNode)<-[:Child]-(environment:Environment)
         
-        RETURN DISTINCT deploymentNode.id AS id,
+        RETURN DISTINCT deploymentNode.identity AS id,
                        deploymentNode.name AS name,
                        environment.name AS environmentName
         ORDER BY deploymentNode.id
