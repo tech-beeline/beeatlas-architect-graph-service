@@ -245,16 +245,12 @@ public class GraphConstructionService {
     }
 
     public ResponseEntity<String> postTags(Long id, List<String> tags) {
-        GraphObject graphObject = new GraphObject();
-        graphObject.setType("Node");
-        graphObject.setKey("id");
-        graphObject.setValue(id.toString());
 
-        if (!genericRepository.checkIfObjectExists("Global", graphObject)) {
+        if (!genericRepository.checkIfObjectGenericExists("Global", id)) {
             return ResponseEntity.notFound().build();
         }
 
-        Value graphTagValue = genericRepository.getObjectParameter("Global", graphObject, "graphTag");
+        Value graphTagValue = genericRepository.getObjectParameterGeneric("Global", id, "graphTag");
         if (!"Global".equals(graphTagValue.asString())) {
             return ResponseEntity.badRequest()
                     .body("Node with id " + id + " must have graphTag='Global'");
@@ -263,12 +259,12 @@ public class GraphConstructionService {
         String newTags = String.join(",", tags);
 
         try {
-            Value existingTags = genericRepository.getObjectParameter("Global", graphObject, "specialTags");
+            Value existingTags = genericRepository.getObjectParameterGeneric("Global", id, "specialTags");
             String currentTags = existingTags.asString();
             String updatedTags = currentTags.isEmpty() ? newTags : currentTags + "," + newTags;
-            genericRepository.setObjectParameter("Global", graphObject, "specialTags", updatedTags);
+            genericRepository.setObjectParameterGeneric("Global", id, "specialTags", updatedTags);
         } catch (Exception e) {
-            genericRepository.setObjectParameter("Global", graphObject, "specialTags", newTags);
+            genericRepository.setObjectParameterGeneric("Global", id, "specialTags", newTags);
         }
 
         return ResponseEntity.ok("Tags added successfully");

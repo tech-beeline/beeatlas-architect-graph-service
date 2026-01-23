@@ -27,6 +27,17 @@ public class GenericRepository {
         return result.hasNext();
     }
 
+    public boolean checkIfObjectGenericExists(String graphTag, Long nodeId) {
+        String checkObjectExist = """
+        MATCH (n {graphTag: $graphTag})
+        WHERE id(n) = $nodeId
+        RETURN n
+        """;
+        Value parameters = Values.parameters("graphTag", graphTag, "nodeId", nodeId);
+        Result result = neo4jSessionManager.getSession().run(checkObjectExist, parameters);
+        return result.hasNext();
+    }
+
     public void createObject(String graphTag, GraphObject graphObject) {
         String createObject = "CREATE (n:" + graphObject.getType() + " {graphTag: $graphTag1, "
                 + graphObject.getKey() + ": $value})";
@@ -41,6 +52,24 @@ public class GenericRepository {
         Value parameters = Values.parameters("graphTag1", graphTag, "value", graphObject.getValue());
         Result result = neo4jSessionManager.getSession().run(getParameter, parameters);
         return result.next().get("parameter");
+    }
+
+    public Value getObjectParameterGeneric(String graphTag, Long id,
+                                    String parameter) {
+        String getParameter = "MATCH (n {graphTag: $graphTag1}) WHERE id(n) = $value "
+                + "RETURN n." + parameter + " AS parameter";
+        Value parameters = Values.parameters("graphTag1", graphTag, "value", id);
+        Result result = neo4jSessionManager.getSession().run(getParameter, parameters);
+        return result.next().get("parameter");
+    }
+
+    public void setObjectParameterGeneric(String graphTag, Long id,
+                                   String parameter, String value) {
+        String setParameter = "MATCH (n {graphTag: $graphTag1})  WHERE id(n) = $value "
+                + "SET n." + parameter + " = $parameter1";
+        Value parameters = Values.parameters("graphTag1", graphTag, "value", id,
+                "parameter1", value);
+        neo4jSessionManager.getSession().run(setParameter, parameters);
     }
 
     public void setObjectParameter(String graphTag, GraphObject graphObject,
