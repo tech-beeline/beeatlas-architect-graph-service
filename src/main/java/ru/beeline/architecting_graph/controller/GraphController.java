@@ -80,9 +80,8 @@ public class GraphController {
     @GetMapping("/deployment-nodes/operation")
     @Operation(summary = "Поиск деплоймент нод по реализованным методам")
     public ResponseEntity<OperationDeploymentNodeSearchDTO> getOperationWithDeploymentNodeByMethods(@RequestParam String path,
-                                                                                                    @RequestParam int limit,
                                                                                                     @RequestParam(required = false) String type) {
-        return graphConstructionService.getOperationWithDeploymentNodeByMethods(path, type, limit);
+        return graphConstructionService.getOperationWithDeploymentNodeByMethods(path, type);
     }
 
     @PostMapping("/graph/local/{docId}")
