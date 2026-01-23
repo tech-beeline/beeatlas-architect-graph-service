@@ -10,6 +10,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.server.ResponseStatusException;
 import ru.beeline.architecting_graph.client.DocumentClient;
@@ -274,9 +275,11 @@ public class GraphConstructionService {
     }
 
     public ResponseEntity<OperationDeploymentNodeSearchDTO> getOperationWithDeploymentNodeByMethods(String path,
-                                                                                                    String type) {
+                                                                                                    String type,
+                                                                                                    int offset,
+                                                                                                    int limit) {
         log.info("callProductClient");
-        OperationDeploymentNodeSearchDTO operations = productClient.getOperations(path, type);
+        OperationDeploymentNodeSearchDTO operations = productClient.getOperations(path, type, offset, limit);
         log.info("add to arch operations");
         operations.getArchOperations().forEach(arcOperation -> {
             fillDeploymentNode(arcOperation);
