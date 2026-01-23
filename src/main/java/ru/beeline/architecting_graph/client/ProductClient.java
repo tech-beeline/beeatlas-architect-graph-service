@@ -76,13 +76,13 @@ public class ProductClient {
         }
     }
 
-    public OperationDeploymentNodeSearchDTO getOperations(String path, String type, int offset, int limit) {
+    public OperationDeploymentNodeSearchDTO getOperations(String path, String type, int limit) {
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
 
             String url = String.format("%s/api/v1/operation?path=%s&type=%s&offset=%s&limit=%s", productServerUrl, path,
-                                       type, offset, limit);
+                                       type, limit);
 
             log.info("Request to Product ServerUrl: GET " + url);
 
