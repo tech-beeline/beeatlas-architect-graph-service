@@ -1,6 +1,8 @@
 package ru.beeline.architecting_graph.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -93,8 +95,14 @@ public class GraphController {
         }
         return graphConstructionService.graphConstruct(docId, "Local");
     }
+
     @PostMapping("/node/{id}/tag")
     @Operation(summary = "Добавление кастомных тегов к нодам глобального графа")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Теги успешно добавлены"),
+            @ApiResponse(responseCode = "404", description = "Нода с указанным ID не существует"),
+            @ApiResponse(responseCode = "400", description = "Нода существует, но graphTag != Global")
+    })
     public ResponseEntity<String> LocalGraph(@PathVariable("id") Long id,
                                              @RequestBody List<String> tags) {
 
