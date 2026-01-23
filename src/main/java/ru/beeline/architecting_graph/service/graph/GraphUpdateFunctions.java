@@ -86,7 +86,7 @@ public class GraphUpdateFunctions {
 
     public String updateSystem(Model model, String graphTag, SoftwareSystem softwareSystem, String cmdb,
                                HashMap<String, GraphObject> objects) {
-        deleteGraphIfIsLocal(graphTag, cmdb);
+        graphTag = deleteGraphIfIsLocal(graphTag, cmdb);
         String curVersion = createSystemGraphObject(graphTag, softwareSystem, cmdb, objects);
         curVersion = setEndVersionIfGlobal(graphTag, cmdb, curVersion);
         updateContainers(graphTag, model, softwareSystem, cmdb, curVersion, objects);
@@ -118,11 +118,12 @@ public class GraphUpdateFunctions {
         return curVersion;
     }
 
-    private void deleteGraphIfIsLocal(String graphTag, String cmdb) {
+    private String deleteGraphIfIsLocal(String graphTag, String cmdb) {
         if (!graphTag.equals("Global")) {
             graphTag = "Local " + cmdb;
             genericRepository.deleteGraph(graphTag);
         }
+        return graphTag;
     }
 
     public String setParametersForSystem(String graphTag, SoftwareSystem softwareSystem, String cmdb,
