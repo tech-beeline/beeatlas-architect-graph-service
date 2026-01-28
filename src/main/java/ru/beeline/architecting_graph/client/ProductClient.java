@@ -7,6 +7,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 import ru.beeline.architecting_graph.dto.ProductInfoShortDTO;
 import ru.beeline.architecting_graph.dto.ProductInfraSearchDTO;
 import ru.beeline.architecting_graph.dto.search.OperationDeploymentNodeSearchDTO;
@@ -83,11 +84,12 @@ public class ProductClient {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
 
-            String encodedPath = URLEncoder.encode(path, StandardCharsets.UTF_8);
-            String url = productServerUrl + "/api/v1/operation?path=" + encodedPath;
-            if(type != null){
-                url = url + "&type=" + type;
-            }
+            String url = UriComponentsBuilder
+                    .fromHttpUrl(productServerUrl + "/api/v1/operation")
+                    .queryParam("path", path)
+                    .queryParam("type", type)
+                    .build()
+                    .toUriString();
             log.info("Request to Product ServerUrl: GET " + url);
 
             ResponseEntity<OperationDeploymentNodeSearchDTO> response = restTemplate.exchange(
