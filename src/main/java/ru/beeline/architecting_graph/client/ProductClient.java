@@ -11,6 +11,8 @@ import ru.beeline.architecting_graph.dto.ProductInfoShortDTO;
 import ru.beeline.architecting_graph.dto.ProductInfraSearchDTO;
 import ru.beeline.architecting_graph.dto.search.OperationDeploymentNodeSearchDTO;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 
@@ -81,8 +83,11 @@ public class ProductClient {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
 
-            String url = productServerUrl + "/api/v1/operation?path=" + path + "&type=" + type;
-
+            String encodedPath = URLEncoder.encode(path, StandardCharsets.UTF_8);
+            String url = productServerUrl + "/api/v1/operation?path=" + encodedPath;
+            if(type != null){
+                url = url + "&type=" + type;
+            }
             log.info("Request to Product ServerUrl: GET " + url);
 
             ResponseEntity<OperationDeploymentNodeSearchDTO> response = restTemplate.exchange(
