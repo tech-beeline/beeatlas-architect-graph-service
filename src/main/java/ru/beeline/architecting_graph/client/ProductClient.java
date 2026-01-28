@@ -81,7 +81,7 @@ public class ProductClient {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
 
-            String url = String.format("%s/api/v1/operation?path=%s&type=%s", productServerUrl, path, type);
+            String url = productServerUrl + "/api/v1/operation?path=" + path + "&type=" + type;
 
             log.info("Request to Product ServerUrl: GET " + url);
 
