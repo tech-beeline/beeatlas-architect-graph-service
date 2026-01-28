@@ -87,9 +87,12 @@ public class ProductClient {
             String url = UriComponentsBuilder
                     .fromHttpUrl(productServerUrl + "/api/v1/operation")
                     .queryParam("path", path)
-                    .queryParam("type", type)
                     .build()
                     .toUriString();
+
+            if(type != null){
+                url = url + "&type=" + type;
+            }
             log.info("Request to Product ServerUrl: GET " + url);
 
             ResponseEntity<OperationDeploymentNodeSearchDTO> response = restTemplate.exchange(
