@@ -56,6 +56,8 @@ public class GraphUpdateFunctions {
         updateDeploymentNodes(graphTag, model, softwareSystem.getId(), cmdb, curVersion, objects);
         //прокидываем остаточные связи
         updateDeploymentNodeRelationships(graphTag, model, curVersion, cmdb, objects);
+        setEndVersion(graphTag, cmdb, curVersion);
+
     }
 
     private void updateDeploymentNodeRelationships(String graphTag,
