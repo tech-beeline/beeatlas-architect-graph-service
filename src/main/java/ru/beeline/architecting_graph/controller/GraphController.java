@@ -84,7 +84,7 @@ public class GraphController {
     @Operation(summary = "Поиск деплоймент нод по реализованным методам")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200",
-                    description = "Теги успешно добавлены"),
+                    description = "Деплоймент ноды"),
             @ApiResponse(responseCode = "400",
                     description = "Отсутствует обязательный параметр path",
                     content = @Content)
