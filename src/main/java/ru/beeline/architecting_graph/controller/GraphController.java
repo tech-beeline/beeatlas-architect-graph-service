@@ -114,7 +114,7 @@ public class GraphController {
                     description = "Нода существует, но graphTag != Global",
                     content = @Content)
     })
-    public ResponseEntity<String> LocalGraph(@PathVariable("id") Long id,
+    public ResponseEntity LocalGraph(@PathVariable("id") Long id,
                                              @RequestBody List<String> tags) {
 
         return graphConstructionService.postTags(id, tags);

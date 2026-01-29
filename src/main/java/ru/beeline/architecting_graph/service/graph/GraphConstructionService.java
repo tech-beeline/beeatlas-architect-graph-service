@@ -245,7 +245,7 @@ public class GraphConstructionService {
                 .build());
     }
 
-    public ResponseEntity<String> postTags(Long id, List<String> tags) {
+    public ResponseEntity postTags(Long id, List<String> tags) {
 
         if (!genericRepository.checkIfObjectExistsById(id)) {
             return ResponseEntity.notFound().build();
@@ -255,6 +255,10 @@ public class GraphConstructionService {
         if (!"Global".equals(graphTagValue.asString())) {
             return ResponseEntity.badRequest()
                     .body("Node with id " + id + " must have graphTag='Global'");
+        }
+        if(tags !=null && !tags.isEmpty()){
+            return ResponseEntity.badRequest()
+                    .body("tags is empty");
         }
 
         String newTags = String.join(",", tags);
@@ -269,7 +273,7 @@ public class GraphConstructionService {
             genericRepository.setObjectParameterGeneric("Global", id, "specialTags", newTags);
         }
 
-        return ResponseEntity.ok("Tags added successfully");
+        return ResponseEntity.ok().build();
     }
 
     public ResponseEntity<OperationDeploymentNodeSearchDTO> getOperationWithDeploymentNodeByMethods(String path,
