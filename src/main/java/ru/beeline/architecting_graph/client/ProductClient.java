@@ -83,10 +83,12 @@ public class ProductClient {
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
+            path = path.replace("{", "%7B").replace("}", "%7D");
+            log.info("path " + path);
 
             String url = UriComponentsBuilder
                     .fromHttpUrl(productServerUrl + "/api/v1/operation")
-                    .queryParam("path", path.replace("{", "%7B").replace("}", "%7D"))
+                    .queryParam("path", path)
                     .build()
                     .toUriString();
 
