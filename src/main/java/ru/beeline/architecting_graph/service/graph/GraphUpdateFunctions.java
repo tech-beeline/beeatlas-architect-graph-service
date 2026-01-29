@@ -50,6 +50,7 @@ public class GraphUpdateFunctions {
         HashMap<String, GraphObject> objects = new HashMap<>();
 
         //сейвим вложенно системы, контейнеры, компоненты, и все связи
+        graphTag = deleteGraphIfIsLocal(graphTag, cmdb);
         String curVersion = updateSystem(model, graphTag, softwareSystem, cmdb, objects);
         //сейвим деплоймент ноды
         updateDeploymentNodes(graphTag, model, softwareSystem.getId(), cmdb, curVersion, objects);
@@ -86,7 +87,6 @@ public class GraphUpdateFunctions {
 
     public String updateSystem(Model model, String graphTag, SoftwareSystem softwareSystem, String cmdb,
                                HashMap<String, GraphObject> objects) {
-        graphTag = deleteGraphIfIsLocal(graphTag, cmdb);
         String curVersion = createSystemGraphObject(graphTag, softwareSystem, cmdb, objects);
         curVersion = setEndVersionIfGlobal(graphTag, cmdb, curVersion);
         updateContainers(graphTag, model, softwareSystem, cmdb, curVersion, objects);
