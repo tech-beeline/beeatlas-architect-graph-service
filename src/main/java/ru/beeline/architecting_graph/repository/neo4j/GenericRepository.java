@@ -38,6 +38,17 @@ public class GenericRepository {
         return result.hasNext();
     }
 
+    public boolean checkIfObjectExistsById(Long nodeId) {
+        String checkObjectExist = """
+                MATCH (n)
+                WHERE id(n) = $nodeId
+                RETURN n
+                """;
+        Value parameters = Values.parameters("nodeId", nodeId);
+        Result result = neo4jSessionManager.getSession().run(checkObjectExist, parameters);
+        return result.hasNext();
+    }
+
     public void createObject(String graphTag, GraphObject graphObject) {
         String createObject = "CREATE (n:" + graphObject.getType() + " {graphTag: $graphTag1, "
                 + graphObject.getKey() + ": $value})";

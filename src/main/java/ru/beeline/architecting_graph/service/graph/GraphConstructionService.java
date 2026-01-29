@@ -246,7 +246,7 @@ public class GraphConstructionService {
 
     public ResponseEntity<String> postTags(Long id, List<String> tags) {
 
-        if (!genericRepository.checkIfObjectGenericExists("Global", id)) {
+        if (!genericRepository.checkIfObjectExistsById(id)) {
             return ResponseEntity.notFound().build();
         }
 
@@ -260,7 +260,8 @@ public class GraphConstructionService {
 
         try {
             Value existingTags = genericRepository.getObjectParameterGeneric("Global", id, "specialTags");
-            String currentTags = existingTags.asString();
+            String currentTags = (existingTags != null && existingTags.asString() != null) ? existingTags.asString() : "";
+            currentTags = "null".equals(currentTags) ? "" : currentTags;
             String updatedTags = currentTags.isEmpty() ? newTags : currentTags + "," + newTags;
             genericRepository.setObjectParameterGeneric("Global", id, "specialTags", updatedTags);
         } catch (Exception e) {
