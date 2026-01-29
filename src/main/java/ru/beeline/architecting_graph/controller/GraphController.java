@@ -83,6 +83,8 @@ public class GraphController {
     @GetMapping("/deployment-nodes/operation")
     @Operation(summary = "Поиск деплоймент нод по реализованным методам")
     @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Теги успешно добавлены"),
             @ApiResponse(responseCode = "400",
                     description = "Отсутствует обязательный параметр path",
                     content = @Content)
