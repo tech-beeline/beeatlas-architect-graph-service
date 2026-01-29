@@ -86,7 +86,7 @@ public class ProductClient {
 
             String url = UriComponentsBuilder
                     .fromHttpUrl(productServerUrl + "/api/v1/operation")
-                    .queryParam("path", path)
+                    .queryParam("path", path.replace("{", "%7B").replace("}", "%7D"))
                     .build()
                     .toUriString();
 

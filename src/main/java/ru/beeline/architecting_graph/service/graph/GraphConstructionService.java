@@ -20,6 +20,7 @@ import ru.beeline.architecting_graph.dto.search.ArchOperationDTO;
 import ru.beeline.architecting_graph.dto.search.DeploymentNodeSearchDTO;
 import ru.beeline.architecting_graph.dto.search.DiscoveredOperationDTO;
 import ru.beeline.architecting_graph.dto.search.OperationDeploymentNodeSearchDTO;
+import ru.beeline.architecting_graph.exception.ValidationException;
 import ru.beeline.architecting_graph.model.GraphObject;
 import ru.beeline.architecting_graph.model.Workspace;
 import ru.beeline.architecting_graph.repository.neo4j.*;
@@ -273,6 +274,9 @@ public class GraphConstructionService {
 
     public ResponseEntity<OperationDeploymentNodeSearchDTO> getOperationWithDeploymentNodeByMethods(String path,
                                                                                                     String type) {
+        if (path == null || path.isEmpty()) {
+            throw new ValidationException("Отсутствует обязательный параметр path");
+        }
         log.info("callProductClient");
         OperationDeploymentNodeSearchDTO operations = productClient.getOperations(path, type);
         log.info("add to arch operations");

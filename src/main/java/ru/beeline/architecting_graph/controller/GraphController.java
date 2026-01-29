@@ -82,6 +82,11 @@ public class GraphController {
 
     @GetMapping("/deployment-nodes/operation")
     @Operation(summary = "Поиск деплоймент нод по реализованным методам")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400",
+                    description = "Отсутствует обязательный параметр path",
+                    content = @Content)
+    })
     public ResponseEntity<OperationDeploymentNodeSearchDTO> getOperationWithDeploymentNodeByMethods(@RequestParam String path,
                                                                                                     @RequestParam(required = false) String type) {
         return graphConstructionService.getOperationWithDeploymentNodeByMethods(path, type);
