@@ -71,7 +71,11 @@ public class GenericRepository {
                 + "RETURN n." + parameter + " AS parameter";
         Value parameters = Values.parameters("graphTag1", graphTag, "value", id);
         Result result = neo4jSessionManager.getSession().run(getParameter, parameters);
-        return result.next().get("parameter");
+        if (result.hasNext()) {
+            return result.next().get("parameter");
+        } else {
+            return Values.NULL;
+        }
     }
 
     public void setObjectParameterGeneric(String graphTag, Long id,
