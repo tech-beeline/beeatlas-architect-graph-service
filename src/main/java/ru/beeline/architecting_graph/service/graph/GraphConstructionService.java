@@ -248,7 +248,9 @@ public class GraphConstructionService {
     public ResponseEntity postTags(Long id, List<String> tags) {
 
         if (!genericRepository.checkIfObjectExistsById(id)) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body("Нода с указанным ID не существует");
         }
 
         Value graphTagValue = genericRepository.getObjectParameterGeneric("Global", id, "graphTag");

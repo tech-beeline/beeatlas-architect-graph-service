@@ -106,7 +106,9 @@ public class GraphController {
 
     @PostMapping("/node/{id}/tag")
     @Operation(summary = "Добавление кастомных тегов к нодам глобального графа")
-    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Теги успешно добавлены", content = @Content), @ApiResponse(responseCode = "404", description = "Нода с указанным ID не существует", content = @Content), @ApiResponse(responseCode = "400", description = "Нода существует, но graphTag != Global", content = @Content)})
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Теги успешно добавлены", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Нода с указанным ID не существует", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Нода существует, но graphTag != Global", content = @Content)})
     public ResponseEntity LocalGraph(@PathVariable("id") Long id, @RequestBody List<String> tags) {
 
         return graphConstructionService.postTags(id, tags);
