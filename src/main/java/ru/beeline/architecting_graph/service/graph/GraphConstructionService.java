@@ -254,11 +254,11 @@ public class GraphConstructionService {
         Value graphTagValue = genericRepository.getObjectParameterGeneric("Global", id, "graphTag");
         if (!"Global".equals(graphTagValue.asString())) {
             return ResponseEntity.badRequest()
-                    .body("Node with id " + id + " must have graphTag='Global'");
+                    .body("Нода с id = " + id + " не имеет тега 'Global'");
         }
-        if(tags !=null && !tags.isEmpty()){
+        if(tags == null || tags.isEmpty()){
             return ResponseEntity.badRequest()
-                    .body("tags is empty");
+                    .body("Отсутствуют теги");
         }
 
         String newTags = String.join(",", tags);
