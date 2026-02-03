@@ -71,7 +71,7 @@ public class DeploymentNodeUpdateFunctions {
                                                String curVersion, String cmdb, Model model, HashMap<String, GraphObject> objects) {
         if (deploymentNode.getInfrastructureNodes() != null) {
             for (InfrastructureNode infrastructureNode : deploymentNode.getInfrastructureNodes()) {
-
+                infrastructureNode.setOriginalName(new String(infrastructureNode.getOriginalName()));
                 infrastructureNode.setName(infrastructureNode.getName() + "~"
                         + deploymentNode.getName().toString());
                 infrastructureNodeUpdateFunctions.updateInfrastructureNode(graphTag, infrastructureNode, curVersion,
@@ -130,6 +130,13 @@ public class DeploymentNodeUpdateFunctions {
         boolean exists = genericRepository.checkIfObjectExists(graphTag, deploymentNodeGraphObject);
         if (!exists) {
             genericRepository.createObject(graphTag, deploymentNodeGraphObject);
+        }
+        if (deploymentNode.getOriginalName() != null) {
+            genericRepository.setObjectParameter(
+                    graphTag,
+                    deploymentNodeGraphObject,
+                    "originalName",
+                    deploymentNode.getOriginalName());
         }
         objects.put(deploymentNode.getId(), deploymentNodeGraphObject);
         return deploymentNodeGraphObject;

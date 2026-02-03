@@ -62,6 +62,13 @@ public class ComponentUpdateService {
             genericRepository.createObject(graphTag, componentGraphObject);
         }
         objects.put(component.getId(), componentGraphObject);
+        if (component.getOriginalName() != null) {
+            genericRepository.setObjectParameter(
+                    graphTag,
+                    componentGraphObject,
+                    "originalName",
+                    component.getOriginalName());
+        }
         setParametersForComponent(graphTag, component, componentGraphObject, curVersion);
     }
 
@@ -127,6 +134,7 @@ public class ComponentUpdateService {
     }
 
     private static void setNames(Container container, String containerExternalName, Component component) {
+        component.setOriginalName(new String(component.getName()));
         component.setName(component.getName() + "~" + container.getName());
         if (component.getProperties() != null && component.getProperties().containsKey("external_name")
                 && component.getProperties().get("external_name") != null) {

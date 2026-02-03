@@ -53,6 +53,13 @@ public class InfrastructureNodeUpdateFunctions {
         if (!exists) {
             genericRepository.createObject(graphTag, infrastructureNodeGraphObject);
         }
+        if (infrastructureNode.getOriginalName() != null) {
+            genericRepository.setObjectParameter(
+                    graphTag,
+                    infrastructureNodeGraphObject,
+                    "originalName",
+                    infrastructureNode.getOriginalName());
+        }
         objects.put(infrastructureNode.getId(), infrastructureNodeGraphObject);
         setParametersForInfrastructureNode(graphTag, infrastructureNode, infrastructureNodeGraphObject,
                 curVersion);

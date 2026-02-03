@@ -230,6 +230,13 @@ public class GraphUpdateFunctions {
             genericRepository.createObject(graphTag, containerGraphObject);
         }
         objects.put(container.getId(), containerGraphObject);
+        if (container.getOriginalName() != null) {
+            genericRepository.setObjectParameter(
+                    graphTag,
+                    containerGraphObject,
+                    "originalName",
+                    container.getOriginalName());
+        }
         setParametersForContainer(graphTag, container, containerGraphObject, curVersion);
     }
 
@@ -248,6 +255,7 @@ public class GraphUpdateFunctions {
     }
 
     private static String setNamesToContainer(String cmdb, Container container) {
+        container.setOriginalName(new String(container.getName()));
         container.setName(container.getName() + "~" + cmdb.toString());
         String containerExternalName = cmdb;
         if (container.getProperties() != null && container.getProperties().containsKey("external_name")
@@ -347,7 +355,6 @@ public class GraphUpdateFunctions {
         if (model.getDeploymentNodes() != null) {
             for (DeploymentNode deploymentNode : model.getDeploymentNodes()) {
                 deploymentNode.setName(deploymentNode.getName() + "~" + cmdb.toString());
-
                 deploymentNodeUpdateFunctions.updateDeploymentNode(graphTag, deploymentNode, curVersion, cmdb,
                         model,
                         objects);

@@ -14,6 +14,7 @@ public class InfrastructureNode {
 
     private String id;
     private String name;
+    private String originalName;
     private String description;
     private String technology;
     private String environment;
