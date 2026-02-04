@@ -11,9 +11,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 import ru.beeline.architecting_graph.dto.ProductInfoShortDTO;
 import ru.beeline.architecting_graph.dto.ProductInfraSearchDTO;
 import ru.beeline.architecting_graph.dto.search.OperationDeploymentNodeSearchDTO;
+import ru.beeline.fdmlib.dto.product.TcDTO;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 
@@ -110,6 +109,41 @@ public class ProductClient {
         } catch (Exception e) {
             log.error("Exception calling operation search: " + e.getMessage(), e);
             return null;
+        }
+    }
+
+    public List<TcDTO> getTechCapabilitiesByContainerProduct(String alias, List<String> containers) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            UriComponentsBuilder builder = UriComponentsBuilder
+                    .fromHttpUrl(productServerUrl + "/api/v1/product/implemented/container/tech-capability");
+            if (alias != null) {
+                builder.queryParam("alias", alias);
+            }
+            if (containers != null && !containers.isEmpty()) {
+                builder.queryParam("containers", containers);
+            }
+
+            String url = builder.build().toUriString();
+
+            log.info("Request to Product ServerUrl: GET " + url);
+
+            ResponseEntity<List<TcDTO>> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    new HttpEntity<>(headers),
+                    new ParameterizedTypeReference<List<TcDTO>>() {}
+            );
+            log.info("Response from Product ServerUrl: " + response.getBody());
+            return response.getBody();
+        } catch (HttpClientErrorException.NotFound e) {
+            log.warn("Tech capability endpoint not found: " + e.getMessage());
+            return List.of();
+        } catch (Exception e) {
+            log.error("Exception calling tech capability service: " + e.getMessage(), e);
+            return List.of();
         }
     }
 }

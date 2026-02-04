@@ -16,6 +16,7 @@ import ru.beeline.architecting_graph.exception.ConflictValuesException;
 import ru.beeline.architecting_graph.service.compareVersions.CompareVersionsService;
 import ru.beeline.architecting_graph.service.createDiagrams.ContainerComponentBuilder;
 import ru.beeline.architecting_graph.service.getElements.ElementService;
+import ru.beeline.architecting_graph.service.graph.ContainerInstanceService;
 import ru.beeline.architecting_graph.service.graph.GraphConstructionService;
 import ru.beeline.architecting_graph.service.graph.ProductInfluenceService;
 import ru.beeline.fdmlib.dto.graph.ProductInfluenceDTO;
@@ -38,6 +39,9 @@ public class GraphController {
 
     @Autowired
     ContainerComponentBuilder containerComponentBuilder;
+
+    @Autowired
+    ContainerInstanceService containerInstanceService;
 
     @Autowired
     ElementService elementService;
@@ -148,6 +152,12 @@ public class GraphController {
         } catch (ConflictValuesException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
+    }
+
+    @GetMapping("/depliyment-node/{id}/containers/tech-capaility")
+    @Operation(summary = "Получение по id deploymentNode контейенры которые в ней развернуты с реализоваными в них ТС")
+    public ResponseEntity getContainerInstancesByDeploymentNodeId(@PathVariable Integer id) {
+        return containerInstanceService.getContainerInstancesByDeploymentNodeId(id);
     }
 
     @GetMapping("/diff/{cmdb}/{firstVersion}/{secondVersion}")

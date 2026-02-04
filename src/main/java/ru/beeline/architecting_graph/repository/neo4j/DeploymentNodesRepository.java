@@ -150,4 +150,21 @@ public class DeploymentNodesRepository {
         Value params = Values.parameters("originName", originName, "ipValue", ipValue);
         neo4jSessionManager.getSession().run(cypher, params);
     }
+
+    public Result findActiveDeploymentNodeById(Long nodeId) {
+        String cypher = """
+            MATCH (n:DeploymentNode {graphTag: 'Global'})
+            WHERE id(n) = $nodeId
+              AND (n.endVersion IS NULL OR NOT exists(n.endVersion))
+            OPTIONAL MATCH (n)-[:Child]->(ci:ContainerInstance)
+                WHERE (ci.endVersion IS NULL OR NOT exists(ci.endVersion))
+            OPTIONAL MATCH (ci)<-[:Deploy]-(c:Container)
+                WHERE (c.endVersion IS NULL OR NOT exists(c.endVersion))
+            RETURN n,
+                                       collect(distinct ci) AS containerInstances,
+                                       collect(distinct c.originalName) AS containerOriginalNames
+            """;
+        Value params = Values.parameters("nodeId", nodeId);
+        return neo4jSessionManager.getSession().run(cypher, params);
+    }
 }

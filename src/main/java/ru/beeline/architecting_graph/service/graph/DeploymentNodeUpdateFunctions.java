@@ -1,7 +1,6 @@
 package ru.beeline.architecting_graph.service.graph;
 
 import org.neo4j.driver.Result;
-import org.neo4j.driver.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.beeline.architecting_graph.model.*;
@@ -18,7 +17,7 @@ public class DeploymentNodeUpdateFunctions {
     GenericRepository genericRepository;
 
     @Autowired
-    ContainerInstanceUpdateFunctions containerInstanceUpdateFunctions;
+    ContainerInstanceService containerInstanceService;
 
     @Autowired
     InfrastructureNodeUpdateFunctions infrastructureNodeUpdateFunctions;
@@ -88,8 +87,8 @@ public class DeploymentNodeUpdateFunctions {
                                               String cmdb, Model model, HashMap<String, GraphObject> objects) {
         if (deploymentNode.getContainerInstances() != null) {
             for (ContainerInstance containerInstance : deploymentNode.getContainerInstances()) {
-                containerInstanceUpdateFunctions.updateContainerInstance(graphTag, model, deploymentNode,
-                                                                         containerInstance, curVersion, objects);
+                containerInstanceService.updateContainerInstance(graphTag, model, deploymentNode,
+                                                                 containerInstance, curVersion, objects);
                 createExternalObjects.updateDeployRelationship(graphTag, model, curVersion,
                         containerInstance.getContainerId(), containerInstance.getId(), cmdb, objects);
                 createExternalObjects.updateChildRelationship(graphTag, model, curVersion, deploymentNode.getId(),
@@ -157,7 +156,7 @@ public class DeploymentNodeUpdateFunctions {
         GraphObject deploymentNodeGraphObject = new GraphObject("DeploymentNode", "name", deploymentNodeName);
         genericRepository.setObjectParameter(graphTag, deploymentNodeGraphObject, "endVersion", curVersion);
         infrastructureNodeUpdateFunctions.setInfrastructureNodeEndVersion(graphTag, deploymentNodeName, curVersion);
-        containerInstanceUpdateFunctions.setContainerInstanceEndVersion(graphTag, deploymentNodeName, curVersion);
+        containerInstanceService.setContainerInstanceEndVersion(graphTag, deploymentNodeName, curVersion);
         setChildDeploymentNodeEndVersion(graphTag, deploymentNodeName, curVersion, cmdb);
     }
 
@@ -174,8 +173,8 @@ public class DeploymentNodeUpdateFunctions {
                                                   String cmdb, Model model, HashMap<String, GraphObject> objects) {
         updateDefaultRelationship(graphTag, deploymentNode, curVersion, cmdb, model, objects);
         updateInfrastructureNodeRelationships(graphTag, deploymentNode, curVersion, cmdb, model, objects);
-        containerInstanceUpdateFunctions.updateContainerInstanceRelationships(graphTag, deploymentNode,
-                curVersion, cmdb, model, objects);
+        containerInstanceService.updateContainerInstanceRelationships(graphTag, deploymentNode,
+                                                                      curVersion, cmdb, model, objects);
         updateChildDeploymentNodeRelationships(graphTag, deploymentNode, curVersion, cmdb, model, objects);
     }
 
