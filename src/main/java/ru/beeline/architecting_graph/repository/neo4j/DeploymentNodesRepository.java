@@ -155,14 +155,14 @@ public class DeploymentNodesRepository {
         String cypher = """
             MATCH (n:DeploymentNode {graphTag: 'Global'})
             WHERE id(n) = $nodeId
-              AND (n.endVersion IS NULL OR NOT exists(n.endVersion))
+              AND (n.endVersion IS NULL)
             OPTIONAL MATCH (n)-[:Child]->(ci:ContainerInstance)
-                WHERE (ci.endVersion IS NULL OR NOT exists(ci.endVersion))
+                WHERE (ci.endVersion IS NULL)
             OPTIONAL MATCH (ci)<-[:Deploy]-(c:Container)
-                WHERE (c.endVersion IS NULL OR NOT exists(c.endVersion))
+                WHERE (c.endVersion IS NULL)
             RETURN n,
-                                       collect(distinct ci) AS containerInstances,
-                                       collect(distinct c.originalName) AS containerOriginalNames
+                   collect(distinct ci) AS containerInstances,
+                   collect(distinct c.originalName) AS containerOriginalNames
             """;
         Value params = Values.parameters("nodeId", nodeId);
         return neo4jSessionManager.getSession().run(cypher, params);
