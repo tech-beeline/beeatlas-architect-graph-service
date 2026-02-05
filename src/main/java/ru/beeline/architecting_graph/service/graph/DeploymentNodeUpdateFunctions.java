@@ -70,7 +70,7 @@ public class DeploymentNodeUpdateFunctions {
                                                String curVersion, String cmdb, Model model, HashMap<String, GraphObject> objects) {
         if (deploymentNode.getInfrastructureNodes() != null) {
             for (InfrastructureNode infrastructureNode : deploymentNode.getInfrastructureNodes()) {
-                infrastructureNode.setOriginalName(new String(infrastructureNode.getOriginalName()));
+                infrastructureNode.setOriginalName(new String(infrastructureNode.getName()));
                 infrastructureNode.setName(infrastructureNode.getName() + "~"
                         + deploymentNode.getName().toString());
                 infrastructureNodeUpdateFunctions.updateInfrastructureNode(graphTag, infrastructureNode, curVersion,
