@@ -36,7 +36,7 @@ public class DeploymentNodesRepository {
         String cypher = "MATCH (n:DeploymentNode)\n" + "WHERE toLower(n.graphTag) = toLower('Global')\n" + "  AND (\n"
                 + "    toLower(n.host) CONTAINS toLower($search)\n" +
                 "    OR toLower(n.ip) CONTAINS toLower($search)\n" +
-                "    OR toLower(n.name) CONTAINS toLower($search)\n" +
+                "    OR toLower(n.originalName) CONTAINS toLower($search)\n" +
                 "    OR toLower(n.IP) CONTAINS toLower($search)\n" + "  )\n" + "RETURN n";
         Value parameters = Values.parameters("search", search);
         return neo4jSessionManager.getSession().run(cypher, parameters);
