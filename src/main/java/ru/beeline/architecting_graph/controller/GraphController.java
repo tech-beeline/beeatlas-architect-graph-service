@@ -19,7 +19,6 @@ import ru.beeline.architecting_graph.service.getElements.ElementService;
 import ru.beeline.architecting_graph.service.graph.ContainerInstanceService;
 import ru.beeline.architecting_graph.service.graph.GraphConstructionService;
 import ru.beeline.architecting_graph.service.graph.ProductInfluenceService;
-import ru.beeline.fdmlib.dto.graph.ProductInfluenceDTO;
 
 import java.util.List;
 import java.util.NoSuchElementException;

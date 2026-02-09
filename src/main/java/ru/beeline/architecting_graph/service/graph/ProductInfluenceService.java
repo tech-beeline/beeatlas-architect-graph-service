@@ -4,10 +4,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.neo4j.driver.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ru.beeline.architecting_graph.dto.ProductInfluenceDTO;
 import ru.beeline.architecting_graph.exception.ConflictValuesException;
 import ru.beeline.architecting_graph.repository.neo4j.DeploymentNodesRepository;
 import ru.beeline.architecting_graph.repository.neo4j.SoftwareSystemRepository;
-import ru.beeline.fdmlib.dto.graph.ProductInfluenceDTO;
 
 import java.util.*;
 import java.util.stream.Collectors;
