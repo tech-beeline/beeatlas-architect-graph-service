@@ -354,6 +354,8 @@ public class GraphUpdateFunctions {
         if (model.getDeploymentNodes() != null) {
             for (DeploymentNode deploymentNode : model.getDeploymentNodes()) {
                 deploymentNode.setName(deploymentNode.getName() + "~" + cmdb.toString());
+                deploymentNode.setOriginalName(new String(deploymentNode.getName()));
+
                 deploymentNodeUpdateFunctions.updateDeploymentNode(graphTag, deploymentNode, curVersion, cmdb,
                         model,
                         objects);
