@@ -10,8 +10,8 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import ru.beeline.architecting_graph.dto.ProductInfoShortDTO;
 import ru.beeline.architecting_graph.dto.ProductInfraSearchDTO;
+import ru.beeline.architecting_graph.dto.product.TcDTO;
 import ru.beeline.architecting_graph.dto.search.OperationDeploymentNodeSearchDTO;
-import ru.beeline.fdmlib.dto.product.TcDTO;
 
 import java.util.List;
 
