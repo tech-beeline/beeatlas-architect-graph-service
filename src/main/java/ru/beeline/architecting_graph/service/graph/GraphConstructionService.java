@@ -166,7 +166,7 @@ public class GraphConstructionService {
             Record environment = getParentEnvironment(deployment.get("n").asNode().id());
             result.add(DeploymentNodeDTO.builder()
                                .id(deployment.get("n").asNode().id())
-                               .deploymentName(deployment.get("n").asNode().get("name").asString())
+                               .deploymentName(deployment.get("n").asNode().get("originalName").asString())
                                .environmentName(environment.get("parent.name").asString())
                                .cmdb(system.get("d").asNode().get("cmdb").asString())
                                .ip(deployment.get("n").asNode().containsKey("ip") ? deployment.get("n").asNode().get(
