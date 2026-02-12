@@ -161,20 +161,28 @@ public class GraphConstructionService {
             deploymentNodes = deploymentNodesRepository.findDeploymentNodesBySearch(search);
         }
         while (deploymentNodes.hasNext()) {
-            Record deployment = deploymentNodes.next();
-            Record system = getParentSoftwareSystem(deployment.get("n").asNode().id());
-            Record environment = getParentEnvironment(deployment.get("n").asNode().id());
-            result.add(DeploymentNodeDTO.builder()
-                               .id(deployment.get("n").asNode().id())
-                               .deploymentName(deployment.get("n").asNode().get("originalName").asString())
-                               .environmentName(environment.get("parent.name").asString())
-                               .cmdb(system.get("d").asNode().get("cmdb").asString())
-                               .ip(deployment.get("n").asNode().containsKey("ip") ? deployment.get("n").asNode().get(
-                                       "ip").asString() : null)
-                               .host(deployment.get("n").asNode().containsKey("host") ?
-                                             deployment.get("n").asNode().get(
-                                       "host").asString() : null)
-                               .build());
+            try {
+
+                Record deployment = deploymentNodes.next();
+                Record system = getParentSoftwareSystem(deployment.get("n").asNode().id());
+                Record environment = getParentEnvironment(deployment.get("n").asNode().id());
+                result.add(DeploymentNodeDTO.builder()
+                                   .id(deployment.get("n").asNode().id())
+                                   .deploymentName(deployment.get("n").asNode().get("originalName").asString())
+                                   .environmentName(environment.get("parent.name").asString())
+                                   .cmdb(system.get("d").asNode().get("cmdb").asString())
+                                   .ip(deployment.get("n").asNode().containsKey("ip") ? deployment.get("n")
+                                           .asNode()
+                                           .get("ip")
+                                           .asString() : null)
+                                   .host(deployment.get("n").asNode().containsKey("host") ? deployment.get("n")
+                                           .asNode()
+                                           .get("host")
+                                           .asString() : null)
+                                   .build());
+            } catch (Exception e){
+                log.error(e.getMessage(), e.getStackTrace());
+            }
         }
 
         return ResponseEntity.ok(result);
