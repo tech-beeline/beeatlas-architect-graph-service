@@ -10,7 +10,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.server.ResponseStatusException;
 import ru.beeline.architecting_graph.client.DocumentClient;
@@ -21,7 +20,6 @@ import ru.beeline.architecting_graph.dto.search.DeploymentNodeSearchDTO;
 import ru.beeline.architecting_graph.dto.search.DiscoveredOperationDTO;
 import ru.beeline.architecting_graph.dto.search.OperationDeploymentNodeSearchDTO;
 import ru.beeline.architecting_graph.exception.ValidationException;
-import ru.beeline.architecting_graph.model.GraphObject;
 import ru.beeline.architecting_graph.model.Workspace;
 import ru.beeline.architecting_graph.repository.neo4j.*;
 
@@ -73,10 +71,10 @@ public class GraphConstructionService {
 
     public ResponseEntity<String> graphConstruct(Long docId, String graphTag) {
         log.info("graphConstruct is running");
-        String workspaceJson = getWorkspaceJson(docId);
+        String workspaceJson =  documentClient.getDocument(docId);
         if (workspaceJson == null) {
             log.info("Документ не найден");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Документ не найден");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Документ не найден");
         }
         Workspace workspace;
         try {
@@ -94,16 +92,6 @@ public class GraphConstructionService {
         }
         log.info("graph constructed");
         return ResponseEntity.status(HttpStatus.CREATED).body("Граф построен");
-    }
-
-    private String getWorkspaceJson(Long docId) {
-        try {
-            return documentClient.getDocument(docId);
-        } catch (HttpClientErrorException e) {
-            return handleClientError(e);
-        } catch (Exception e) {
-            return null;
-        }
     }
 
     private String handleClientError(HttpClientErrorException e) {

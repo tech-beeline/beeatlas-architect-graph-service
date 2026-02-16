@@ -7,6 +7,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import ru.beeline.architecting_graph.exception.DocumentForbiddenException;
 import ru.beeline.architecting_graph.exception.DocumentServerException;
 import ru.beeline.architecting_graph.exception.NotFoundException;
 import ru.beeline.architecting_graph.exception.ValidationException;
@@ -46,4 +47,14 @@ public class CustomExceptionHandler {
                 .header("content-type", MediaType.APPLICATION_JSON_VALUE)
                 .body(e.getMessage());
     }
+
+    @ExceptionHandler(DocumentForbiddenException.class)
+    public ResponseEntity<Object> handleException(DocumentForbiddenException e) {
+        log.error(e.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .header("content-type", MediaType.APPLICATION_JSON_VALUE)
+                .body(e.getMessage());
+    }
+
 }
