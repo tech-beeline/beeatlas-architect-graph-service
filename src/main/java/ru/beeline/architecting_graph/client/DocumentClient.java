@@ -14,6 +14,7 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import ru.beeline.architecting_graph.exception.DocumentForbiddenException;
 import ru.beeline.architecting_graph.exception.DocumentServerException;
+import ru.beeline.architecting_graph.exception.NotFoundException;
 import ru.beeline.architecting_graph.exception.ValidationException;
 
 import java.nio.charset.StandardCharsets;
@@ -53,10 +54,9 @@ public class DocumentClient {
         } catch (HttpClientErrorException.Forbidden e) {
             log.error("Документ недоступен (403 Forbidden): ", e);
             throw new DocumentForbiddenException("Доступ к документу запрещён: " + e.getStatusCode());
-
         } catch (HttpClientErrorException.NotFound e) {
             log.error("Запись с данным id не найдена: ", e);
-            throw new DocumentServerException("Запись с данным id не найдена: ");
+            throw new NotFoundException("Запись с данным id не найдена: ");
         } catch (RestClientException e) {
             throw new DocumentServerException("Ошибка при вызове документа: ");
         }
