@@ -56,9 +56,9 @@ public class DocumentClient {
             throw new DocumentForbiddenException("Доступ к документу запрещён: " + e.getStatusCode());
         } catch (HttpClientErrorException.NotFound e) {
             log.error("Запись с данным id не найдена: ", e);
-            throw new NotFoundException("Запись с данным id не найдена: ");
+            throw new NotFoundException("Запись с данным id не найдена");
         } catch (RestClientException e) {
-            throw new DocumentServerException("Ошибка при вызове документа: ");
+            throw new DocumentServerException("Ошибка при вызове документа");
         }
     }
 }

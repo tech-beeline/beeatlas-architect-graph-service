@@ -99,6 +99,12 @@ public class GraphController {
 
     @PostMapping("/graph/local/{docId}")
     @Operation(summary = "Пересоздание локального графа, используя документ, в котором описывается система (все вершины и связи помечаются graphTag: Local)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Граф успешно пересоздан"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Документ не найден", content = @Content),
+            @ApiResponse(responseCode = "503", description = "Ошибка при загрузке документа", content = @Content)
+    })
     public ResponseEntity<String> LocalGraph(@PathVariable("docId") Long docId,
                                              @Value("${app.feature.use-doc-service:false}") boolean isDocServiceEnabled) {
         if (!isDocServiceEnabled) {
@@ -119,6 +125,12 @@ public class GraphController {
 
     @PostMapping("/graph/{docId}")
     @Operation(summary = "Добавление системы из указанного документа в глобальный граф (все вершины и связи помечаются graphTag: Global)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Граф успешно пересоздан"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Документ не найден", content = @Content),
+            @ApiResponse(responseCode = "503", description = "Ошибка при загрузке документа", content = @Content)
+    })
     public ResponseEntity<String> GlobalGraph(@PathVariable("docId") Long docId,
                                               @Value("${app.feature.use-doc-service:false}") boolean isDocServiceEnabled) {
         if (!isDocServiceEnabled) {
