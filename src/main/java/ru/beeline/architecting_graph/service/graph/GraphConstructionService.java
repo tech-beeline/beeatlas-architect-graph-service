@@ -1,5 +1,6 @@
 package ru.beeline.architecting_graph.service.graph;
 
+import ru.beeline.architecting_graph.dto.SequenceDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.neo4j.driver.Record;
@@ -22,7 +23,7 @@ import ru.beeline.architecting_graph.dto.search.OperationDeploymentNodeSearchDTO
 import ru.beeline.architecting_graph.exception.ValidationException;
 import ru.beeline.architecting_graph.model.Workspace;
 import ru.beeline.architecting_graph.repository.neo4j.*;
-
+import java.util.Comparator;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -201,6 +202,58 @@ public class GraphConstructionService {
             Long parentNodeId = record.get("parentNodeId").asLong();
             return getParentEnvironment(parentNodeId);
         }
+    }
+
+    public ResponseEntity<String> createSequence(List<SequenceDto> sequenceDtos) {
+        for (SequenceDto sequenceDto : sequenceDtos) {
+            String diagramKey = sequenceDto.getDiagramKey();
+            List<SequenceDto.SequenceItemDto> sequence = sequenceDto.getSequence();
+
+            SequenceDto.SequenceItemDto firstItem = sequence.stream()
+                    .filter(item -> item.getOrder() == 1)
+                    .findFirst()
+                    .orElse(null);
+
+            if (firstItem == null) {
+                log.warn("Нет элемента с order=1 для diagramKey={}", diagramKey);
+                return ResponseEntity.badRequest().body("Нет элемента с order=1 для diagramKey=" + diagramKey);
+            }
+
+            SequenceDto.ComponentDto inDto = firstItem.getIn();
+            long[] inSsInfo = genericRepository.findOrCreateSoftwareSystemForSequence(inDto.getSoftwaresystem());
+            long inSsVersion = inSsInfo[1];
+            long inContainerId = genericRepository.findOrCreateContainerUnderSS(inSsInfo[0], inDto.getContainer(), inSsVersion);
+            long inComponentId = genericRepository.findOrCreateComponentUnderContainer(inContainerId, inDto.getComponent(), inSsVersion);
+            genericRepository.findOrCreateStartPoint(inComponentId, firstItem.getMethod(), diagramKey, firstItem.getTcCode(), inSsVersion);
+
+            List<SequenceDto.SequenceItemDto> remainingItems = sequence.stream()
+                    .filter(item -> item.getOrder() > 1)
+                    .sorted(Comparator.comparingInt(SequenceDto.SequenceItemDto::getOrder))
+                    .collect(Collectors.toList());
+
+            for (SequenceDto.SequenceItemDto item : remainingItems) {
+                SequenceDto.ComponentDto outDto = item.getOut();
+                SequenceDto.ComponentDto itemInDto = item.getIn();
+
+                long[] outSsInfo = genericRepository.findOrCreateSoftwareSystemForSequence(outDto.getSoftwaresystem());
+                long outSsVersion = outSsInfo[1];
+                long outContainerId = genericRepository.findOrCreateContainerUnderSS(outSsInfo[0], outDto.getContainer(), outSsVersion);
+                long outComponentId = genericRepository.findOrCreateComponentUnderContainer(outContainerId, outDto.getComponent(), outSsVersion);
+
+                long[] itemInSsInfo = genericRepository.findOrCreateSoftwareSystemForSequence(itemInDto.getSoftwaresystem());
+                long itemInSsVersion = itemInSsInfo[1];
+                long itemInContainerId = genericRepository.findOrCreateContainerUnderSS(itemInSsInfo[0], itemInDto.getContainer(), itemInSsVersion);
+                long itemInComponentId = genericRepository.findOrCreateComponentUnderContainer(itemInContainerId, itemInDto.getComponent(), itemInSsVersion);
+
+                if (!genericRepository.sequenceRelationshipExists(outComponentId, itemInComponentId,
+                                                                  item.getMethod(), diagramKey, item.getTcCode())) {
+                    genericRepository.createSequenceRelationship(outComponentId, itemInComponentId,
+                                                                 item.getMethod(), diagramKey, item.getTcCode(), outSsVersion);
+                }
+            }
+        }
+        log.info("Последовательности успешно созданы, количество диаграмм: {}", sequenceDtos.size());
+        return ResponseEntity.ok().build();
     }
 
     public ResponseEntity<List<SearchSoftwareSystemDTO>> getSoftwareSystem(String search) {

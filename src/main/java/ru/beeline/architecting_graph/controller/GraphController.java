@@ -1,5 +1,6 @@
 package ru.beeline.architecting_graph.controller;
 
+import ru.beeline.architecting_graph.dto.SequenceDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -8,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import ru.beeline.architecting_graph.dto.*;
@@ -20,11 +22,13 @@ import ru.beeline.architecting_graph.service.graph.ContainerInstanceService;
 import ru.beeline.architecting_graph.service.graph.GraphConstructionService;
 import ru.beeline.architecting_graph.service.graph.ProductInfluenceService;
 
+import javax.validation.Valid;
 import java.util.List;
 import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/api/v1")
+@Validated
 public class GraphController {
 
     @Autowired
@@ -121,6 +125,15 @@ public class GraphController {
     public ResponseEntity LocalGraph(@PathVariable("id") Long id, @RequestBody List<String> tags) {
 
         return graphConstructionService.postTags(id, tags);
+    }
+
+    @PostMapping("/sequence")
+    @Operation(summary = "Построение сиквенса")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Упешно построен сиквенс", content =
+    @Content),
+            @ApiResponse(responseCode = "400", description = "Неправильные поля", content = @Content)})
+    public ResponseEntity<?> createSequence(@Valid @RequestBody List<@Valid SequenceDto> sequenceDtos) {
+        return graphConstructionService.createSequence(sequenceDtos);
     }
 
     @PostMapping("/graph/{docId}")
