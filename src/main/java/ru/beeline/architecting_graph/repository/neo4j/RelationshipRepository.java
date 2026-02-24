@@ -256,8 +256,11 @@ public class RelationshipRepository {
                 + connection.getDestination().getType() + " {graphTag: $graphTag1, "
                 + connection.getDestination().getKey()
                 + ": $value2}) RETURN EXISTS((a)-->(b)) AS relationshipExists";
-        Value parameters = Values.parameters("graphTag1", graphTag, "value1", connection.getSource().getValue(),
-                "value2", connection.getDestination().getValue(), "cmdb", connection.getCmdb(),
+        Value parameters = Values.parameters(
+                "graphTag1", graphTag
+                , "value1", connection.getSource().getValue(),
+                "value2", connection.getDestination().getValue()
+                , "cmdb", connection.getCmdb(),
                 "description1", relationship.getDescription());
         Result result = neo4jSessionManager.getSession().run(query, parameters);
         if (result.hasNext()) {

@@ -4,7 +4,6 @@
 
 package ru.beeline.architecting_graph.service.graph;
 
-import org.neo4j.driver.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.beeline.architecting_graph.model.*;
@@ -122,10 +121,6 @@ public class CreateExternalObjects {
         }
     }
 
-    public void createRelationship(String graphTag, RelationshipEntity relationship, Connection connection) {
-        relationshipRepository.createRelationshipQuery(graphTag, relationship, connection);
-    }
-
     public void setRelationshipProperties(String graphTag, RelationshipEntity relationship, Connection connection) {
         if (relationship.getProperties() != null) {
             for (Map.Entry<String, Object> entry : relationship.getProperties().entrySet()) {
@@ -167,14 +162,12 @@ public class CreateExternalObjects {
 
     public void updateChildRelationship(String graphTag, Model model, String curVersion,
                                         String sourceId, String destinationId, String cmdb, HashMap<String, GraphObject> objects) {
-        RelationshipEntity relationship = new RelationshipEntity();
-        relationship.setSourceId(sourceId);
-        relationship.setDestinationId(destinationId);
-        relationship.setDescription("Child");
-        Connection connection = new Connection();
-        connection.setRelationshipType("Child");
-        connection.setCmdb(cmdb);
-        updateRelationship(graphTag, relationship, model, curVersion, connection, objects);
+        updateRelationship(graphTag,
+                           RelationshipEntity.builder().sourceId(sourceId).destinationId(destinationId).description("Child").build(),
+                           model,
+                           curVersion,
+                           Connection.builder().relationshipType("Child").cmdb(cmdb).build(),
+                           objects);
     }
 
     public void updateDeployRelationship(String graphTag, Model model, String curVersion,
@@ -192,11 +185,12 @@ public class CreateExternalObjects {
 
     public void updateDefaultRelationship(String graphTag, RelationshipEntity relationship, Model model,
                                           String curVersion, String cmdb, String level, HashMap<String, GraphObject> objects) {
-        Connection connection = new Connection();
-        connection.setRelationshipType("Relationship");
-        connection.setCmdb(cmdb);
-        connection.setLevel(level);
-        updateRelationship(graphTag, relationship, model, curVersion, connection, objects);
+        updateRelationship(graphTag,
+                           relationship,
+                           model,
+                           curVersion,
+                           Connection.builder().cmdb(cmdb).level(level).relationshipType("Relationship").build(),
+                           objects);
     }
 
     public void updateRelationship(String graphTag, RelationshipEntity relationship, Model model,
@@ -223,7 +217,7 @@ public class CreateExternalObjects {
             relationship.setDescription("None");
         }
         if (!relationshipRepository.checkIfRelationshipExists(graphTag, relationship, connection)) {
-            createRelationship(graphTag, relationship, connection);
+            relationshipRepository.createRelationshipQuery(graphTag, relationship, connection);
         }
         setParametersForRelationship(graphTag, relationship, connection, curVersion);
     }

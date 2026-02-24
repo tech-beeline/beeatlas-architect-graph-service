@@ -4,26 +4,35 @@
 
 package ru.beeline.architecting_graph.controller;
 
+import ru.beeline.architecting_graph.dto.SequenceDto;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import ru.beeline.architecting_graph.dto.*;
+import ru.beeline.architecting_graph.dto.search.OperationDeploymentNodeSearchDTO;
 import ru.beeline.architecting_graph.exception.ConflictValuesException;
 import ru.beeline.architecting_graph.service.compareVersions.CompareVersionsService;
 import ru.beeline.architecting_graph.service.createDiagrams.ContainerComponentBuilder;
 import ru.beeline.architecting_graph.service.getElements.ElementService;
+import ru.beeline.architecting_graph.service.graph.ContainerInstanceService;
 import ru.beeline.architecting_graph.service.graph.GraphConstructionService;
 import ru.beeline.architecting_graph.service.graph.ProductInfluenceService;
 
+import javax.validation.Valid;
 import java.util.List;
 import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/api/v1")
+@Validated
 public class GraphController {
 
     @Autowired
@@ -37,6 +46,9 @@ public class GraphController {
 
     @Autowired
     ContainerComponentBuilder containerComponentBuilder;
+
+    @Autowired
+    ContainerInstanceService containerInstanceService;
 
     @Autowired
     ElementService elementService;
@@ -79,23 +91,81 @@ public class GraphController {
         return graphConstructionService.getGraphByTask(graphType, taskId);
     }
 
-    @PostMapping("/graph/local/{json}")
+    @GetMapping("/deployment-nodes/operation")
+    @Operation(summary = "Поиск деплоймент нод по реализованным методам")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Деплоймент ноды"),
+            @ApiResponse(responseCode = "400",
+                    description = "Отсутствует обязательный параметр path",
+                    content = @Content)
+    })
+    public ResponseEntity<OperationDeploymentNodeSearchDTO> getOperationWithDeploymentNodeByMethods(@RequestParam String path,
+                                                                                                    @RequestParam(required = false) String type) {
+        return graphConstructionService.getOperationWithDeploymentNodeByMethods(path, type);
+    }
+
+    @PostMapping("/graph/local/{docId}")
     @Operation(summary = "Пересоздание локального графа, используя документ, в котором описывается система (все вершины и связи помечаются graphTag: Local)")
-    public ResponseEntity<String> LocalGraph(@PathVariable("json") String json,
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Граф успешно пересоздан"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Документ не найден", content = @Content),
+            @ApiResponse(responseCode = "503", description = "Ошибка при загрузке документа", content = @Content)
+    })
+    public ResponseEntity<String> LocalGraph(@PathVariable("docId") Long docId,
                                              @Value("${app.feature.use-doc-service:false}") boolean isDocServiceEnabled) {
         if (!isDocServiceEnabled) {
             throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED);
         }
-        return graphConstructionService.graphConstruct(json, "Local");
+        return graphConstructionService.graphConstruct(docId, "Local");
     }
 
-    @PostMapping("/graph/{json}")
+    @PostMapping("/node/{id}/tag")
+    @Operation(summary = "Добавление кастомных тегов к нодам глобального графа")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Теги успешно добавлены", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Нода с указанным ID не существует", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Нода существует, но graphTag != Global", content = @Content)})
+    public ResponseEntity LocalGraph(@PathVariable("id") Long id, @RequestBody List<String> tags) {
+
+        return graphConstructionService.postTags(id, tags);
+    }
+
+    @PostMapping("/sequence")
+    @Operation(summary = "Построение сиквенса")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Упешно построен сиквенс", content =
+    @Content),
+            @ApiResponse(responseCode = "400", description = "Неправильные поля", content = @Content)})
+    public ResponseEntity<?> createSequence(@Valid @RequestBody List<@Valid SequenceDto> sequenceDtos) {
+        return graphConstructionService.createSequence(sequenceDtos);
+    }
+
+    @PostMapping("/graph/{docId}")
     @Operation(summary = "Добавление системы из указанного документа в глобальный граф (все вершины и связи помечаются graphTag: Global)")
-    public ResponseEntity<String> GlobalGraph(@PathVariable("json") String json,
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Граф успешно пересоздан"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Документ не найден", content = @Content),
+            @ApiResponse(responseCode = "503", description = "Ошибка при загрузке документа", content = @Content)
+    })
+    public ResponseEntity<String> GlobalGraph(@PathVariable("docId") Long docId,
                                               @Value("${app.feature.use-doc-service:false}") boolean isDocServiceEnabled) {
         if (!isDocServiceEnabled) {
             throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED);
         }
+        return graphConstructionService.graphConstruct(docId, "Global");
+    }
+
+
+    @PostMapping("/graph/local/json")
+    @Operation(summary = "Пересоздание локального графа, используя документ, в котором описывается система (все вершины и связи помечаются graphTag: Local)")
+    public ResponseEntity<String> LocalGraph(@RequestBody String json) {
+        return graphConstructionService.graphConstruct(json, "Local");
+    }
+
+    @PostMapping("/graph/json")
+    @Operation(summary = "Добавление системы из указанного документа в глобальный граф (все вершины и связи помечаются graphTag: Global)")
+    public ResponseEntity<String> GlobalGraph(@RequestBody String json) {
         return graphConstructionService.graphConstruct(json, "Global");
     }
 
@@ -123,6 +193,12 @@ public class GraphController {
         } catch (ConflictValuesException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
+    }
+
+    @GetMapping("/depliyment-node/{id}/containers/tech-capaility")
+    @Operation(summary = "Получение по id deploymentNode контейенры которые в ней развернуты с реализоваными в них ТС")
+    public ResponseEntity getContainerInstancesByDeploymentNodeId(@PathVariable Integer id) {
+        return containerInstanceService.getContainerInstancesByDeploymentNodeId(id);
     }
 
     @GetMapping("/diff/{cmdb}/{firstVersion}/{secondVersion}")

@@ -20,6 +20,7 @@ public class Container {
     private String name;
     private String description;
     private String technology;
+    private String originalName;
     private String tags;
     private String url;
     private List<Component> components;
