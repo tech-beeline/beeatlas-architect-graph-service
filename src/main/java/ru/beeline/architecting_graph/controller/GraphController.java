@@ -152,6 +152,19 @@ public class GraphController {
         return graphConstructionService.graphConstruct(docId, "Global");
     }
 
+
+    @PostMapping("/graph/local/json")
+    @Operation(summary = "Пересоздание локального графа, используя документ, в котором описывается система (все вершины и связи помечаются graphTag: Local)")
+    public ResponseEntity<String> LocalGraph(@RequestBody String json) {
+        return graphConstructionService.graphConstruct(json, "Local");
+    }
+
+    @PostMapping("/graph/json")
+    @Operation(summary = "Добавление системы из указанного документа в глобальный граф (все вершины и связи помечаются graphTag: Global)")
+    public ResponseEntity<String> GlobalGraph(@RequestBody String json) {
+        return graphConstructionService.graphConstruct(json, "Global");
+    }
+
     @GetMapping("/graph/product/{cmdb}/influence")
     @Operation(summary = "Метод для получения связанных систем")
     public ResponseEntity<ProductInfluenceDTO> getInfluence(@PathVariable String cmdb) {

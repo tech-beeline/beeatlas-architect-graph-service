@@ -72,11 +72,16 @@ public class GraphConstructionService {
 
     public ResponseEntity<String> graphConstruct(Long docId, String graphTag) {
         log.info("graphConstruct is running");
-        String workspaceJson =  documentClient.getDocument(docId);
+        String workspaceJson = documentClient.getDocument(docId);
         if (workspaceJson == null) {
             log.info("Документ не найден");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Документ не найден");
         }
+        return graphConstruct(workspaceJson, graphTag);
+    }
+
+    public ResponseEntity<String> graphConstruct(String workspaceJson, String graphTag) {
+        log.info("graphConstruct is running");
         Workspace workspace;
         try {
             workspace = objectMapper.readValue(workspaceJson, Workspace.class);

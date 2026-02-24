@@ -5,12 +5,18 @@ import org.springframework.amqp.core.MessageDeliveryMode;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import ru.beeline.architecting_graph.client.AuthSSOClient;
 
 
 @Slf4j
 @Component
+@ConditionalOnProperty(
+        name = "app.feature.use-doc-service",
+        havingValue = "true",
+        matchIfMissing = true
+)
 public class RabbitService {
 
     @Autowired
