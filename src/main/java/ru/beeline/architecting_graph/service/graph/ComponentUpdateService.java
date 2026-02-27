@@ -66,6 +66,13 @@ public class ComponentUpdateService {
             genericRepository.createObject(graphTag, componentGraphObject);
         }
         objects.put(component.getId(), componentGraphObject);
+        if (component.getOriginalName() != null) {
+            genericRepository.setObjectParameter(
+                    graphTag,
+                    componentGraphObject,
+                    "originalName",
+                    component.getOriginalName());
+        }
         setParametersForComponent(graphTag, component, componentGraphObject, curVersion);
     }
 
@@ -122,17 +129,22 @@ public class ComponentUpdateService {
                                  String curVersion, String containerExternalName, HashMap<String, GraphObject> objects) {
         if (container.getComponents() != null) {
             for (Component component : container.getComponents()) {
-                component.setName(component.getName() + "~" + container.getName());
-                if (component.getProperties() != null && component.getProperties().containsKey("external_name")
-                        && component.getProperties().get("external_name") != null) {
-                    String componentExternalName = component.getProperties().get("external_name").toString() + "."
-                            + containerExternalName;
-                    component.getProperties().put("external_name", componentExternalName);
-                }
+                setNames(container, containerExternalName, component);
                 updateComponent(graphTag, component, curVersion, objects);
                 createExternalObjects.updateChildRelationship(graphTag, model, curVersion,
                         container.getId(), component.getId(), cmdb, objects);
             }
+        }
+    }
+
+    private static void setNames(Container container, String containerExternalName, Component component) {
+        component.setOriginalName(new String(component.getName()));
+        component.setName(component.getName() + "~" + container.getName());
+        if (component.getProperties() != null && component.getProperties().containsKey("external_name")
+                && component.getProperties().get("external_name") != null) {
+            String componentExternalName = component.getProperties().get("external_name").toString() + "."
+                    + containerExternalName;
+            component.getProperties().put("external_name", componentExternalName);
         }
     }
 

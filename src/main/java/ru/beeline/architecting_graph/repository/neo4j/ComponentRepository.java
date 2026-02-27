@@ -46,12 +46,18 @@ public class ComponentRepository {
 
     public void setComponentProperty(String graphTag, String componentName, String sanitizedKey,
                                      Object propertyValue) {
-        String cypherQuery = "MATCH (n:Component {graphTag: $graphTag, name: $name}) SET n." + sanitizedKey
-                + " = $value";
+        String safeKey = sanitizedKey.replace("`", "``");
+        String cypherQuery = String.format(
+                "MATCH (n:Component {graphTag: $graphTag, name: $name}) " +
+                        "SET n.`%s` = $value",
+                safeKey
+        );
+
         Value parameters = Values.parameters(
                 "graphTag", graphTag,
                 "name", componentName,
-                "value", propertyValue);
+                "value", propertyValue
+        );
         neo4jSessionManager.getSession().run(cypherQuery, parameters);
     }
 

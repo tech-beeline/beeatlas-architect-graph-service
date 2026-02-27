@@ -1,0 +1,24 @@
+# Используем базовый образ Maven с Java 17
+FROM maven:3.9.9-eclipse-temurin-17
+
+# Устанавливаем рабочую директорию
+WORKDIR /app
+
+# Копируем исходный код в контейнер
+COPY pom.xml .
+COPY src ./src
+COPY certs ./certs
+
+COPY *.crt /usr/local/share/ca-certificates
+USER root
+RUN update-ca-certificates
+RUN keytool -importcert -file /app/certs/Vimpelcom_InternalCA_G2.crt -alias Vimpelcom_InternalCA_G2 -storepass changeit -noprompt -trustcacerts  -cacerts
+RUN keytool -importcert -file /app/certs/Vimpelcom_RootCA_G2.crt -alias Vimpelcom_RootCA_G2 -storepass changeit -noprompt -trustcacerts -cacerts
+RUN keytool -importcert -file /app/certs/apps.yd-m6-kt22.vimpelcom.ru.crt -alias apps.yd-m6-kt22.vimpelcom.ru -storepass changeit -noprompt -trustcacerts -cacerts
+
+
+# Собираем проект
+RUN mvn clean package
+
+# Запускаем приложение
+CMD ["java", "-jar", "target/architecting_graph-0.0.2-SNAPSHOT.jar"]

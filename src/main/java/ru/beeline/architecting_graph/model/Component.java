@@ -20,6 +20,7 @@ public class Component {
     private String name;
     private String description;
     private String technology;
+    private String originalName;
     private String tags;
     private String url;
     private String group;
