@@ -1,5 +1,6 @@
 package ru.beeline.architecting_graph.controller;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import ru.beeline.architecting_graph.dto.SequenceDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -191,7 +192,16 @@ public class GraphController {
         }
     }
 
-    @GetMapping("/depliyment-node/{id}/containers/tech-capaility")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Список ТС найден",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = java.util.List.class))
+            ),
+            @ApiResponse(responseCode = "404", description = "Not found", content = @Content),
+    })
+    @GetMapping("/deployment-node/{id}/containers/tech-capability")
     @Operation(summary = "Получение по id deploymentNode контейенры которые в ней развернуты с реализоваными в них ТС")
     public ResponseEntity getContainerInstancesByDeploymentNodeId(@PathVariable Integer id) {
         return containerInstanceService.getContainerInstancesByDeploymentNodeId(id);
