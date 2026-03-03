@@ -210,6 +210,9 @@ public class GraphConstructionService {
     }
 
     public ResponseEntity<String> createSequence(List<SequenceDto> sequenceDtos) {
+        if (sequenceDtos.isEmpty()){
+            throw new ValidationException("Отсутствут sequenceDtos");
+        }
         for (SequenceDto sequenceDto : sequenceDtos) {
             String diagramKey = sequenceDto.getDiagramKey();
             List<SequenceDto.SequenceItemDto> sequence = sequenceDto.getSequence();

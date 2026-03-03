@@ -517,7 +517,7 @@ public class GenericRepository {
         }
         String createQuery = """
                 MATCH (ss:SoftwareSystem) WHERE id(ss) = $ssId
-                CREATE (c:Container {graphTag: "Global", originalName: $name, startVersion: $startVersion})
+                CREATE (c:Container {graphTag: "Global", originalName: $name, name: $name, startVersion: $startVersion})
                 CREATE (ss)-[:Child]->(c)
                 RETURN id(c) AS id
                 """;
@@ -540,7 +540,7 @@ public class GenericRepository {
         }
         String createQuery = """
                 MATCH (c:Container) WHERE id(c) = $cId
-                CREATE (comp:Component {graphTag: "Global", originalName: $name, startVersion: $startVersion})
+                CREATE (comp:Component {graphTag: "Global", originalName: $name, name: $name, startVersion: $startVersion})
                 CREATE (c)-[:Child]->(comp)
                 RETURN id(comp) AS id
                 """;
