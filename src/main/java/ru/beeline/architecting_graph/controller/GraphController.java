@@ -1,5 +1,6 @@
 package ru.beeline.architecting_graph.controller;
 
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import ru.beeline.architecting_graph.dto.SequenceDto;
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,6 +15,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import ru.beeline.architecting_graph.dto.*;
+import ru.beeline.architecting_graph.dto.product.TcDTO;
 import ru.beeline.architecting_graph.dto.search.OperationDeploymentNodeSearchDTO;
 import ru.beeline.architecting_graph.exception.ConflictValuesException;
 import ru.beeline.architecting_graph.service.compareVersions.CompareVersionsService;
@@ -196,14 +198,16 @@ public class GraphController {
             @ApiResponse(
                     responseCode = "200",
                     description = "Список ТС найден",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = java.util.List.class))
+                    content = @Content(
+                            mediaType = "application/json",
+                            array = @ArraySchema(schema = @Schema(implementation = TcDTO.class))
+                    )
             ),
             @ApiResponse(responseCode = "404", description = "Not found", content = @Content),
     })
     @GetMapping("/deployment-node/{id}/containers/tech-capability")
-    @Operation(summary = "Получение по id deploymentNode контейенры которые в ней развернуты с реализоваными в них ТС")
-    public ResponseEntity getContainerInstancesByDeploymentNodeId(@PathVariable Integer id) {
+    @Operation(summary = "Получение по id deploymentNode контейнеров, которые в ней развернуты с реализованными в них ТС")
+    public ResponseEntity<List<TcDTO>> getContainerInstancesByDeploymentNodeId(@PathVariable Integer id) {
         return containerInstanceService.getContainerInstancesByDeploymentNodeId(id);
     }
 
