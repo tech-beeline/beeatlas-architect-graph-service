@@ -203,7 +203,7 @@ public class GraphController {
                             array = @ArraySchema(schema = @Schema(implementation = TcDTO.class))
                     )
             ),
-            @ApiResponse(responseCode = "404", description = "Not found", content = @Content),
+            @ApiResponse(responseCode = "404", description = "DeploymentNode с указанным id не найдена", content = @Content),
     })
     @GetMapping("/deployment-node/{id}/containers/tech-capability")
     @Operation(summary = "Получение по id deploymentNode контейнеров, которые в ней развернуты с реализованными в них ТС")

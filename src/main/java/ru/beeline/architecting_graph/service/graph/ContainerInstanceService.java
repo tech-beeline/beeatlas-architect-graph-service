@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import ru.beeline.architecting_graph.client.ProductClient;
+import ru.beeline.architecting_graph.exception.NotFoundException;
 import ru.beeline.architecting_graph.model.*;
 import ru.beeline.architecting_graph.repository.neo4j.ContainerInstanceRepository;
 import ru.beeline.architecting_graph.repository.neo4j.DeploymentNodesRepository;
@@ -133,7 +134,7 @@ public class ContainerInstanceService {
     public ResponseEntity getContainerInstancesByDeploymentNodeId(Integer id) {
         Result check = deploymentNodesRepository.findActiveDeploymentNodeById(id.longValue());
         if (!check.hasNext()) {
-            return ResponseEntity.notFound().build();
+            throw new NotFoundException("DeploymentNode с указанным id не найдена");
         }
         var record = check.next();
         Node node = record.get("n").asNode();
