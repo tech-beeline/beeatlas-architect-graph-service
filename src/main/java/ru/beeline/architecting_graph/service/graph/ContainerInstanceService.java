@@ -8,9 +8,11 @@ import org.neo4j.driver.Result;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.types.Node;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import ru.beeline.architecting_graph.client.ProductClient;
+import ru.beeline.architecting_graph.dto.ErrorResponse;
 import ru.beeline.architecting_graph.model.*;
 import ru.beeline.architecting_graph.repository.neo4j.ContainerInstanceRepository;
 import ru.beeline.architecting_graph.repository.neo4j.DeploymentNodesRepository;
@@ -135,11 +137,12 @@ public class ContainerInstanceService {
     }
 
     public ResponseEntity getContainerInstancesByDeploymentNodeId(Integer id) {
-        Result check = deploymentNodesRepository.findActiveDeploymentNodeById(id.longValue());
-        if (!check.hasNext()) {
-            return ResponseEntity.notFound().build();
+        Result deploymentNode = deploymentNodesRepository.findActiveDeploymentNodeById(id.longValue());
+        if (!deploymentNode.hasNext()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ErrorResponse("DeploymentNode с указанным id не найдена"));
         }
-        var record = check.next();
+        var record = deploymentNode.next();
         Node node = record.get("n").asNode();
         String fullName = node.get("name").asString("");
 
