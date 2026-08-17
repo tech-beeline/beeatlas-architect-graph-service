@@ -320,7 +320,7 @@ public class GenericRepository {
     public Result getDependentSystemsRelationship(String cmdb) {
         String cypher = """
         MATCH (softwareSystem2:SoftwareSystem)
-        WHERE toLower(softwareSystem2.cmdb) = toLower($cmdb) AND softwareSystem2.graphTag = "Global"
+        WHERE softwareSystem2.cmdb = $cmdb AND softwareSystem2.graphTag = "Global"
         MATCH (softwareSystem2)-[:Child*0..]->(target)
         WHERE target:Container OR target:Component
         WITH softwareSystem2, COLLECT(DISTINCT target) + softwareSystem2 AS allTargets
@@ -335,7 +335,7 @@ public class GenericRepository {
     public Result getDependentInfluenceSystem(String cmdb) {
         String cypher = """
         MATCH (softwareSystem2:SoftwareSystem)
-        WHERE toLower(softwareSystem2.cmdb) = toLower($cmdb) AND softwareSystem2.graphTag = "Global"
+        WHERE softwareSystem2.cmdb = $cmdb AND softwareSystem2.graphTag = "Global"
                 MATCH (softwareSystem2)-[:Child*0..]->(target)
                 WHERE target:Container OR target:Component
                 WITH softwareSystem2, COLLECT(DISTINCT target) + softwareSystem2 AS allTargets
@@ -350,7 +350,7 @@ public class GenericRepository {
     public Result  getDependentSystemsChildContainerRelationship(String cmdb) {
         String cypher = """
         MATCH (softwareSystem2:SoftwareSystem)
-        WHERE toLower(softwareSystem2.cmdb) = toLower($cmdb) AND softwareSystem2.graphTag = "Global"
+        WHERE softwareSystem2.cmdb = $cmdb AND softwareSystem2.graphTag = "Global"
         MATCH (softwareSystem2)-[:Child*0..]->(target)
         WHERE target:Container OR target:Component
         WITH softwareSystem2, COLLECT(DISTINCT target) + softwareSystem2 AS allTargets
@@ -365,7 +365,7 @@ public class GenericRepository {
  public Result getDependentSystemsChildContainerRelationshipInfluence(String cmdb) {
         String cypher = """
         MATCH (softwareSystem2:SoftwareSystem)
-        WHERE toLower(softwareSystem2.cmdb) = toLower($cmdb) AND softwareSystem2.graphTag = "Global"
+        WHERE softwareSystem2.cmdb = $cmdb AND softwareSystem2.graphTag = "Global"
         MATCH (softwareSystem2)-[:Child*0..]->(target)
         WHERE target:Container OR target:Component
         WITH softwareSystem2, COLLECT(DISTINCT target) + softwareSystem2 AS allTargets
@@ -381,7 +381,7 @@ public class GenericRepository {
     public Result getDependentSystemsChildContainerChildRelationship(String cmdb) {
         String cypher = """
         MATCH (softwareSystem2:SoftwareSystem)
-        WHERE toLower(softwareSystem2.cmdb) = toLower($cmdb) AND softwareSystem2.graphTag = "Global"
+        WHERE softwareSystem2.cmdb = $cmdb AND softwareSystem2.graphTag = "Global"
         MATCH (softwareSystem2)-[:Child*0..]->(target)
         WHERE target:Container OR target:Component
         WITH softwareSystem2, COLLECT(DISTINCT target) + softwareSystem2 AS allTargets
@@ -396,7 +396,7 @@ public class GenericRepository {
     public Result getDependentSystemsChildContainerChildRelationshipInfluenceSystem(String cmdb) {
         String cypher = """
         MATCH (softwareSystem2:SoftwareSystem)
-        WHERE toLower(softwareSystem2.cmdb) = toLower($cmdb) AND softwareSystem2.graphTag = "Global"
+        WHERE softwareSystem2.cmdb = $cmdb AND softwareSystem2.graphTag = "Global"
         MATCH (softwareSystem2)-[:Child*0..]->(target)
         WHERE target:Container OR target:Component
         WITH softwareSystem2, COLLECT(DISTINCT target) + softwareSystem2 AS allTargets
@@ -415,7 +415,7 @@ public class GenericRepository {
         MATCH (container:Container)
         WHERE container.name STARTS WITH $containerPrefix + "~"
           AND (softwareSystem)-[:Child*0..]->(container)
-          AND toLower(softwareSystem.cmdb) = toLower($cmdb)
+          AND softwareSystem.cmdb = $cmdb
         MATCH (container)-[dep:Deploy]->(containerInstance:ContainerInstance)
         WHERE dep.endVersion IS NULL
         MATCH (containerInstance)<-[child:Child]-(deploymentNode:DeploymentNode)

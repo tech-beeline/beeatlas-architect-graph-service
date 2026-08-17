@@ -102,7 +102,7 @@ public class ContainerRepository {
 
     public Long findContainerIdByParentSystemAndName(String name, String cmdb) {
         String query = "MATCH (parent:SoftwareSystem )-[r:Child]->(con:Container) \n" +
-                "WHERE toLower(con.name) = toLower($name)  and toLower(parent.cmdb) = toLower($cmdb)\n" +
+                "WHERE toLower(con.name) = toLower($name)  and parent.cmdb = $cmdb\n" +
                 "RETURN id(con) LIMIT 1";
 
         Result result =

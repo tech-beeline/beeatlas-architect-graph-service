@@ -53,7 +53,7 @@ public class SoftwareSystemRepository {
     public List<String> getInfluencingSystems(String cmdb) {
         String query =
                 "MATCH (influencing:SoftwareSystem)-[r:Relationship]->(p:SoftwareSystem {graphTag: 'Global'}) " +
-                        "WHERE toLower(p.cmdb) = toLower($cmdb) " +
+                        "WHERE p.cmdb = $cmdb " +
                         "RETURN collect(influencing.cmdb) AS influencingSystems";
         return neo4jSessionManager.getSession().run(query, Values.parameters("cmdb", cmdb))
                 .single()
@@ -64,7 +64,7 @@ public class SoftwareSystemRepository {
     public List<String> getDependentSystems(String cmdb) {
         String query =
                 "MATCH (p:SoftwareSystem {graphTag: 'Global'}) " +
-                        "WHERE toLower(p.cmdb) = toLower($cmdb) " +
+                        "WHERE p.cmdb = $cmdb " +
                         "MATCH (p)-[r:Relationship]->(dependent:SoftwareSystem) " +
                         "RETURN collect(dependent.cmdb) AS dependentSystems";
         return neo4jSessionManager.getSession().run(query, Values.parameters("cmdb", cmdb))
@@ -76,7 +76,7 @@ public class SoftwareSystemRepository {
     public Result getSoftwareSystem(String cmdb) {
         String query =
                 "MATCH (softwareSystem:SoftwareSystem {graphTag: 'Global'}) " +
-                        "WHERE toLower(softwareSystem.cmdb) = toLower($cmdb) " +
+                        "WHERE softwareSystem.cmdb = $cmdb " +
                         "RETURN softwareSystem";
         return neo4jSessionManager.getSession().run(query, Values.parameters("cmdb", cmdb));
     }
@@ -171,7 +171,7 @@ public class SoftwareSystemRepository {
 
     public boolean productExists(String cmdb) {
         String query = "MATCH (p:SoftwareSystem {graphTag: 'Global'}) " +
-                "WHERE toLower(p.cmdb) = toLower($cmdb) " +
+                "WHERE p.cmdb = $cmdb " +
                 "RETURN p LIMIT 1";
         Record productRecord = neo4jSessionManager.getSession().run(query, Values.parameters("cmdb", cmdb)).single();
         return productRecord != null;
