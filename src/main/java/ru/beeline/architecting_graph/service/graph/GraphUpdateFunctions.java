@@ -90,7 +90,7 @@ public class GraphUpdateFunctions {
         for (SoftwareSystem softwareSystem : model.getSoftwareSystems()) {
             if (softwareSystem.getProperties() != null
                     && softwareSystem.getProperties().get("cmdb") != null
-                    && softwareSystem.getProperties().get("cmdb").equals(cmdb)) {
+                    && softwareSystem.getProperties().get("cmdb").toString().equalsIgnoreCase(cmdb)) {
                 return softwareSystem;
             }
         }
