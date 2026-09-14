@@ -4,6 +4,8 @@
 
 package ru.beeline.architecting_graph.service.graph;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.neo4j.driver.Record;
@@ -27,6 +29,7 @@ import ru.beeline.architecting_graph.exception.ValidationException;
 import ru.beeline.architecting_graph.model.Workspace;
 import ru.beeline.architecting_graph.repository.neo4j.*;
 
+import javax.annotation.PostConstruct;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -51,6 +54,10 @@ public class GraphConstructionService {
     @Autowired
     ObjectMapper objectMapper;
 
+    // Настройки как в AbstractJsonReader из Structurizr: DSL допускает shape/border в любом регистре,
+    // а незнакомые значения enum не должны ломать разбор всего workspace
+    private ObjectMapper workspaceMapper;
+
     @Autowired
     DeploymentNodesRepository deploymentNodesRepository;
 
@@ -69,6 +76,15 @@ public class GraphConstructionService {
     @Autowired
     ProductClient productClient;
 
+    @PostConstruct
+    void initWorkspaceMapper() {
+        workspaceMapper = objectMapper.copy()
+                .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS, true)
+                .configure(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL, true)
+                .configure(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT, true)
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    }
+
     public String graphConstruct(Long docId, String graphTag) {
         log.info("graphConstruct is running");
         String workspaceJson = documentClient.getDocument(docId);
@@ -83,7 +99,7 @@ public class GraphConstructionService {
         log.info("graphConstruct is running");
         Workspace workspace;
         try {
-            workspace = objectMapper.readValue(workspaceJson, Workspace.class);
+            workspace = workspaceMapper.readValue(workspaceJson, Workspace.class);
         } catch (Exception e) {
             log.info("Полученный workspace не валиден: " + e.getMessage());
             log.info("workspaceJson is: " + workspaceJson);
