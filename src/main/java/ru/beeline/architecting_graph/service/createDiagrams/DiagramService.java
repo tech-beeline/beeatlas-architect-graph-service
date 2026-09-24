@@ -13,8 +13,6 @@ import org.graphstream.stream.file.FileSinkDOT;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.types.Node;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import ru.beeline.architecting_graph.client.ProductClient;
@@ -81,9 +79,9 @@ public class DiagramService {
     }
 
     public String createDiagram(String softwareSystemMnemonic,
-                                                String containerMnemonic,
-                                                String environment,
-                                                String rankDirection) {
+                                String containerMnemonic,
+                                String environment,
+                                String rankDirection) {
         if (rankDirection == null) {
             rankDirection = "LeftRight";
         }
@@ -93,25 +91,25 @@ public class DiagramService {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         GraphObject systemGraphObject = new GraphObject("SoftwareSystem",
-                                                        "structurizr_dsl_identifier",
-                                                        softwareSystemMnemonic);
+                "structurizr_dsl_identifier",
+                softwareSystemMnemonic);
         boolean exists = genericRepository.checkIfObjectExists("Global", systemGraphObject);
         if (!exists) {
             throw new NotFoundException("Система не найдена");
+        }
+        if (containerMnemonic != null && !checkifContainerExists(softwareSystemMnemonic, containerMnemonic)) {
+            throw new NotFoundException("Контейнер не найден");
+        }
+        if (environment != null && !checkIfEnvironmentExists(environment)) {
+            throw new NotFoundException("Окружение не найдено");
         }
         Workspace workspace;
         try {
             if (containerMnemonic == null && environment == null) {
                 workspace = viewService.GetContextView(softwareSystemMnemonic, rankDirection);
             } else if (containerMnemonic != null) {
-                if (!checkifContainerExists(softwareSystemMnemonic, containerMnemonic)) {
-                    throw new NotFoundException("Контейнер не найден");
-                }
                 workspace = viewService.GetComponentView(softwareSystemMnemonic, containerMnemonic, rankDirection);
             } else {
-                if (!checkIfEnvironmentExists(environment)) {
-                    throw new NotFoundException("Окружение не найдено");
-                }
                 workspace = viewService.GetDeploymentView(softwareSystemMnemonic, environment, rankDirection);
             }
             String json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(workspace);
@@ -123,8 +121,8 @@ public class DiagramService {
     }
 
     public String createContextDiagramV2(String cmdb,
-                                                         String rankDirection,
-                                                         String communicationDirection) {
+                                         String rankDirection,
+                                         String communicationDirection) {
         if (rankDirection == null) {
             rankDirection = "LeftRight";
         }
@@ -191,10 +189,10 @@ public class DiagramService {
         try {
             ObjectMapper mapper = new ObjectMapper();
             String json = mapper.writeValueAsString(createDiagram(rankDirection,
-                                                                  softwareSystemId,
-                                                                  softwareSystemName,
-                                                                  relationships,
-                                                                  softwareSystems));
+                    softwareSystemId,
+                    softwareSystemName,
+                    relationships,
+                    softwareSystems));
             json = structurizrClient.changeJson(json);
             return json;
         } catch (Exception e) {
@@ -245,9 +243,9 @@ public class DiagramService {
     }
 
     public String getDiagramDeployment(String cmdb,
-                                                       String env,
-                                                       String rankDirection,
-                                                       String deploymentName) {
+                                       String env,
+                                       String rankDirection,
+                                       String deploymentName) {
         if (rankDirection == null) {
             rankDirection = "LeftRight";
         }
@@ -294,21 +292,21 @@ public class DiagramService {
 
         List<Map<String, String>> elements = new ArrayList<>();
         elements.addAll(dnMap.keySet()
-                                .stream()
-                                .map(id -> Map.of("id", String.valueOf(id)))
-                                .collect(Collectors.toList()));
+                .stream()
+                .map(id -> Map.of("id", String.valueOf(id)))
+                .collect(Collectors.toList()));
         elements.addAll(ciMap.keySet()
-                                .stream()
-                                .map(id -> Map.of("id", String.valueOf(id)))
-                                .collect(Collectors.toList()));
+                .stream()
+                .map(id -> Map.of("id", String.valueOf(id)))
+                .collect(Collectors.toList()));
         elements.addAll(inMap.keySet()
-                                .stream()
-                                .map(id -> Map.of("id", String.valueOf(id)))
-                                .collect(Collectors.toList()));
+                .stream()
+                .map(id -> Map.of("id", String.valueOf(id)))
+                .collect(Collectors.toList()));
         elements.addAll(ssMap.keySet()
-                                .stream()
-                                .map(id -> Map.of("id", String.valueOf(id)))
-                                .collect(Collectors.toList()));
+                .stream()
+                .map(id -> Map.of("id", String.valueOf(id)))
+                .collect(Collectors.toList()));
 
         List<Map<String, String>> relations = relMap.keySet()
                 .stream()
@@ -318,10 +316,10 @@ public class DiagramService {
         try {
             ObjectMapper mapper = new ObjectMapper();
             String json = mapper.writeValueAsString(createDiagram(rankDirection,
-                                                                  deploymentNodes,
-                                                                  ssMap,
-                                                                  elements,
-                                                                  relations));
+                    deploymentNodes,
+                    ssMap,
+                    elements,
+                    relations));
             json = structurizrClient.changeJson(json);
             return json;
         } catch (Exception e) {
@@ -623,8 +621,8 @@ public class DiagramService {
         }
         deploymentNode.put("containerInstances", containerInstances);
         deploymentNode.put("infrastructureNodes",
-                           mapInfrastructureNodes(infrastructureNodesRepository.getInfrastructureNodesByDeploymentNodeId(
-                                   dnNode.id()), inMap));
+                mapInfrastructureNodes(infrastructureNodesRepository.getInfrastructureNodesByDeploymentNodeId(
+                        dnNode.id()), inMap));
 
         List<Map<String, Object>> children = new ArrayList<>();
         Result kids = deploymentNodesRepository.getChildDeploymentNodesById(dnNode.id());
@@ -735,33 +733,33 @@ public class DiagramService {
                 if (depResults.hasNext()) {
                     var depRecord = depResults.next();
                     addNodesFromCollection(graph,
-                                           depRecord,
-                                           "deploymentSources",
-                                           "yellow",
-                                           "orange",
-                                           "Вызов",
-                                           "central");
+                            depRecord,
+                            "deploymentSources",
+                            "yellow",
+                            "orange",
+                            "Вызов",
+                            "central");
                     addNodesFromCollection(graph,
-                                           depRecord,
-                                           "infrastructureSources",
-                                           "yellow",
-                                           "orange",
-                                           "Вызов",
-                                           "central");
+                            depRecord,
+                            "infrastructureSources",
+                            "yellow",
+                            "orange",
+                            "Вызов",
+                            "central");
                     addNodesFromCollection(graph,
-                                           depRecord,
-                                           "deploymentTargets",
-                                           "blue",
-                                           "lightblue",
-                                           "Deploy",
-                                           "central");
+                            depRecord,
+                            "deploymentTargets",
+                            "blue",
+                            "lightblue",
+                            "Deploy",
+                            "central");
                     addNodesFromCollection(graph,
-                                           depRecord,
-                                           "infrastructureNodes",
-                                           "blue",
-                                           "lightblue",
-                                           "Deploy",
-                                           "central");
+                            depRecord,
+                            "infrastructureNodes",
+                            "blue",
+                            "lightblue",
+                            "Deploy",
+                            "central");
                     addNodesFromCollection(graph, depRecord, "containers", "blue", "lightblue", "Deploy", "central");
                 }
                 break;
@@ -771,12 +769,12 @@ public class DiagramService {
                 if (containerResults.hasNext()) {
                     var containerRecord = containerResults.next();
                     addNodesFromCollection(graph,
-                                           containerRecord,
-                                           "containersSources",
-                                           "yellow",
-                                           "orange",
-                                           "Вызов",
-                                           "central");
+                            containerRecord,
+                            "containersSources",
+                            "yellow",
+                            "orange",
+                            "Вызов",
+                            "central");
                 }
                 break;
 
@@ -785,19 +783,19 @@ public class DiagramService {
                 if (infraResults.hasNext()) {
                     var infraRecord = infraResults.next();
                     addNodesFromCollection(graph,
-                                           infraRecord,
-                                           "infrastructureSources",
-                                           "yellow",
-                                           "orange",
-                                           "Вызов",
-                                           "central");
+                            infraRecord,
+                            "infrastructureSources",
+                            "yellow",
+                            "orange",
+                            "Вызов",
+                            "central");
                     addNodesFromCollection(graph,
-                                           infraRecord,
-                                           "deploymentSources",
-                                           "yellow",
-                                           "orange",
-                                           "Вызов",
-                                           "central");
+                            infraRecord,
+                            "deploymentSources",
+                            "yellow",
+                            "orange",
+                            "Вызов",
+                            "central");
                 }
                 break;
 
@@ -936,13 +934,13 @@ public class DiagramService {
                         .orElse(null);
 
                 dependentElements.add(DiagramElementDTO.builder()
-                                              .id(id)
-                                              .name(trimAfterFirstDot(fullName))
-                                              .dependentCount(genericRepository.getDependentCountByNodeId(id))
-                                              .cmdb(cmdb)
-                                              .critical(productInfo != null ? productInfo.getCritical() : "")
-                                              .ownerName(productInfo != null ? productInfo.getOwnerName() : "")
-                                              .build());
+                        .id(id)
+                        .name(trimAfterFirstDot(fullName))
+                        .dependentCount(genericRepository.getDependentCountByNodeId(id))
+                        .cmdb(cmdb)
+                        .critical(productInfo != null ? productInfo.getCritical() : "")
+                        .ownerName(productInfo != null ? productInfo.getOwnerName() : "")
+                        .build());
             }
         }
 
@@ -1032,15 +1030,15 @@ public class DiagramService {
         addCmdbFromResult(dependentCmdbSet, genericRepository.getDependentSystemsChildContainerChildRelationship(cmdb));
 
         return ResponseEntity.ok(productClient.getAllProductsInfo()
-                                         .stream()
-                                         .filter(product -> dependentCmdbSet.contains(product.getAlias().toLowerCase()))
-                                         .map(product -> ContextElementDTO.builder()
-                                                 .id(Long.parseLong(product.getId()))
-                                                 .cmdb(product.getAlias())
-                                                 .critical(product.getCritical())
-                                                 .ownerName(product.getOwnerName())
-                                                 .build())
-                                         .toList());
+                .stream()
+                .filter(product -> dependentCmdbSet.contains(product.getAlias().toLowerCase()))
+                .map(product -> ContextElementDTO.builder()
+                        .id(Long.parseLong(product.getId()))
+                        .cmdb(product.getAlias())
+                        .critical(product.getCritical())
+                        .ownerName(product.getOwnerName())
+                        .build())
+                .toList());
     }
 
     public ResponseEntity<String> getInfluenceDot(Long Id) {
@@ -1212,35 +1210,35 @@ public class DiagramService {
                 int influenceCount = genericRepository.getDependentCount(nodeId);
 
                 dependentElements.add(DiagramElementInfluenceDTO.builder()
-                                              .id(nodeId)
-                                              .name(trimAfterFirstDot(fullName))
-                                              .influenceCount(influenceCount)
-                                              .cmdb(cmdb)
-                                              .critical(productInfo != null ? productInfo.getCritical() : "")
-                                              .ownerName(productInfo != null ? productInfo.getOwnerName() : "")
-                                              .build());
+                        .id(nodeId)
+                        .name(trimAfterFirstDot(fullName))
+                        .influenceCount(influenceCount)
+                        .cmdb(cmdb)
+                        .critical(productInfo != null ? productInfo.getCritical() : "")
+                        .ownerName(productInfo != null ? productInfo.getOwnerName() : "")
+                        .build());
             }
         }
         return ResponseEntity.ok(dependentElements);
     }
 
     public ResponseEntity<List<ContextElementDTO>> getContextInfluenceElements(String cmdb) {
-    Set<String> dependentCmdbSet = new HashSet<>();
+        Set<String> dependentCmdbSet = new HashSet<>();
 
-    addCmdbFromResult(dependentCmdbSet, genericRepository.getDependentInfluenceSystem(cmdb));
-    addCmdbFromResult(dependentCmdbSet, genericRepository.getDependentSystemsChildContainerRelationshipInfluence(cmdb));
-    addCmdbFromResult(dependentCmdbSet, genericRepository.getDependentSystemsChildContainerChildRelationshipInfluenceSystem(cmdb));
+        addCmdbFromResult(dependentCmdbSet, genericRepository.getDependentInfluenceSystem(cmdb));
+        addCmdbFromResult(dependentCmdbSet, genericRepository.getDependentSystemsChildContainerRelationshipInfluence(cmdb));
+        addCmdbFromResult(dependentCmdbSet, genericRepository.getDependentSystemsChildContainerChildRelationshipInfluenceSystem(cmdb));
 
         return ResponseEntity.ok(productClient.getAllProductsInfo()
                 .stream()
-                                         .filter(product -> dependentCmdbSet.contains(product.getAlias().toLowerCase()))
-            .map(product -> ContextElementDTO.builder()
-            .id(Long.parseLong(product.getId()))
-            .cmdb(product.getAlias())
-            .critical(product.getCritical())
-            .ownerName(product.getOwnerName())
-            .build())
-            .toList());
+                .filter(product -> dependentCmdbSet.contains(product.getAlias().toLowerCase()))
+                .map(product -> ContextElementDTO.builder()
+                        .id(Long.parseLong(product.getId()))
+                        .cmdb(product.getAlias())
+                        .critical(product.getCritical())
+                        .ownerName(product.getOwnerName())
+                        .build())
+                .toList());
     }
 
     public ResponseEntity<String> getContextInfluenceDiagramDot(String cmdb) {

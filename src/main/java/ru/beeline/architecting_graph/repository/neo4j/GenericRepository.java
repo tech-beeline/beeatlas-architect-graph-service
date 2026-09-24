@@ -5,6 +5,7 @@
 package ru.beeline.architecting_graph.repository.neo4j;
 
 import lombok.extern.slf4j.Slf4j;
+import org.neo4j.driver.Record;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
@@ -13,7 +14,6 @@ import org.springframework.stereotype.Repository;
 import ru.beeline.architecting_graph.dto.search.DeploymentNodeSearchDTO;
 import ru.beeline.architecting_graph.model.GraphObject;
 import ru.beeline.architecting_graph.service.graph.Neo4jSessionManager;
-import org.neo4j.driver.Record;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -34,10 +34,10 @@ public class GenericRepository {
 
     public boolean checkIfObjectGenericExists(String graphTag, Long nodeId) {
         String checkObjectExist = """
-        MATCH (n {graphTag: $graphTag})
-        WHERE id(n) = $nodeId
-        RETURN n
-        """;
+                MATCH (n {graphTag: $graphTag})
+                WHERE id(n) = $nodeId
+                RETURN n
+                """;
         Value parameters = Values.parameters("graphTag", graphTag, "nodeId", nodeId);
         Result result = neo4jSessionManager.getSession().run(checkObjectExist, parameters);
         return result.hasNext();
@@ -71,7 +71,7 @@ public class GenericRepository {
     }
 
     public Value getObjectParameterGeneric(String graphTag, Long id,
-                                    String parameter) {
+                                           String parameter) {
         String getParameter = "MATCH (n {graphTag: $graphTag1}) WHERE id(n) = $value "
                 + "RETURN n." + parameter + " AS parameter";
         Value parameters = Values.parameters("graphTag1", graphTag, "value", id);
@@ -84,7 +84,7 @@ public class GenericRepository {
     }
 
     public void setObjectParameterGeneric(String graphTag, Long id,
-                                   String parameter, String value) {
+                                          String parameter, String value) {
         String setParameter = "MATCH (n {graphTag: $graphTag1})  WHERE id(n) = $value "
                 + "SET n." + parameter + " = $parameter1";
         Value parameters = Values.parameters("graphTag1", graphTag, "value", id,
@@ -126,14 +126,14 @@ public class GenericRepository {
 
     public Result findIncomingRelationshipsByContainerInstance(Long containerInstanceId) {
         String cypher = """
-        MATCH (src:ContainerInstance)-[r:Relationship]->(dst:ContainerInstance)
-        WHERE id(dst) = $containerInstanceId
-        MATCH (container:Container)-[:Deploy]->(dst)
-        MATCH (ss:SoftwareSystem)-[:Child]->(container)
-        MATCH (dn:DeploymentNode)-[:Child]->(dst)
-        RETURN
-            r, src, dst, container, ss, dn
-    """;
+                    MATCH (src:ContainerInstance)-[r:Relationship]->(dst:ContainerInstance)
+                    WHERE id(dst) = $containerInstanceId
+                    MATCH (container:Container)-[:Deploy]->(dst)
+                    MATCH (ss:SoftwareSystem)-[:Child]->(container)
+                    MATCH (dn:DeploymentNode)-[:Child]->(dst)
+                    RETURN
+                        r, src, dst, container, ss, dn
+                """;
 
         Value params = Values.parameters("containerInstanceId", containerInstanceId);
         return neo4jSessionManager.getSession().run(cypher, params);
@@ -178,111 +178,111 @@ public class GenericRepository {
     public Result getNodeTypeAndNameById(Long nodeId) {
         String cypher = "MATCH (n) WHERE id(n) = $nodeId RETURN head(labels(n)) AS nodeType, n.name AS name";
         Value params = Values.parameters("nodeId", nodeId);
-            return neo4jSessionManager.getSession().run(cypher, params);
+        return neo4jSessionManager.getSession().run(cypher, params);
     }
 
     public Result getDeploymentNodeDependencies(Long nodeId) {
         String cypher = """
-            MATCH (start) WHERE id(start) = $nodeId
-            OPTIONAL MATCH (deploymentSource:DeploymentNode)-[:Relationship]->(start)
-            OPTIONAL MATCH (infrastructureSource:InfrastructureNode)-[:Relationship]->(start)
-            OPTIONAL MATCH (start)-[:Child]->(deploymentTarget:DeploymentNode)
-            OPTIONAL MATCH (start)-[:Child]->(infrastructure:InfrastructureNode)
-            OPTIONAL MATCH (start)-[:Child]->(containerInstance:ContainerInstance)
-            OPTIONAL MATCH (container:Container)-[:Deploy]->(containerInstance)
-            RETURN 
-                collect(DISTINCT deploymentSource) AS deploymentSources,
-                collect(DISTINCT infrastructureSource) AS infrastructureSources,
-                collect(DISTINCT deploymentTarget) AS deploymentTargets,
-                collect(DISTINCT infrastructure) AS infrastructureNodes,
-                collect(DISTINCT containerInstance) AS containerInstances,
-                collect(DISTINCT container) AS containers
-        """;
+                    MATCH (start) WHERE id(start) = $nodeId
+                    OPTIONAL MATCH (deploymentSource:DeploymentNode)-[:Relationship]->(start)
+                    OPTIONAL MATCH (infrastructureSource:InfrastructureNode)-[:Relationship]->(start)
+                    OPTIONAL MATCH (start)-[:Child]->(deploymentTarget:DeploymentNode)
+                    OPTIONAL MATCH (start)-[:Child]->(infrastructure:InfrastructureNode)
+                    OPTIONAL MATCH (start)-[:Child]->(containerInstance:ContainerInstance)
+                    OPTIONAL MATCH (container:Container)-[:Deploy]->(containerInstance)
+                    RETURN 
+                        collect(DISTINCT deploymentSource) AS deploymentSources,
+                        collect(DISTINCT infrastructureSource) AS infrastructureSources,
+                        collect(DISTINCT deploymentTarget) AS deploymentTargets,
+                        collect(DISTINCT infrastructure) AS infrastructureNodes,
+                        collect(DISTINCT containerInstance) AS containerInstances,
+                        collect(DISTINCT container) AS containers
+                """;
         Value params = Values.parameters("nodeId", nodeId);
         return neo4jSessionManager.getSession().run(cypher, params);
     }
 
     public Result getDeploymentNodeDependenciesShort(Long nodeId) {
         String cypher = """
-                MATCH (start)
-                WHERE id(start) = $nodeId
-                OPTIONAL MATCH (deploymentSource:DeploymentNode)<-[:Relationship]-(start)
-                OPTIONAL MATCH (infrastructureSource:InfrastructureNode)<-[:Relationship]-(start)
-                OPTIONAL MATCH (start)<-[:Child]-(deploymentTarget:DeploymentNode)
-                RETURN 
-                  collect(DISTINCT deploymentSource) as deploymentSources,
-                  collect(DISTINCT infrastructureSource) as infrastructureSources,
-                  collect(DISTINCT deploymentTarget) as deploymentParent
-        """;
+                        MATCH (start)
+                        WHERE id(start) = $nodeId
+                        OPTIONAL MATCH (deploymentSource:DeploymentNode)<-[:Relationship]-(start)
+                        OPTIONAL MATCH (infrastructureSource:InfrastructureNode)<-[:Relationship]-(start)
+                        OPTIONAL MATCH (start)<-[:Child]-(deploymentTarget:DeploymentNode)
+                        RETURN 
+                          collect(DISTINCT deploymentSource) as deploymentSources,
+                          collect(DISTINCT infrastructureSource) as infrastructureSources,
+                          collect(DISTINCT deploymentTarget) as deploymentParent
+                """;
         Value params = Values.parameters("nodeId", nodeId);
         return neo4jSessionManager.getSession().run(cypher, params);
     }
 
     public Result getContainerDependencies(Long nodeId) {
         String cypher = """
-            MATCH (start) WHERE id(start) = $nodeId
-            MATCH (directContainer:Container)-[:Deploy]->(:ContainerInstance)
-            WHERE (directContainer)-[:Relationship]->(start)
-            RETURN collect(DISTINCT directContainer) AS containersSources
-        """;
+                    MATCH (start) WHERE id(start) = $nodeId
+                    MATCH (directContainer:Container)-[:Deploy]->(:ContainerInstance)
+                    WHERE (directContainer)-[:Relationship]->(start)
+                    RETURN collect(DISTINCT directContainer) AS containersSources
+                """;
         Value params = Values.parameters("nodeId", nodeId);
         return neo4jSessionManager.getSession().run(cypher, params);
     }
 
     public Result getContainerDependenciesShort(Long nodeId) {
         String cypher = """
-                MATCH (start)
-                WHERE id(start) = $nodeId
-                OPTIONAL MATCH (directContainer:Container)-[:Deploy]->(:ContainerInstance)
-                WHERE (directContainer)<-[:Relationship]-(start)
-                OPTIONAL MATCH (deploymentParent:DeploymentNode)-[:Child]->(instance:ContainerInstance)
-                WHERE (instance)<-[:Deploy]-(start)
-                RETURN 
-                  collect(DISTINCT directContainer) as containersSources,
-                  collect(DISTINCT deploymentParent) as deploymentParent
-        """;
+                        MATCH (start)
+                        WHERE id(start) = $nodeId
+                        OPTIONAL MATCH (directContainer:Container)-[:Deploy]->(:ContainerInstance)
+                        WHERE (directContainer)<-[:Relationship]-(start)
+                        OPTIONAL MATCH (deploymentParent:DeploymentNode)-[:Child]->(instance:ContainerInstance)
+                        WHERE (instance)<-[:Deploy]-(start)
+                        RETURN 
+                          collect(DISTINCT directContainer) as containersSources,
+                          collect(DISTINCT deploymentParent) as deploymentParent
+                """;
         Value params = Values.parameters("nodeId", nodeId);
         return neo4jSessionManager.getSession().run(cypher, params);
     }
 
     public Result getInfrastructureNodeDependencies(Long nodeId) {
         String cypher = """
-            MATCH (start) WHERE id(start) = $nodeId
-            OPTIONAL MATCH (infrastructureSource:InfrastructureNode)-[:Relationship]->(start)
-            OPTIONAL MATCH (deploymentSource:DeploymentNode)-[:Relationship]->(start)
-            RETURN 
-                collect(DISTINCT infrastructureSource) AS infrastructureSources,
-                collect(DISTINCT deploymentSource) AS deploymentSources
-        """;
+                    MATCH (start) WHERE id(start) = $nodeId
+                    OPTIONAL MATCH (infrastructureSource:InfrastructureNode)-[:Relationship]->(start)
+                    OPTIONAL MATCH (deploymentSource:DeploymentNode)-[:Relationship]->(start)
+                    RETURN 
+                        collect(DISTINCT infrastructureSource) AS infrastructureSources,
+                        collect(DISTINCT deploymentSource) AS deploymentSources
+                """;
         Value params = Values.parameters("nodeId", nodeId);
         return neo4jSessionManager.getSession().run(cypher, params);
     }
 
     public Result getInfrastructureNodeDependenciesShort(Long nodeId) {
         String cypher = """
-            MATCH (start) WHERE id(start) = $nodeId
-            OPTIONAL MATCH (infrastructureSource:InfrastructureNode)<-[:Relationship]-(start)
-            OPTIONAL MATCH (deploymentSource:DeploymentNode)<-[:Relationship]-(start)
-            OPTIONAL MATCH (deploymentParent:DeploymentNode)-[:Child]->(start)
-            RETURN
-                   collect(DISTINCT infrastructureSource) as infrastructureSources,
-                   collect(DISTINCT deploymentSource) as deploymentSources,
-                   collect(DISTINCT deploymentParent) as deploymentParent
-        """;
+                    MATCH (start) WHERE id(start) = $nodeId
+                    OPTIONAL MATCH (infrastructureSource:InfrastructureNode)<-[:Relationship]-(start)
+                    OPTIONAL MATCH (deploymentSource:DeploymentNode)<-[:Relationship]-(start)
+                    OPTIONAL MATCH (deploymentParent:DeploymentNode)-[:Child]->(start)
+                    RETURN
+                           collect(DISTINCT infrastructureSource) as infrastructureSources,
+                           collect(DISTINCT deploymentSource) as deploymentSources,
+                           collect(DISTINCT deploymentParent) as deploymentParent
+                """;
         Value params = Values.parameters("nodeId", nodeId);
         return neo4jSessionManager.getSession().run(cypher, params);
     }
 
     public int getDependentCountByNodeId(Long nodeId) {
         String cypher = """
-            MATCH (n)
-                        WHERE id(n) = $nodeId
-                        OPTIONAL MATCH (n)<-[incoming_rel:Relationship]-(incoming_node)
-                        WITH n, collect(DISTINCT incoming_node) as unique_incoming_nodes
-                        OPTIONAL MATCH (n)-[outgoing_child:Child]->()
-                        WITH n, unique_incoming_nodes, count(DISTINCT outgoing_child) as outgoing_child_count
-                        RETURN size(unique_incoming_nodes) + outgoing_child_count as totalConnections
-    """;
+                        MATCH (n)
+                                    WHERE id(n) = $nodeId
+                                    OPTIONAL MATCH (n)<-[incoming_rel:Relationship]-(incoming_node)
+                                    WITH n, collect(DISTINCT incoming_node) as unique_incoming_nodes
+                                    OPTIONAL MATCH (n)-[outgoing_child:Child]->()
+                                    WITH n, unique_incoming_nodes, count(DISTINCT outgoing_child) as outgoing_child_count
+                                    RETURN size(unique_incoming_nodes) + outgoing_child_count as totalConnections
+                """;
         Value params = Values.parameters("nodeId", nodeId);
         var result = neo4jSessionManager.getSession().run(cypher, params);
 
@@ -296,16 +296,16 @@ public class GenericRepository {
 
     public int getDependentCount(Long nodeId) {
         String cypher = """
-                MATCH (n)
-                 WHERE id(n) =$nodeId
-                 OPTIONAL MATCH (n)-[incoming_rel:Relationship]->(incoming_node)
-                 WITH n, collect(DISTINCT incoming_node) as unique_incoming_nodes
-                 OPTIONAL MATCH (n)<-[outgoing_child:Child]-(parent)
-                 WHERE NOT parent:Environment AND NOT parent:SoftwareSystem
-                 WITH n, unique_incoming_nodes, count(DISTINCT outgoing_child) as outgoing_child_count\s
-                 RETURN\s
-                 size(unique_incoming_nodes) + outgoing_child_count as totalConnections
-    """;
+                            MATCH (n)
+                             WHERE id(n) =$nodeId
+                             OPTIONAL MATCH (n)-[incoming_rel:Relationship]->(incoming_node)
+                             WITH n, collect(DISTINCT incoming_node) as unique_incoming_nodes
+                             OPTIONAL MATCH (n)<-[outgoing_child:Child]-(parent)
+                             WHERE NOT parent:Environment AND NOT parent:SoftwareSystem
+                             WITH n, unique_incoming_nodes, count(DISTINCT outgoing_child) as outgoing_child_count\s
+                             RETURN\s
+                             size(unique_incoming_nodes) + outgoing_child_count as totalConnections
+                """;
         Value params = Values.parameters("nodeId", nodeId);
         var result = neo4jSessionManager.getSession().run(cypher, params);
 
@@ -319,115 +319,117 @@ public class GenericRepository {
 
     public Result getDependentSystemsRelationship(String cmdb) {
         String cypher = """
-        MATCH (softwareSystem2:SoftwareSystem)
-        WHERE softwareSystem2.cmdb = $cmdb AND softwareSystem2.graphTag = "Global"
-        MATCH (softwareSystem2)-[:Child*0..]->(target)
-        WHERE target:Container OR target:Component
-        WITH softwareSystem2, COLLECT(DISTINCT target) + softwareSystem2 AS allTargets
-        MATCH (dependentSystem:SoftwareSystem)-[r:Relationship]->(target)
-        WHERE target IN allTargets AND dependentSystem <> softwareSystem2 AND target.endVersion IS NULL AND r.endVersion IS NULL
-        RETURN DISTINCT dependentSystem
-    """;
+                    MATCH (softwareSystem2:SoftwareSystem)
+                    WHERE toLower(softwareSystem2.cmdb) = toLower($cmdb) AND softwareSystem2.graphTag = "Global"
+                    MATCH (softwareSystem2)-[:Child*0..]->(target)
+                    WHERE target:Container OR target:Component
+                    WITH softwareSystem2, COLLECT(DISTINCT target) + softwareSystem2 AS allTargets
+                    MATCH (dependentSystem:SoftwareSystem)-[r:Relationship]->(target)
+                    WHERE target IN allTargets AND dependentSystem <> softwareSystem2 AND target.endVersion IS NULL AND r.endVersion IS NULL
+                    RETURN DISTINCT dependentSystem
+                """;
         Value params = Values.parameters("cmdb", cmdb);
         return neo4jSessionManager.getSession().run(cypher, params);
     }
 
     public Result getDependentInfluenceSystem(String cmdb) {
         String cypher = """
-        MATCH (softwareSystem2:SoftwareSystem)
-        WHERE softwareSystem2.cmdb = $cmdb AND softwareSystem2.graphTag = "Global"
-                MATCH (softwareSystem2)-[:Child*0..]->(target)
-                WHERE target:Container OR target:Component
-                WITH softwareSystem2, COLLECT(DISTINCT target) + softwareSystem2 AS allTargets
-                MATCH (dependentSystem:SoftwareSystem)<-[r:Relationship]-(target)
-                WHERE target IN allTargets AND target.endVersion IS NULL AND r.endVersion IS NULL
-                  AND dependentSystem <> softwareSystem2 RETURN DISTINCT dependentSystem
-    """;
+                    MATCH (softwareSystem2:SoftwareSystem)
+                    WHERE toLower(softwareSystem2.cmdb) = toLower($cmdb) AND softwareSystem2.graphTag = "Global"
+                            MATCH (softwareSystem2)-[:Child*0..]->(target)
+                            WHERE target:Container OR target:Component
+                            WITH softwareSystem2, COLLECT(DISTINCT target) + softwareSystem2 AS allTargets
+                            MATCH (dependentSystem:SoftwareSystem)<-[r:Relationship]-(target)
+                            WHERE target IN allTargets AND target.endVersion IS NULL AND r.endVersion IS NULL
+                              AND dependentSystem <> softwareSystem2 RETURN DISTINCT dependentSystem
+                """;
         Value params = Values.parameters("cmdb", cmdb);
         return neo4jSessionManager.getSession().run(cypher, params);
     }
 
-    public Result  getDependentSystemsChildContainerRelationship(String cmdb) {
+    public Result getDependentSystemsChildContainerRelationship(String cmdb) {
         String cypher = """
-        MATCH (softwareSystem2:SoftwareSystem)
-        WHERE softwareSystem2.cmdb = $cmdb AND softwareSystem2.graphTag = "Global"
-        MATCH (softwareSystem2)-[:Child*0..]->(target)
-        WHERE target:Container OR target:Component
-        WITH softwareSystem2, COLLECT(DISTINCT target) + softwareSystem2 AS allTargets
-        MATCH (dependentSystem:SoftwareSystem)-[:Child]->(container:Container)-[r:Relationship]->(target)
-        WHERE target IN allTargets AND dependentSystem <> softwareSystem2 AND target.endVersion IS NULL AND r.endVersion IS NULL
-        RETURN DISTINCT dependentSystem
-        ORDER BY dependentSystem.id
-    """;
+                    MATCH (softwareSystem2:SoftwareSystem)
+                    WHERE toLower(softwareSystem2.cmdb) = toLower($cmdb) AND softwareSystem2.graphTag = "Global"
+                    MATCH (softwareSystem2)-[:Child*0..]->(target)
+                    WHERE target:Container OR target:Component
+                    WITH softwareSystem2, COLLECT(DISTINCT target) + softwareSystem2 AS allTargets
+                    MATCH (dependentSystem:SoftwareSystem)-[:Child]->(container:Container)-[r:Relationship]->(target)
+                    WHERE target IN allTargets AND dependentSystem <> softwareSystem2 AND target.endVersion IS NULL AND r.endVersion IS NULL
+                    RETURN DISTINCT dependentSystem
+                    ORDER BY dependentSystem.id
+                """;
         Value params = Values.parameters("cmdb", cmdb);
         return neo4jSessionManager.getSession().run(cypher, params);
     }
- public Result getDependentSystemsChildContainerRelationshipInfluence(String cmdb) {
+
+    public Result getDependentSystemsChildContainerRelationshipInfluence(String cmdb) {
         String cypher = """
-        MATCH (softwareSystem2:SoftwareSystem)
-        WHERE softwareSystem2.cmdb = $cmdb AND softwareSystem2.graphTag = "Global"
-        MATCH (softwareSystem2)-[:Child*0..]->(target)
-        WHERE target:Container OR target:Component
-        WITH softwareSystem2, COLLECT(DISTINCT target) + softwareSystem2 AS allTargets
-        MATCH (dependentSystem:SoftwareSystem)-[:Child]->(container:Container)<-[r:Relationship]-(target)
-        WHERE target IN allTargets AND dependentSystem <> softwareSystem2 AND target.endVersion IS NULL AND r.endVersion IS NULL
-        RETURN DISTINCT dependentSystem
-        ORDER BY dependentSystem.id
-    """;
+                    MATCH (softwareSystem2:SoftwareSystem)
+                    WHERE toLower(softwareSystem2.cmdb) = toLower($cmdb) AND softwareSystem2.graphTag = "Global"
+                    MATCH (softwareSystem2)-[:Child*0..]->(target)
+                    WHERE target:Container OR target:Component
+                    WITH softwareSystem2, COLLECT(DISTINCT target) + softwareSystem2 AS allTargets
+                    MATCH (dependentSystem:SoftwareSystem)-[:Child]->(container:Container)<-[r:Relationship]-(target)
+                    WHERE target IN allTargets AND dependentSystem <> softwareSystem2 AND target.endVersion IS NULL AND r.endVersion IS NULL
+                    RETURN DISTINCT dependentSystem
+                    ORDER BY dependentSystem.id
+                """;
         Value params = Values.parameters("cmdb", cmdb);
         return neo4jSessionManager.getSession().run(cypher, params);
     }
 
     public Result getDependentSystemsChildContainerChildRelationship(String cmdb) {
         String cypher = """
-        MATCH (softwareSystem2:SoftwareSystem)
-        WHERE softwareSystem2.cmdb = $cmdb AND softwareSystem2.graphTag = "Global"
-        MATCH (softwareSystem2)-[:Child*0..]->(target)
-        WHERE target:Container OR target:Component
-        WITH softwareSystem2, COLLECT(DISTINCT target) + softwareSystem2 AS allTargets
-        MATCH (dependentSystem:SoftwareSystem)-[:Child]->(:Container)-[:Child]->(component:Component)-[r:Relationship]->(target)
-        WHERE target IN allTargets AND dependentSystem <> softwareSystem2 AND target.endVersion IS NULL AND r.endVersion IS NULL
-        RETURN DISTINCT dependentSystem
-        ORDER BY dependentSystem.id
-    """;
+                    MATCH (softwareSystem2:SoftwareSystem)
+                    WHERE toLower(softwareSystem2.cmdb) = toLower($cmdb) AND softwareSystem2.graphTag = "Global"
+                    MATCH (softwareSystem2)-[:Child*0..]->(target)
+                    WHERE target:Container OR target:Component
+                    WITH softwareSystem2, COLLECT(DISTINCT target) + softwareSystem2 AS allTargets
+                    MATCH (dependentSystem:SoftwareSystem)-[:Child]->(:Container)-[:Child]->(component:Component)-[r:Relationship]->(target)
+                    WHERE target IN allTargets AND dependentSystem <> softwareSystem2 AND target.endVersion IS NULL AND r.endVersion IS NULL
+                    RETURN DISTINCT dependentSystem
+                    ORDER BY dependentSystem.id
+                """;
         Value params = Values.parameters("cmdb", cmdb);
         return neo4jSessionManager.getSession().run(cypher, params);
     }
+
     public Result getDependentSystemsChildContainerChildRelationshipInfluenceSystem(String cmdb) {
         String cypher = """
-        MATCH (softwareSystem2:SoftwareSystem)
-        WHERE softwareSystem2.cmdb = $cmdb AND softwareSystem2.graphTag = "Global"
-        MATCH (softwareSystem2)-[:Child*0..]->(target)
-        WHERE target:Container OR target:Component
-        WITH softwareSystem2, COLLECT(DISTINCT target) + softwareSystem2 AS allTargets
-        MATCH (dependentSystem:SoftwareSystem)-[:Child]->(:Container)-[:Child]->(component:Component)<-[r:Relationship]-(target)
-        WHERE target IN allTargets AND dependentSystem <> softwareSystem2 AND target.endVersion IS NULL AND r.endVersion IS NULL
-        RETURN DISTINCT dependentSystem
-        ORDER BY dependentSystem.id
-    """;
+                    MATCH (softwareSystem2:SoftwareSystem)
+                    WHERE toLower(softwareSystem2.cmdb) = toLower($cmdb) AND softwareSystem2.graphTag = "Global"
+                    MATCH (softwareSystem2)-[:Child*0..]->(target)
+                    WHERE target:Container OR target:Component
+                    WITH softwareSystem2, COLLECT(DISTINCT target) + softwareSystem2 AS allTargets
+                    MATCH (dependentSystem:SoftwareSystem)-[:Child]->(:Container)-[:Child]->(component:Component)<-[r:Relationship]-(target)
+                    WHERE target IN allTargets AND dependentSystem <> softwareSystem2 AND target.endVersion IS NULL AND r.endVersion IS NULL
+                    RETURN DISTINCT dependentSystem
+                    ORDER BY dependentSystem.id
+                """;
         Value params = Values.parameters("cmdb", cmdb);
         return neo4jSessionManager.getSession().run(cypher, params);
     }
 
     public List<DeploymentNodeSearchDTO> findDeploymentNodes(String containerNamePrefix, String productCmdb) {
         String cypher = """
-        MATCH (softwareSystem:SoftwareSystem {graphTag: "Global"})
-        MATCH (container:Container)
-        WHERE container.name STARTS WITH $containerPrefix + "~"
-          AND (softwareSystem)-[:Child*0..]->(container)
-          AND softwareSystem.cmdb = $cmdb
-        MATCH (container)-[dep:Deploy]->(containerInstance:ContainerInstance)
-        WHERE dep.endVersion IS NULL
-        MATCH (containerInstance)<-[child:Child]-(deploymentNode:DeploymentNode)
-        WHERE child.endVersion IS NULL
-        MATCH (deploymentNode)<-[:Child]-(environment:Environment)
-        
-                WITH DISTINCT deploymentNode, environment
-                        ORDER BY id(deploymentNode)
-                        RETURN id(deploymentNode) AS id,
-                               deploymentNode.name AS name,
-                               environment.name AS environmentName
-        """;
+                MATCH (softwareSystem:SoftwareSystem {graphTag: "Global"})
+                MATCH (container:Container)
+                WHERE container.name STARTS WITH $containerPrefix + "~"
+                  AND (softwareSystem)-[:Child*0..]->(container)
+                  AND softwareSystem.cmdb = $cmdb
+                MATCH (container)-[dep:Deploy]->(containerInstance:ContainerInstance)
+                WHERE dep.endVersion IS NULL
+                MATCH (containerInstance)<-[child:Child]-(deploymentNode:DeploymentNode)
+                WHERE child.endVersion IS NULL
+                MATCH (deploymentNode)<-[:Child]-(environment:Environment)
+                
+                        WITH DISTINCT deploymentNode, environment
+                                ORDER BY id(deploymentNode)
+                                RETURN id(deploymentNode) AS id,
+                                       deploymentNode.name AS name,
+                                       environment.name AS environmentName
+                """;
 
         Value params = Values.parameters("cmdb", productCmdb, "containerPrefix", containerNamePrefix);
         Result result = neo4jSessionManager.getSession().run(cypher, params);
@@ -514,7 +516,7 @@ public class GenericRepository {
                 RETURN id(c) AS id
                 """;
         Result r = neo4jSessionManager.getSession().run(findQuery,
-                                                        Values.parameters("ssId", ssId, "name", originalName));
+                Values.parameters("ssId", ssId, "name", originalName));
         if (r.hasNext()) {
             Value idVal = r.next().get("id");
             if (!idVal.isNull()) return idVal.asLong();
@@ -526,7 +528,7 @@ public class GenericRepository {
                 RETURN id(c) AS id
                 """;
         Result cr = neo4jSessionManager.getSession().run(createQuery,
-                                                         Values.parameters("ssId", ssId, "name", originalName, "startVersion", startVersion));
+                Values.parameters("ssId", ssId, "name", originalName, "startVersion", startVersion));
         return cr.next().get("id").asLong();
     }
 
@@ -537,7 +539,7 @@ public class GenericRepository {
                 RETURN id(comp) AS id
                 """;
         Result r = neo4jSessionManager.getSession().run(findQuery,
-                                                        Values.parameters("cId", containerId, "name", originalName));
+                Values.parameters("cId", containerId, "name", originalName));
         if (r.hasNext()) {
             Value idVal = r.next().get("id");
             if (!idVal.isNull()) return idVal.asLong();
@@ -549,7 +551,7 @@ public class GenericRepository {
                 RETURN id(comp) AS id
                 """;
         Result cr = neo4jSessionManager.getSession().run(createQuery,
-                                                         Values.parameters("cId", containerId, "name", originalName, "startVersion", startVersion));
+                Values.parameters("cId", containerId, "name", originalName, "startVersion", startVersion));
         return cr.next().get("id").asLong();
     }
 
@@ -560,7 +562,7 @@ public class GenericRepository {
                 RETURN id(sp) AS id
                 """;
         Result r = neo4jSessionManager.getSession().run(findQuery,
-                                                        Values.parameters("compId", componentId, "name", name, "key", key));
+                Values.parameters("compId", componentId, "name", name, "key", key));
         if (r.hasNext() && !r.next().get("id").isNull()) return;
         String createQuery = """
                 MATCH (comp:Component) WHERE id(comp) = $compId
@@ -568,8 +570,8 @@ public class GenericRepository {
                 CREATE (comp)-[:Child]->(sp)
                 """;
         neo4jSessionManager.getSession().run(createQuery,
-                                             Values.parameters("compId", componentId, "name", name, "key", key,
-                                                               "tcCode", tcCode, "startVersion", startVersion));
+                Values.parameters("compId", componentId, "name", name, "key", key,
+                        "tcCode", tcCode, "startVersion", startVersion));
     }
 
     public boolean sequenceRelationshipExists(long outCompId, long inCompId, String name, String key, String tcCode) {
@@ -580,8 +582,8 @@ public class GenericRepository {
                 RETURN r IS NOT NULL AS exists
                 """;
         Result r = neo4jSessionManager.getSession().run(query,
-                                                        Values.parameters("outId", outCompId, "inId", inCompId,
-                                                                          "name", name, "key", key, "tcCode", tcCode));
+                Values.parameters("outId", outCompId, "inId", inCompId,
+                        "name", name, "key", key, "tcCode", tcCode));
         if (r.hasNext()) return r.next().get("exists").asBoolean();
         return false;
     }
@@ -594,7 +596,7 @@ public class GenericRepository {
                 CREATE (out)-[:Sequence {name: $name, key: $key, tcCode: $tcCode, startVersion: $startVersion}]->(in)
                 """;
         neo4jSessionManager.getSession().run(query,
-                                             Values.parameters("outId", outCompId, "inId", inCompId,
-                                                               "name", name, "key", key, "tcCode", tcCode, "startVersion", startVersion));
+                Values.parameters("outId", outCompId, "inId", inCompId,
+                        "name", name, "key", key, "tcCode", tcCode, "startVersion", startVersion));
     }
 }
