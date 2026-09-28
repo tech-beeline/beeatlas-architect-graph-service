@@ -1,0 +1,139 @@
+{
+  "id": 1,
+  "name": "Alpha",
+  "model": {
+    "properties": {
+      "workspace_cmdb": "ALPHA"
+    },
+    "people": [
+      {
+        "id": "100",
+        "name": "User",
+        "relationships": [
+          {"id": "101", "sourceId": "100", "destinationId": "2", "description": "Uses"}
+        ]
+      }
+    ],
+    "softwareSystems": [
+      {
+        "id": "1",
+        "name": "Alpha System",
+        "description": "Main system",
+        "tags": "Element,Software System",
+        "location": "Internal",
+        "group": "Core",
+        "url": "https://alpha",
+        "properties": {
+          "cmdb": "ALPHA",
+          "structurizr.dsl.identifier": "alpha"
+        },
+        "relationships": [
+          {"id": "30", "sourceId": "1", "destinationId": "20", "description": "Sends orders", "technology": "REST", "tags": "Relationship", "url": "https://rel"},
+          {"id": "31", "sourceId": "1", "destinationId": "21", "description": "Calls gateway", "linkedRelationshipId": "32"},
+          {"id": "35", "sourceId": "1", "destinationId": "40", "description": "Feeds legacy"}
+        ],
+        "containers": [
+          {
+            "id": "2",
+            "name": "api",
+            "description": "API",
+            "technology": "Java",
+            "tags": "Element,Container",
+            "properties": {
+              "structurizr.dsl.identifier": "alpha.api",
+              "api.style": "rest"
+            },
+            "relationships": [
+              {"id": "32", "sourceId": "2", "destinationId": "21", "description": "Calls gateway", "technology": "gRPC"},
+              {"id": "33", "sourceId": "2", "destinationId": "3", "description": "Reads", "technology": "JDBC", "properties": {"data.flow": "read"}},
+              {"id": "36", "sourceId": "2", "destinationId": "22", "description": "Publishes"}
+            ],
+            "components": [
+              {
+                "id": "4",
+                "name": "controller",
+                "technology": "Spring MVC",
+                "properties": {"structurizr.dsl.identifier": "alpha.api.controller"},
+                "relationships": [
+                  {"id": "34", "sourceId": "4", "destinationId": "5"},
+                  {"id": "37", "sourceId": "4", "destinationId": "20", "description": "Checks status"}
+                ]
+              },
+              {"id": "5", "name": "service", "technology": "Spring"}
+            ]
+          },
+          {"id": "3", "name": "db", "technology": "PostgreSQL"}
+        ]
+      },
+      {
+        "id": "20",
+        "name": "Beta System",
+        "location": "External",
+        "properties": {
+          "cmdb": "BETA",
+          "structurizr.dsl.identifier": "beta"
+        },
+        "relationships": [
+          {"id": "38", "sourceId": "20", "destinationId": "1", "description": "Callbacks"}
+        ],
+        "containers": [
+          {"id": "21", "name": "gateway", "properties": {"structurizr.dsl.identifier": "beta.gateway"}},
+          {"id": "22", "name": "queue"}
+        ]
+      },
+      {
+        "id": "40",
+        "name": "Legacy",
+        "properties": {}
+      }
+    ],
+    "deploymentNodes": [
+      {
+        "id": "50",
+        "name": "k8s",
+        "environment": "Production",
+        "technology": "Kubernetes",
+        "instances": "1",
+        "properties": {"ip": "10.0.0.1"},
+        "relationships": [
+          {"id": "62", "sourceId": "50", "destinationId": "55", "description": "Replicates"}
+        ],
+        "infrastructureNodes": [
+          {
+            "id": "51",
+            "name": "lb",
+            "environment": "Production",
+            "technology": "nginx",
+            "properties": {"lb.mode": "l7"},
+            "relationships": [
+              {"id": "60", "sourceId": "51", "destinationId": "53", "description": "Routes"}
+            ]
+          }
+        ],
+        "children": [
+          {
+            "id": "52",
+            "name": "pod",
+            "environment": "Production",
+            "instances": "3",
+            "containerInstances": [
+              {
+                "id": "53",
+                "containerId": "2",
+                "instanceId": 1,
+                "environment": "Production",
+                "tags": "Container Instance",
+                "properties": {"replica.set": "api-rs"},
+                "relationships": [
+                  {"id": "61", "sourceId": "53", "destinationId": "54", "description": "Reads", "linkedRelationshipId": "33"}
+                ]
+              },
+              {"id": "54", "containerId": "3", "instanceId": 1, "environment": "Production"}
+            ]
+          }
+        ]
+      },
+      {"id": "55", "name": "dr", "environment": "Production"}
+    ]
+  }
+}

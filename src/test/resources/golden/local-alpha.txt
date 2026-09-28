@@ -1,0 +1,43 @@
+(Component 'controller~api~ALPHA' @Local ALPHA) -[:Relationship {description=Checks status, graphTag=Local ALPHA, level=C3, sourceWorkspace=ALPHA}]-> (SoftwareSystem 'BETA' @Local ALPHA)
+(Component 'controller~api~ALPHA' @Local ALPHA) -[:Relationship {description=None, graphTag=Local ALPHA, level=C3, numberOfConnects=1, sourceWorkspace=ALPHA}]-> (Component 'service~api~ALPHA' @Local ALPHA)
+(Component 'controller~api~ALPHA' @Local ALPHA) {graphTag=Local ALPHA, name=controller~api~ALPHA, originalName=controller, structurizr_dsl_identifier=alpha.api.controller, technology=Spring MVC}
+(Component 'service~api~ALPHA' @Local ALPHA) {graphTag=Local ALPHA, name=service~api~ALPHA, originalName=service, technology=Spring}
+(Container 'api~ALPHA' @Local ALPHA) -[:Child {description=Child, graphTag=Local ALPHA, sourceWorkspace=ALPHA}]-> (Component 'controller~api~ALPHA' @Local ALPHA)
+(Container 'api~ALPHA' @Local ALPHA) -[:Child {description=Child, graphTag=Local ALPHA, sourceWorkspace=ALPHA}]-> (Component 'service~api~ALPHA' @Local ALPHA)
+(Container 'api~ALPHA' @Local ALPHA) -[:Deploy {description=Deploy, graphTag=Local ALPHA, sourceWorkspace=ALPHA}]-> (ContainerInstance 'api~ALPHA.ContainerInstance.pod~k8s~ALPHA' @Local ALPHA)
+(Container 'api~ALPHA' @Local ALPHA) -[:Relationship {data_flow=read, description=Reads, graphTag=Local ALPHA, level=C2, sourceWorkspace=ALPHA, technology=JDBC}]-> (Container 'db~ALPHA' @Local ALPHA)
+(Container 'api~ALPHA' @Local ALPHA) -[:Relationship {description=Calls gateway, graphTag=Local ALPHA, level=C2, sourceWorkspace=ALPHA, technology=gRPC}]-> (Container 'gateway' @Local ALPHA)
+(Container 'api~ALPHA' @Local ALPHA) -[:Relationship {description=Publishes, graphTag=Local ALPHA, level=C2, sourceWorkspace=ALPHA}]-> (Container 'gateway' @Local ALPHA)
+(Container 'api~ALPHA' @Local ALPHA) {api_style=rest, description=API, graphTag=Local ALPHA, name=api~ALPHA, originalName=api, structurizr_dsl_identifier=alpha.api, tags=Element,Container, technology=Java}
+(Container 'db~ALPHA' @Local ALPHA) -[:Deploy {description=Deploy, graphTag=Local ALPHA, sourceWorkspace=ALPHA}]-> (ContainerInstance 'db~ALPHA.ContainerInstance.pod~k8s~ALPHA' @Local ALPHA)
+(Container 'db~ALPHA' @Local ALPHA) {graphTag=Local ALPHA, name=db~ALPHA, originalName=db, technology=PostgreSQL}
+(Container 'gateway' @Local ALPHA) {external_name=BETA, graphTag=Local ALPHA, name=gateway, structurizr_dsl_identifier=beta.gateway}
+(ContainerInstance 'api~ALPHA.ContainerInstance.pod~k8s~ALPHA' @Local ALPHA) -[:Relationship {description=Reads, graphTag=Local ALPHA, level=, sourceWorkspace=ALPHA}]-> (ContainerInstance 'db~ALPHA.ContainerInstance.pod~k8s~ALPHA' @Local ALPHA)
+(ContainerInstance 'api~ALPHA.ContainerInstance.pod~k8s~ALPHA' @Local ALPHA) {graphTag=Local ALPHA, instanceId=1, name=api~ALPHA.ContainerInstance.pod~k8s~ALPHA, replica_set=api-rs, tags=Container Instance}
+(ContainerInstance 'db~ALPHA.ContainerInstance.pod~k8s~ALPHA' @Local ALPHA) {graphTag=Local ALPHA, instanceId=1, name=db~ALPHA.ContainerInstance.pod~k8s~ALPHA}
+(DeploymentNode 'dr~ALPHA' @Local ALPHA) {graphTag=Local ALPHA, name=dr~ALPHA, originalName=dr}
+(DeploymentNode 'k8s~ALPHA' @Local ALPHA) -[:Child {description=Child, graphTag=Local ALPHA, sourceWorkspace=ALPHA}]-> (DeploymentNode 'pod~k8s~ALPHA' @Local ALPHA)
+(DeploymentNode 'k8s~ALPHA' @Local ALPHA) -[:Child {description=Child, graphTag=Local ALPHA, sourceWorkspace=ALPHA}]-> (InfrastructureNode 'lb~k8s~ALPHA' @Local ALPHA)
+(DeploymentNode 'k8s~ALPHA' @Local ALPHA) -[:Relationship {description=Replicates, graphTag=Local ALPHA, level=, sourceWorkspace=ALPHA}]-> (DeploymentNode 'dr~ALPHA' @Local ALPHA)
+(DeploymentNode 'k8s~ALPHA' @Local ALPHA) {graphTag=Local ALPHA, instances=1, ip=10.0.0.1, name=k8s~ALPHA, originalName=k8s, technology=Kubernetes}
+(DeploymentNode 'pod~k8s~ALPHA' @Local ALPHA) -[:Child {description=Child, graphTag=Local ALPHA, sourceWorkspace=ALPHA}]-> (ContainerInstance 'api~ALPHA.ContainerInstance.pod~k8s~ALPHA' @Local ALPHA)
+(DeploymentNode 'pod~k8s~ALPHA' @Local ALPHA) -[:Child {description=Child, graphTag=Local ALPHA, sourceWorkspace=ALPHA}]-> (ContainerInstance 'db~ALPHA.ContainerInstance.pod~k8s~ALPHA' @Local ALPHA)
+(DeploymentNode 'pod~k8s~ALPHA' @Local ALPHA) {graphTag=Local ALPHA, instances=3, name=pod~k8s~ALPHA, originalName=pod}
+(Environment 'Production' @Local ALPHA) -[:Child {description=Child, graphTag=Local ALPHA, sourceWorkspace=ALPHA}]-> (ContainerInstance 'api~ALPHA.ContainerInstance.pod~k8s~ALPHA' @Local ALPHA)
+(Environment 'Production' @Local ALPHA) -[:Child {description=Child, graphTag=Local ALPHA, sourceWorkspace=ALPHA}]-> (ContainerInstance 'db~ALPHA.ContainerInstance.pod~k8s~ALPHA' @Local ALPHA)
+(Environment 'Production' @Local ALPHA) -[:Child {description=Child, graphTag=Local ALPHA, sourceWorkspace=ALPHA}]-> (DeploymentNode 'dr~ALPHA' @Local ALPHA)
+(Environment 'Production' @Local ALPHA) -[:Child {description=Child, graphTag=Local ALPHA, sourceWorkspace=ALPHA}]-> (DeploymentNode 'k8s~ALPHA' @Local ALPHA)
+(Environment 'Production' @Local ALPHA) -[:Child {description=Child, graphTag=Local ALPHA, sourceWorkspace=ALPHA}]-> (DeploymentNode 'pod~k8s~ALPHA' @Local ALPHA)
+(Environment 'Production' @Local ALPHA) -[:Child {description=Child, graphTag=Local ALPHA, sourceWorkspace=ALPHA}]-> (InfrastructureNode 'lb~k8s~ALPHA' @Local ALPHA)
+(Environment 'Production' @Local ALPHA) {graphTag=Local ALPHA, name=Production}
+(InfrastructureNode 'lb~k8s~ALPHA' @Local ALPHA) -[:Relationship {description=Routes, graphTag=Local ALPHA, level=, sourceWorkspace=ALPHA}]-> (ContainerInstance 'api~ALPHA.ContainerInstance.pod~k8s~ALPHA' @Local ALPHA)
+(InfrastructureNode 'lb~k8s~ALPHA' @Local ALPHA) {graphTag=Local ALPHA, lb_mode=l7, name=lb~k8s~ALPHA, originalName=lb, technology=nginx}
+(SoftwareSystem 'ALPHA' @Local ALPHA) -[:Child {description=Child, graphTag=Local ALPHA, sourceWorkspace=ALPHA}]-> (Container 'api~ALPHA' @Local ALPHA)
+(SoftwareSystem 'ALPHA' @Local ALPHA) -[:Child {description=Child, graphTag=Local ALPHA, sourceWorkspace=ALPHA}]-> (Container 'db~ALPHA' @Local ALPHA)
+(SoftwareSystem 'ALPHA' @Local ALPHA) -[:Child {description=Child, graphTag=Local ALPHA, sourceWorkspace=ALPHA}]-> (DeploymentNode 'dr~ALPHA' @Local ALPHA)
+(SoftwareSystem 'ALPHA' @Local ALPHA) -[:Child {description=Child, graphTag=Local ALPHA, sourceWorkspace=ALPHA}]-> (DeploymentNode 'k8s~ALPHA' @Local ALPHA)
+(SoftwareSystem 'ALPHA' @Local ALPHA) -[:Relationship {description=Sends orders, graphTag=Local ALPHA, level=C1, sourceWorkspace=ALPHA, tags=Relationship, technology=REST, url=https://rel}]-> (SoftwareSystem 'BETA' @Local ALPHA)
+(SoftwareSystem 'ALPHA' @Local ALPHA) {cmdb=ALPHA, description=Main system, graphTag=Local ALPHA, group=Core, name=Alpha System, structurizr_dsl_identifier=alpha, tags=Element,Software System, url=https://alpha}
+(SoftwareSystem 'BETA' @Local ALPHA) -[:Child {description=Child, graphTag=Local ALPHA, sourceWorkspace=BETA}]-> (Container 'gateway' @Local ALPHA)
+(SoftwareSystem 'BETA' @Local ALPHA) -[:Relationship {description=Callbacks, graphTag=Local ALPHA, level=C1, sourceWorkspace=ALPHA}]-> (SoftwareSystem 'ALPHA' @Local ALPHA)
+(SoftwareSystem 'BETA' @Local ALPHA) {cmdb=BETA, graphTag=Local ALPHA, name=Beta System, structurizr_dsl_identifier=beta}
