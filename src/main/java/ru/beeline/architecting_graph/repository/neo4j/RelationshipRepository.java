@@ -107,11 +107,14 @@ public class RelationshipRepository {
         return neo4jSessionManager.getSession().run(query, params);
     }
 
-    public Result getRelationshipsByTagAndCmdb(String graphTag, String cmdb) {
-        String getRelationships = "MATCH (n)-[r {sourceWorkspace: $cmdb, graphTag: $graphTag1}]->(m) "
-                + "WHERE r.endVersion IS NULL RETURN n,m,r";
-        Value parameters = Values.parameters("graphTag1", graphTag, "cmdb", cmdb);
-        return neo4jSessionManager.getSession().run(getRelationships, parameters);
+    public void closeActiveRelationships(String graphTag, String cmdb, String endVersion) {
+        for (String type : List.of("Relationship", "Child", "Deploy")) {
+            String closeRelationships = "MATCH ()-[r:" + type + " {sourceWorkspace: $cmdb}]->() "
+                    + "WHERE r.graphTag = $graphTag1 AND r.endVersion IS NULL "
+                    + "SET r.endVersion = $endVersion";
+            Value parameters = Values.parameters("graphTag1", graphTag, "cmdb", cmdb, "endVersion", endVersion);
+            neo4jSessionManager.getSession().run(closeRelationships, parameters);
+        }
     }
 
     public Result getContainerRelationshipsOut(String containerName, String cmdb) {

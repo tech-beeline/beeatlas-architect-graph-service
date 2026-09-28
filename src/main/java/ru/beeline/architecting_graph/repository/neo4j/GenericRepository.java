@@ -102,7 +102,18 @@ public class GenericRepository {
     }
 
     public void deleteGraph(String graphTag) {
-        String deleteLocalGraph = "MATCH (n) WHERE n.graphTag = $graphTag1 DETACH DELETE n";
+        String deleteLocalGraph = """
+                CALL {
+                    MATCH (n:SoftwareSystem {graphTag: $graphTag1}) RETURN n
+                    UNION MATCH (n:Container {graphTag: $graphTag1}) RETURN n
+                    UNION MATCH (n:Component {graphTag: $graphTag1}) RETURN n
+                    UNION MATCH (n:DeploymentNode {graphTag: $graphTag1}) RETURN n
+                    UNION MATCH (n:InfrastructureNode {graphTag: $graphTag1}) RETURN n
+                    UNION MATCH (n:ContainerInstance {graphTag: $graphTag1}) RETURN n
+                    UNION MATCH (n:Environment {graphTag: $graphTag1}) RETURN n
+                }
+                DETACH DELETE n
+                """;
         Value parameters = Values.parameters("graphTag1", graphTag);
         neo4jSessionManager.getSession().run(deleteLocalGraph, parameters);
     }

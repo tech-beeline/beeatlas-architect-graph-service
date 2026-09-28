@@ -1,0 +1,9 @@
+CREATE INDEX software_system_cmdb IF NOT EXISTS FOR (n:SoftwareSystem) ON (n.cmdb);
+CREATE INDEX container_name IF NOT EXISTS FOR (n:Container) ON (n.name);
+CREATE INDEX container_external_name IF NOT EXISTS FOR (n:Container) ON (n.external_name);
+CREATE INDEX component_name IF NOT EXISTS FOR (n:Component) ON (n.name);
+CREATE INDEX component_external_name IF NOT EXISTS FOR (n:Component) ON (n.external_name);
+CREATE INDEX deployment_node_name IF NOT EXISTS FOR (n:DeploymentNode) ON (n.name);
+CREATE INDEX infrastructure_node_name IF NOT EXISTS FOR (n:InfrastructureNode) ON (n.name);
+CREATE INDEX container_instance_name IF NOT EXISTS FOR (n:ContainerInstance) ON (n.name);
+CREATE INDEX environment_name IF NOT EXISTS FOR (n:Environment) ON (n.name);
