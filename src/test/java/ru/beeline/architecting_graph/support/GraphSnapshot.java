@@ -53,7 +53,7 @@ public final class GraphSnapshot {
                 Files.createDirectories(GOLDEN_DIR);
                 Files.writeString(file, actual, StandardCharsets.UTF_8);
             }
-            assertThat(actual).isEqualTo(Files.readString(file, StandardCharsets.UTF_8));
+            assertThat(actual).isEqualTo(Files.readString(file, StandardCharsets.UTF_8).replace("\r\n", "\n"));
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
