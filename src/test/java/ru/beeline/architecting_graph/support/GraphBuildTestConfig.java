@@ -52,7 +52,7 @@ public class GraphBuildTestConfig {
 
     @Bean(destroyMethod = "")
     public Driver neo4jDriver() {
-        return EmbeddedNeo4j.driver();
+        return QueryCounter.wrap(EmbeddedNeo4j.driver());
     }
 
     @Bean
