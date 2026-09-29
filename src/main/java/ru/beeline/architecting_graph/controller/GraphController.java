@@ -4,16 +4,15 @@
 
 package ru.beeline.architecting_graph.controller;
 
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Schema;
-import org.springframework.data.util.Pair;
-import ru.beeline.architecting_graph.dto.SequenceDto;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.util.Pair;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -22,6 +21,7 @@ import org.springframework.web.server.ResponseStatusException;
 import ru.beeline.architecting_graph.dto.*;
 import ru.beeline.architecting_graph.dto.product.TcDTO;
 import ru.beeline.architecting_graph.dto.search.OperationDeploymentNodeSearchDTO;
+import ru.beeline.architecting_graph.dto.search.QueryDTO;
 import ru.beeline.architecting_graph.exception.ConflictValuesException;
 import ru.beeline.architecting_graph.service.compareVersions.CompareVersionsService;
 import ru.beeline.architecting_graph.service.createDiagrams.ContainerComponentBuilder;
@@ -84,9 +84,9 @@ public class GraphController {
             @RequestParam String name) {
         Pair<Set<String>, Set<String>> result = graphConstructionService.getContainerInfluence(cmdb, name);
         return ResponseEntity.ok(InfluenceResponseDTO.builder()
-                                         .dependentSystems(new ArrayList<>(result.getFirst()))
-                                         .influencingSystems(new ArrayList<>(result.getSecond()))
-                                         .build());
+                .dependentSystems(new ArrayList<>(result.getFirst()))
+                .influencingSystems(new ArrayList<>(result.getSecond()))
+                .build());
 
     }
 
@@ -112,7 +112,7 @@ public class GraphController {
                     content = @Content)
     })
     public OperationDeploymentNodeSearchDTO getOperationWithDeploymentNodeByMethods(@RequestParam String path,
-                                                                                                    @RequestParam(required = false) String type) {
+                                                                                    @RequestParam(required = false) String type) {
         return graphConstructionService.getOperationWithDeploymentNodeByMethods(path, type);
     }
 
@@ -248,5 +248,10 @@ public class GraphController {
     @GetMapping("/elements")
     public ResponseEntity<String> getElements(@RequestHeader(value = "CYPHER-QUERY") String query) {
         return elementService.processingQuery(query);
+    }
+
+    @PostMapping("/elements")
+    public ResponseEntity<String> postElements(@RequestBody QueryDTO query) {
+        return elementService.processingQuery(query.getQuery());
     }
 }
