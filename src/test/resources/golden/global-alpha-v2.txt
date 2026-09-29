@@ -1,0 +1,43 @@
+(Component 'controller~api~ALPHA' @Global) -[:Relationship {description=Checks status, graphTag=Global, level=C3, sourceWorkspace=ALPHA, startVersion=1}]-> (SoftwareSystem 'BETA' @Global)
+(Component 'controller~api~ALPHA' @Global) -[:Relationship {description=None, graphTag=Global, level=C3, numberOfConnects=1, sourceWorkspace=ALPHA, startVersion=1}]-> (Component 'service~api~ALPHA' @Global)
+(Component 'controller~api~ALPHA' @Global) {graphTag=Global, name=controller~api~ALPHA, originalName=controller, startVersion=1, structurizr_dsl_identifier=alpha.api.controller, technology=Spring MVC}
+(Component 'service~api~ALPHA' @Global) {graphTag=Global, name=service~api~ALPHA, originalName=service, startVersion=1, technology=Spring}
+(Container 'api~ALPHA' @Global) -[:Child {description=Child, graphTag=Global, sourceWorkspace=ALPHA, startVersion=1}]-> (Component 'controller~api~ALPHA' @Global)
+(Container 'api~ALPHA' @Global) -[:Child {description=Child, graphTag=Global, sourceWorkspace=ALPHA, startVersion=1}]-> (Component 'service~api~ALPHA' @Global)
+(Container 'api~ALPHA' @Global) -[:Deploy {description=Deploy, graphTag=Global, sourceWorkspace=ALPHA, startVersion=1}]-> (ContainerInstance 'api~ALPHA.ContainerInstance.pod~k8s~ALPHA' @Global)
+(Container 'api~ALPHA' @Global) -[:Relationship {data_flow=read, description=Reads, endVersion=1, graphTag=Global, level=C2, sourceWorkspace=ALPHA, startVersion=1, technology=JDBC}]-> (Container 'db~ALPHA' @Global)
+(Container 'api~ALPHA' @Global) -[:Relationship {description=Calls gateway, graphTag=Global, level=C2, sourceWorkspace=ALPHA, startVersion=1, technology=gRPC}]-> (Container 'gateway' @Global)
+(Container 'api~ALPHA' @Global) -[:Relationship {description=Publishes, graphTag=Global, level=C2, sourceWorkspace=ALPHA, startVersion=1}]-> (Container 'gateway' @Global)
+(Container 'api~ALPHA' @Global) {api_style=rest, description=API v2, graphTag=Global, name=api~ALPHA, originalName=api, startVersion=1, structurizr_dsl_identifier=alpha.api, tags=Element,Container, technology=Java}
+(Container 'db~ALPHA' @Global) -[:Deploy {description=Deploy, endVersion=1, graphTag=Global, sourceWorkspace=ALPHA, startVersion=1}]-> (ContainerInstance 'db~ALPHA.ContainerInstance.pod~k8s~ALPHA' @Global)
+(Container 'db~ALPHA' @Global) {endVersion=1, graphTag=Global, name=db~ALPHA, originalName=db, startVersion=1, technology=PostgreSQL}
+(Container 'gateway' @Global) {external_name=BETA, graphTag=Global, name=gateway, structurizr_dsl_identifier=beta.gateway}
+(ContainerInstance 'api~ALPHA.ContainerInstance.pod~k8s~ALPHA' @Global) -[:Relationship {description=Reads, endVersion=1, graphTag=Global, level=, sourceWorkspace=ALPHA, startVersion=1}]-> (ContainerInstance 'db~ALPHA.ContainerInstance.pod~k8s~ALPHA' @Global)
+(ContainerInstance 'api~ALPHA.ContainerInstance.pod~k8s~ALPHA' @Global) {graphTag=Global, instanceId=1, name=api~ALPHA.ContainerInstance.pod~k8s~ALPHA, replica_set=api-rs, startVersion=1, tags=Container Instance}
+(ContainerInstance 'db~ALPHA.ContainerInstance.pod~k8s~ALPHA' @Global) {endVersion=1, graphTag=Global, instanceId=1, name=db~ALPHA.ContainerInstance.pod~k8s~ALPHA, startVersion=1}
+(DeploymentNode 'dr~ALPHA' @Global) {endVersion=1, graphTag=Global, name=dr~ALPHA, originalName=dr, startVersion=1}
+(DeploymentNode 'k8s~ALPHA' @Global) -[:Child {description=Child, graphTag=Global, sourceWorkspace=ALPHA, startVersion=1}]-> (DeploymentNode 'pod~k8s~ALPHA' @Global)
+(DeploymentNode 'k8s~ALPHA' @Global) -[:Child {description=Child, graphTag=Global, sourceWorkspace=ALPHA, startVersion=1}]-> (InfrastructureNode 'lb~k8s~ALPHA' @Global)
+(DeploymentNode 'k8s~ALPHA' @Global) -[:Relationship {description=Replicates, endVersion=1, graphTag=Global, level=, sourceWorkspace=ALPHA, startVersion=1}]-> (DeploymentNode 'dr~ALPHA' @Global)
+(DeploymentNode 'k8s~ALPHA' @Global) {graphTag=Global, instances=1, ip=10.0.0.1, name=k8s~ALPHA, originalName=k8s, startVersion=1, technology=Kubernetes}
+(DeploymentNode 'pod~k8s~ALPHA' @Global) -[:Child {description=Child, endVersion=1, graphTag=Global, sourceWorkspace=ALPHA, startVersion=1}]-> (ContainerInstance 'db~ALPHA.ContainerInstance.pod~k8s~ALPHA' @Global)
+(DeploymentNode 'pod~k8s~ALPHA' @Global) -[:Child {description=Child, graphTag=Global, sourceWorkspace=ALPHA, startVersion=1}]-> (ContainerInstance 'api~ALPHA.ContainerInstance.pod~k8s~ALPHA' @Global)
+(DeploymentNode 'pod~k8s~ALPHA' @Global) {graphTag=Global, instances=3, name=pod~k8s~ALPHA, originalName=pod, startVersion=1}
+(Environment 'Production' @Global) -[:Child {description=Child, endVersion=1, graphTag=Global, sourceWorkspace=ALPHA, startVersion=1}]-> (ContainerInstance 'db~ALPHA.ContainerInstance.pod~k8s~ALPHA' @Global)
+(Environment 'Production' @Global) -[:Child {description=Child, endVersion=1, graphTag=Global, sourceWorkspace=ALPHA, startVersion=1}]-> (DeploymentNode 'dr~ALPHA' @Global)
+(Environment 'Production' @Global) -[:Child {description=Child, graphTag=Global, sourceWorkspace=ALPHA, startVersion=1}]-> (ContainerInstance 'api~ALPHA.ContainerInstance.pod~k8s~ALPHA' @Global)
+(Environment 'Production' @Global) -[:Child {description=Child, graphTag=Global, sourceWorkspace=ALPHA, startVersion=1}]-> (DeploymentNode 'k8s~ALPHA' @Global)
+(Environment 'Production' @Global) -[:Child {description=Child, graphTag=Global, sourceWorkspace=ALPHA, startVersion=1}]-> (DeploymentNode 'pod~k8s~ALPHA' @Global)
+(Environment 'Production' @Global) -[:Child {description=Child, graphTag=Global, sourceWorkspace=ALPHA, startVersion=1}]-> (InfrastructureNode 'lb~k8s~ALPHA' @Global)
+(Environment 'Production' @Global) {graphTag=Global, name=Production}
+(InfrastructureNode 'lb~k8s~ALPHA' @Global) -[:Relationship {description=Routes, graphTag=Global, level=, sourceWorkspace=ALPHA, startVersion=1}]-> (ContainerInstance 'api~ALPHA.ContainerInstance.pod~k8s~ALPHA' @Global)
+(InfrastructureNode 'lb~k8s~ALPHA' @Global) {graphTag=Global, lb_mode=l7, name=lb~k8s~ALPHA, originalName=lb, startVersion=1, technology=nginx}
+(SoftwareSystem 'ALPHA' @Global) -[:Child {description=Child, endVersion=1, graphTag=Global, sourceWorkspace=ALPHA, startVersion=1}]-> (Container 'db~ALPHA' @Global)
+(SoftwareSystem 'ALPHA' @Global) -[:Child {description=Child, endVersion=1, graphTag=Global, sourceWorkspace=ALPHA, startVersion=1}]-> (DeploymentNode 'dr~ALPHA' @Global)
+(SoftwareSystem 'ALPHA' @Global) -[:Child {description=Child, graphTag=Global, sourceWorkspace=ALPHA, startVersion=1}]-> (Container 'api~ALPHA' @Global)
+(SoftwareSystem 'ALPHA' @Global) -[:Child {description=Child, graphTag=Global, sourceWorkspace=ALPHA, startVersion=1}]-> (DeploymentNode 'k8s~ALPHA' @Global)
+(SoftwareSystem 'ALPHA' @Global) -[:Relationship {description=Sends orders, graphTag=Global, level=C1, sourceWorkspace=ALPHA, startVersion=1, tags=Relationship, technology=REST, url=https://rel}]-> (SoftwareSystem 'BETA' @Global)
+(SoftwareSystem 'ALPHA' @Global) {cmdb=ALPHA, description=Main system, graphTag=Global, group=Core, name=Alpha System, structurizr_dsl_identifier=alpha, tags=Element,Software System, url=https://alpha, version=2}
+(SoftwareSystem 'BETA' @Global) -[:Child {description=Child, graphTag=Global, sourceWorkspace=BETA, startVersion=1}]-> (Container 'gateway' @Global)
+(SoftwareSystem 'BETA' @Global) -[:Relationship {description=Callbacks, graphTag=Global, level=C1, sourceWorkspace=ALPHA, startVersion=1}]-> (SoftwareSystem 'ALPHA' @Global)
+(SoftwareSystem 'BETA' @Global) {cmdb=BETA, graphTag=Global, name=Beta System, structurizr_dsl_identifier=beta}

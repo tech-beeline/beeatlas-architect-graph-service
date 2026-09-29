@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import ru.beeline.architecting_graph.model.Connection;
 import ru.beeline.architecting_graph.model.RelationshipEntity;
+import ru.beeline.architecting_graph.service.graph.RelationshipBatch;
 import ru.beeline.architecting_graph.service.graph.Neo4jSessionManager;
 
 import java.util.*;
@@ -16,6 +17,8 @@ import java.util.*;
 @Slf4j
 @Repository
 public class RelationshipRepository {
+    private static final int BATCH_SIZE = 1000;
+
     @Autowired
     private Neo4jSessionManager neo4jSessionManager;
 
@@ -107,11 +110,47 @@ public class RelationshipRepository {
         return neo4jSessionManager.getSession().run(query, params);
     }
 
-    public Result getRelationshipsByTagAndCmdb(String graphTag, String cmdb) {
-        String getRelationships = "MATCH (n)-[r {sourceWorkspace: $cmdb, graphTag: $graphTag1}]->(m) "
-                + "WHERE r.endVersion IS NULL RETURN n,m,r";
-        Value parameters = Values.parameters("graphTag1", graphTag, "cmdb", cmdb);
-        return neo4jSessionManager.getSession().run(getRelationships, parameters);
+    public void upsertRelationships(String graphTag, String version, Collection<RelationshipBatch.Row> rows) {
+        Map<List<String>, List<RelationshipBatch.Row>> groups = new LinkedHashMap<>();
+        for (RelationshipBatch.Row row : rows) {
+            groups.computeIfAbsent(List.of(row.getRelationshipType(),
+                    row.getSource().getType(), row.getSource().getKey(),
+                    row.getDestination().getType(), row.getDestination().getKey()), k -> new ArrayList<>()).add(row);
+        }
+        for (Map.Entry<List<String>, List<RelationshipBatch.Row>> group : groups.entrySet()) {
+            List<String> shape = group.getKey();
+            String cypher = "UNWIND $rows AS row "
+                    + "MATCH (a:" + shape.get(1) + " {graphTag: $graphTag, " + shape.get(2) + ": row.source}) "
+                    + "MATCH (b:" + shape.get(3) + " {graphTag: $graphTag, " + shape.get(4) + ": row.destination}) "
+                    + "MERGE (a)-[r:" + shape.get(0)
+                    + " {graphTag: $graphTag, sourceWorkspace: row.sourceWorkspace, description: row.description}]->(b) "
+                    + ("Global".equals(graphTag) ? "SET r.startVersion = coalesce(r.startVersion, $version) " : "")
+                    + "FOREACH (_ IN CASE WHEN row.connects IS NULL THEN [] ELSE [1] END | "
+                    + "SET r.numberOfConnects = toString(CASE WHEN r.numberOfConnects IS NULL OR r.endVersion IS NOT NULL "
+                    + "THEN 0 ELSE toInteger(r.numberOfConnects) END + row.connects)) "
+                    + "SET r.endVersion = null, r.tags = row.tags, r.url = row.url, r.technology = row.technology, "
+                    + "r.interactionStyle = row.interactionStyle, r.level = row.level "
+                    + "SET r += row.properties";
+            List<RelationshipBatch.Row> groupRows = group.getValue();
+            for (int from = 0; from < groupRows.size(); from += BATCH_SIZE) {
+                List<Map<String, Object>> chunk = new ArrayList<>();
+                for (RelationshipBatch.Row row : groupRows.subList(from, Math.min(from + BATCH_SIZE, groupRows.size()))) {
+                    chunk.add(row.toParameters());
+                }
+                Value parameters = Values.parameters("graphTag", graphTag, "version", version, "rows", chunk);
+                neo4jSessionManager.getSession().run(cypher, parameters).consume();
+            }
+        }
+    }
+
+    public void closeActiveRelationships(String graphTag, String cmdb, String endVersion) {
+        for (String type : List.of("Relationship", "Child", "Deploy")) {
+            String closeRelationships = "MATCH ()-[r:" + type + " {sourceWorkspace: $cmdb}]->() "
+                    + "WHERE r.graphTag = $graphTag1 AND r.endVersion IS NULL "
+                    + "SET r.endVersion = $endVersion";
+            Value parameters = Values.parameters("graphTag1", graphTag, "cmdb", cmdb, "endVersion", endVersion);
+            neo4jSessionManager.getSession().run(closeRelationships, parameters);
+        }
     }
 
     public Result getContainerRelationshipsOut(String containerName, String cmdb) {

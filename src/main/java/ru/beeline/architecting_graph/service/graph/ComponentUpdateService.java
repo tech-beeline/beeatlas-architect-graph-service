@@ -149,14 +149,15 @@ public class ComponentUpdateService {
     }
 
     public void updateComponentRelationships(String graphTag, Model model, Container container,
-                                             String cmdb, String curVersion, HashMap<String, GraphObject> objects) {
+                                             String cmdb, String curVersion, HashMap<String, GraphObject> objects,
+                                             RelationshipBatch batch) {
         if (container.getComponents() != null) {
             for (Component component : container.getComponents()) {
                 if (component.getRelationships() != null) {
                     for (RelationshipEntity relationship : component.getRelationships()) {
                         if (relationship.getLinkedRelationshipId() == null) {
                             createExternalObjects.updateDefaultRelationship(graphTag, relationship,
-                                    model, curVersion, cmdb, "C3", objects);
+                                    model, curVersion, cmdb, "C3", objects, batch);
                         }
                     }
                 }

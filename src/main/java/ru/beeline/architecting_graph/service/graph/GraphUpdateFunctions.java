@@ -6,9 +6,7 @@ package ru.beeline.architecting_graph.service.graph;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.neo4j.driver.Record;
 import org.neo4j.driver.Result;
-import org.neo4j.driver.Value;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.beeline.architecting_graph.exception.ValidationException;
@@ -59,29 +57,39 @@ public class GraphUpdateFunctions {
         String cmdb = model.getProperties().get("workspace_cmdb").toString();
         SoftwareSystem softwareSystem = getSoftwareSystem(model, cmdb);
         HashMap<String, GraphObject> objects = new HashMap<>();
+        RelationshipBatch batch = new RelationshipBatch();
 
         //сейвим вложенно системы, контейнеры, компоненты, и все связи
         graphTag = deleteGraphIfIsLocal(graphTag, cmdb);
-        String curVersion = updateSystem(model, graphTag, softwareSystem, cmdb, objects);
+        String curVersion = updateSystem(model, graphTag, softwareSystem, cmdb, objects, batch);
+        flush(graphTag, curVersion, batch);
         //сейвим деплоймент ноды
         updateDeploymentNodes(graphTag, model, softwareSystem.getId(), cmdb, curVersion, objects);
         //прокидываем остаточные связи
-        updateDeploymentNodeRelationships(graphTag, model, curVersion, cmdb, objects);
+        updateDeploymentNodeRelationships(graphTag, model, curVersion, cmdb, objects, batch);
+        flush(graphTag, curVersion, batch);
+    }
 
+    private void flush(String graphTag, String curVersion, RelationshipBatch batch) {
+        if (!batch.isEmpty()) {
+            relationshipRepository.upsertRelationships(graphTag, curVersion, batch.drain());
+        }
     }
 
     private void updateDeploymentNodeRelationships(String graphTag,
                            Model model,
                            String curVersion,
                            String cmdb,
-                           HashMap<String, GraphObject> objects) {
+                           HashMap<String, GraphObject> objects,
+                           RelationshipBatch batch) {
         if (model.getDeploymentNodes() != null) {
             for (DeploymentNode deploymentNode : model.getDeploymentNodes()) {
                 deploymentNodeUpdateFunctions.updateDeploymentNodeRelationships(graphTag, deploymentNode,
                                                                                 curVersion,
                                                                                 cmdb,
                                                                                 model,
-                                                                                objects);
+                                                                                objects,
+                                                                                batch);
             }
         }
     }
@@ -98,11 +106,11 @@ public class GraphUpdateFunctions {
     }
 
     public String updateSystem(Model model, String graphTag, SoftwareSystem softwareSystem, String cmdb,
-                               HashMap<String, GraphObject> objects) {
+                               HashMap<String, GraphObject> objects, RelationshipBatch batch) {
         String curVersion = createSystemGraphObject(graphTag, softwareSystem, cmdb, objects);
         curVersion = setEndVersionIfGlobal(graphTag, cmdb, curVersion);
         updateContainers(graphTag, model, softwareSystem, cmdb, curVersion, objects);
-        updateSystemRelationships(graphTag, model, cmdb, curVersion, objects);
+        updateSystemRelationships(graphTag, model, cmdb, curVersion, objects, batch);
         return curVersion;
     }
 
@@ -300,19 +308,20 @@ public class GraphUpdateFunctions {
     }
 
     public void updateContainerRelationships(String graphTag, Model model, SoftwareSystem softwareSystem,
-                                             String cmdb, String curVersion, HashMap<String, GraphObject> objects) {
+                                             String cmdb, String curVersion, HashMap<String, GraphObject> objects,
+                                             RelationshipBatch batch) {
         if (softwareSystem.getContainers() != null) {
             for (Container container : softwareSystem.getContainers()) {
                 if (container.getRelationships() != null) {
                     for (RelationshipEntity relationship : container.getRelationships()) {
                         if (relationship.getLinkedRelationshipId() == null) {
                             createExternalObjects.updateDefaultRelationship(graphTag, relationship,
-                                    model, curVersion, cmdb, "C2", objects);
+                                    model, curVersion, cmdb, "C2", objects, batch);
                         }
                     }
                 }
                 componentUpdateService.updateComponentRelationships(graphTag, model, container, cmdb,
-                        curVersion, objects);
+                        curVersion, objects, batch);
             }
         }
     }
@@ -329,35 +338,8 @@ public class GraphUpdateFunctions {
         setRelationshipsEndVersion(graphTag, curVersion, cmdb);
     }
 
-    public GraphObject getGraphObject(Value graphNode) {
-        String label = graphNode.asNode().labels().toString();
-        String type = label.substring(1, label.length() - 1);
-        String key = "name";
-        if (type.equals("SoftwareSystem")) {
-            key = "cmdb";
-        }
-        Object value = graphNode.asNode().asMap().get(key);
-        if (value == null) {
-            value = graphNode.asNode().asMap().get("external_name");
-        }
-        return new GraphObject(type, key, value.toString());
-    }
-
     public void setRelationshipsEndVersion(String graphTag, String curVersion, String cmdb) {
-        Result result = relationshipRepository.getRelationshipsByTagAndCmdb(graphTag, cmdb);
-        while (result.hasNext()) {
-            Record record = result.next();
-            Connection connection = new Connection();
-            connection.setSource(getGraphObject(record.get("n")));
-            connection.setDestination(getGraphObject(record.get("m")));
-            connection.setCmdb(cmdb);
-            Value connectValue = record.get("r");
-            connection.setRelationshipType(connectValue.asRelationship().type().toString());
-            String relationshipDescription = connectValue.asRelationship().get("description").toString();
-            relationshipDescription = relationshipDescription.substring(1, relationshipDescription.length() - 1);
-            relationshipRepository.setRelationshipParameter(graphTag, relationshipDescription, connection,
-                                                            "endVersion", curVersion);
-        }
+        relationshipRepository.closeActiveRelationships(graphTag, cmdb, curVersion);
     }
 
     public void updateDeploymentNodes(String graphTag, Model model, String softwareSystemId,
@@ -397,17 +379,18 @@ public class GraphUpdateFunctions {
     }
 
     public void updateSystemRelationships(String graphTag, Model model, String cmdb,
-                                          String curVersion, HashMap<String, GraphObject> objects) {
+                                          String curVersion, HashMap<String, GraphObject> objects,
+                                          RelationshipBatch batch) {
         for (SoftwareSystem softwareSystem : model.getSoftwareSystems()) {
             if (softwareSystem.getRelationships() != null) {
                 for (RelationshipEntity relationship : softwareSystem.getRelationships()) {
                     if (relationship.getLinkedRelationshipId() == null) {
                         createExternalObjects.updateDefaultRelationship(graphTag, relationship, model,
-                                curVersion, cmdb, "C1", objects);
+                                curVersion, cmdb, "C1", objects, batch);
                     }
                 }
             }
-            updateContainerRelationships(graphTag, model, softwareSystem, cmdb, curVersion, objects);
+            updateContainerRelationships(graphTag, model, softwareSystem, cmdb, curVersion, objects, batch);
         }
     }
 }

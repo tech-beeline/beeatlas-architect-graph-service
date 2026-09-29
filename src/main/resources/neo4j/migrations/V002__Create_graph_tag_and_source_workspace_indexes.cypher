@@ -1,0 +1,10 @@
+CREATE INDEX software_system_graph_tag IF NOT EXISTS FOR (n:SoftwareSystem) ON (n.graphTag);
+CREATE INDEX container_graph_tag IF NOT EXISTS FOR (n:Container) ON (n.graphTag);
+CREATE INDEX component_graph_tag IF NOT EXISTS FOR (n:Component) ON (n.graphTag);
+CREATE INDEX deployment_node_graph_tag IF NOT EXISTS FOR (n:DeploymentNode) ON (n.graphTag);
+CREATE INDEX infrastructure_node_graph_tag IF NOT EXISTS FOR (n:InfrastructureNode) ON (n.graphTag);
+CREATE INDEX container_instance_graph_tag IF NOT EXISTS FOR (n:ContainerInstance) ON (n.graphTag);
+CREATE INDEX environment_graph_tag IF NOT EXISTS FOR (n:Environment) ON (n.graphTag);
+CREATE INDEX relationship_source_workspace IF NOT EXISTS FOR ()-[r:Relationship]-() ON (r.sourceWorkspace);
+CREATE INDEX child_source_workspace IF NOT EXISTS FOR ()-[r:Child]-() ON (r.sourceWorkspace);
+CREATE INDEX deploy_source_workspace IF NOT EXISTS FOR ()-[r:Deploy]-() ON (r.sourceWorkspace);

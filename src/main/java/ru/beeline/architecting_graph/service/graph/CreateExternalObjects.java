@@ -184,24 +184,23 @@ public class CreateExternalObjects {
     }
 
     public void updateDefaultRelationship(String graphTag, RelationshipEntity relationship, Model model,
-                                          String curVersion, String cmdb, String level, HashMap<String, GraphObject> objects) {
-        updateRelationship(graphTag,
-                           relationship,
-                           model,
-                           curVersion,
-                           Connection.builder().cmdb(cmdb).level(level).relationshipType("Relationship").build(),
-                           objects);
+                                          String curVersion, String cmdb, String level, HashMap<String, GraphObject> objects,
+                                          RelationshipBatch batch) {
+        Connection connection = Connection.builder().cmdb(cmdb).level(level).relationshipType("Relationship").build();
+        if (resolveEndpoints(graphTag, relationship, model, curVersion, connection, objects)) {
+            batch.add(relationship, connection);
+        }
     }
 
-    public void updateRelationship(String graphTag, RelationshipEntity relationship, Model model,
-                                   String curVersion, Connection connection, HashMap<String, GraphObject> objects) {
+    private boolean resolveEndpoints(String graphTag, RelationshipEntity relationship, Model model,
+                                     String curVersion, Connection connection, HashMap<String, GraphObject> objects) {
         if (!objects.containsKey(relationship.getSourceId())) {
             createExternalObject(graphTag, model, curVersion, relationship.getSourceId(),
                     objects);
         }
         GraphObject source = objects.get(relationship.getSourceId());
         if (source == null) {
-            return;
+            return false;
         }
         if (!objects.containsKey(relationship.getDestinationId())) {
             createExternalObject(graphTag, model, curVersion,
@@ -209,12 +208,20 @@ public class CreateExternalObjects {
         }
         GraphObject destination = objects.get(relationship.getDestinationId());
         if (destination == null) {
-            return;
+            return false;
         }
         connection.setSource(source);
         connection.setDestination(destination);
         if (relationship.getDescription() == null) {
             relationship.setDescription("None");
+        }
+        return true;
+    }
+
+    public void updateRelationship(String graphTag, RelationshipEntity relationship, Model model,
+                                   String curVersion, Connection connection, HashMap<String, GraphObject> objects) {
+        if (!resolveEndpoints(graphTag, relationship, model, curVersion, connection, objects)) {
+            return;
         }
         if (!relationshipRepository.checkIfRelationshipExists(graphTag, relationship, connection)) {
             relationshipRepository.createRelationshipQuery(graphTag, relationship, connection);

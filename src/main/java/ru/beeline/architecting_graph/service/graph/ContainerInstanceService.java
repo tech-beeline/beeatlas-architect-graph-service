@@ -117,7 +117,8 @@ public class ContainerInstanceService {
                                                      String curVersion,
                                                      String cmdb,
                                                      Model model,
-                                                     HashMap<String, GraphObject> objects) {
+                                                     HashMap<String, GraphObject> objects,
+                                                     RelationshipBatch batch) {
         if (deploymentNode.getContainerInstances() != null) {
             for (ContainerInstance containerInstance : deploymentNode.getContainerInstances()) {
                 if (containerInstance.getRelationships() != null) {
@@ -128,7 +129,8 @@ public class ContainerInstanceService {
                                                                         curVersion,
                                                                         cmdb,
                                                                         "",
-                                                                        objects);
+                                                                        objects,
+                                                                        batch);
                     }
                 }
             }

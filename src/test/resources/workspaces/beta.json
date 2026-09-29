@@ -1,0 +1,40 @@
+{
+  "id": 2,
+  "name": "Beta",
+  "model": {
+    "properties": {
+      "workspace_cmdb": "BETA"
+    },
+    "softwareSystems": [
+      {
+        "id": "1",
+        "name": "Beta Platform",
+        "description": "Beta own description",
+        "properties": {
+          "cmdb": "BETA",
+          "structurizr.dsl.identifier": "beta"
+        },
+        "containers": [
+          {
+            "id": "2",
+            "name": "gateway",
+            "technology": "Go",
+            "relationships": [
+              {"id": "30", "sourceId": "2", "destinationId": "10", "description": "Notifies"}
+            ]
+          }
+        ]
+      },
+      {
+        "id": "10",
+        "name": "Alpha From Beta",
+        "properties": {
+          "cmdb": "ALPHA"
+        }
+      }
+    ],
+    "deploymentNodes": [
+      {"id": "50", "name": "vm", "environment": "Production"}
+    ]
+  }
+}

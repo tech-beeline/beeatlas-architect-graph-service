@@ -192,21 +192,23 @@ public class DeploymentNodeUpdateFunctions {
     }
 
     public void updateChildDeploymentNodeRelationships(String graphTag, DeploymentNode deploymentNode,
-                                                       String curVersion, String cmdb, Model model, HashMap<String, GraphObject> objects) {
+                                                       String curVersion, String cmdb, Model model, HashMap<String, GraphObject> objects,
+                                                       RelationshipBatch batch) {
         if (deploymentNode.getChildren() != null) {
             for (DeploymentNode childDeploymentNode : deploymentNode.getChildren()) {
-                updateDeploymentNodeRelationships(graphTag, childDeploymentNode, curVersion, cmdb, model, objects);
+                updateDeploymentNodeRelationships(graphTag, childDeploymentNode, curVersion, cmdb, model, objects, batch);
             }
         }
     }
 
     public void updateDeploymentNodeRelationships(String graphTag, DeploymentNode deploymentNode, String curVersion,
-                                                  String cmdb, Model model, HashMap<String, GraphObject> objects) {
-        updateDefaultRelationship(graphTag, deploymentNode, curVersion, cmdb, model, objects);
-        updateInfrastructureNodeRelationships(graphTag, deploymentNode, curVersion, cmdb, model, objects);
+                                                  String cmdb, Model model, HashMap<String, GraphObject> objects,
+                                                  RelationshipBatch batch) {
+        updateDefaultRelationship(graphTag, deploymentNode, curVersion, cmdb, model, objects, batch);
+        updateInfrastructureNodeRelationships(graphTag, deploymentNode, curVersion, cmdb, model, objects, batch);
         containerInstanceService.updateContainerInstanceRelationships(graphTag, deploymentNode,
-                                                                      curVersion, cmdb, model, objects);
-        updateChildDeploymentNodeRelationships(graphTag, deploymentNode, curVersion, cmdb, model, objects);
+                                                                      curVersion, cmdb, model, objects, batch);
+        updateChildDeploymentNodeRelationships(graphTag, deploymentNode, curVersion, cmdb, model, objects, batch);
     }
 
     private void updateDefaultRelationship(String graphTag,
@@ -214,26 +216,29 @@ public class DeploymentNodeUpdateFunctions {
                            String curVersion,
                            String cmdb,
                            Model model,
-                           HashMap<String, GraphObject> objects) {
+                           HashMap<String, GraphObject> objects,
+                           RelationshipBatch batch) {
         if (deploymentNode.getRelationships() != null) {
             for (RelationshipEntity relationship : deploymentNode.getRelationships()) {
                 createExternalObjects.updateDefaultRelationship(graphTag, relationship,
                                                                 model,
                                                                 curVersion,
                                                                 cmdb, "",
-                                                                objects);
+                                                                objects,
+                                                                batch);
             }
         }
     }
 
     public void updateInfrastructureNodeRelationships(String graphTag, DeploymentNode deploymentNode,
-                                                      String curVersion, String cmdb, Model model, HashMap<String, GraphObject> objects) {
+                                                      String curVersion, String cmdb, Model model, HashMap<String, GraphObject> objects,
+                                                      RelationshipBatch batch) {
         if (deploymentNode.getInfrastructureNodes() != null) {
             for (InfrastructureNode infrastructureNode : deploymentNode.getInfrastructureNodes()) {
                 if (infrastructureNode.getRelationships() != null) {
                     for (RelationshipEntity relationship : infrastructureNode.getRelationships()) {
                         createExternalObjects.updateDefaultRelationship(graphTag, relationship, model, curVersion,
-                                cmdb, "", objects);
+                                cmdb, "", objects, batch);
                     }
                 }
             }
