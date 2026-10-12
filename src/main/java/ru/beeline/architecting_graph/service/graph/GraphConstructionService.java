@@ -122,12 +122,12 @@ public class GraphConstructionService {
 
         if (existingDto == null) {
             log.warn("No cache entry for taskId: {}", taskId);
-            return ResponseEntity.notFound().build();
+            throw new NotFoundException(String.format("Граф по задаче с taskId = %s не найден", taskId));
         }
 
         if (!graphType.equalsIgnoreCase(existingDto.getType())) {
             log.warn("Cache entry type '{}' does not match requested graphType '{}'", existingDto.getType(), graphType);
-            return ResponseEntity.notFound().build();
+            throw new NotFoundException(String.format("Граф с типом %s по задаче с taskId = %s не найден", graphType, taskId));
         }
 
         return ResponseEntity.ok(existingDto);

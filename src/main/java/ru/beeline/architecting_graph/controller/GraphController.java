@@ -23,6 +23,7 @@ import ru.beeline.architecting_graph.dto.product.TcDTO;
 import ru.beeline.architecting_graph.dto.search.OperationDeploymentNodeSearchDTO;
 import ru.beeline.architecting_graph.dto.search.QueryDTO;
 import ru.beeline.architecting_graph.exception.ConflictValuesException;
+import ru.beeline.architecting_graph.exception.NotFoundException;
 import ru.beeline.architecting_graph.service.compareVersions.CompareVersionsService;
 import ru.beeline.architecting_graph.service.createDiagrams.ContainerComponentBuilder;
 import ru.beeline.architecting_graph.service.getElements.ElementService;
@@ -187,9 +188,7 @@ public class GraphController {
         try {
             return ResponseEntity.ok(productInfluenceService.getRelatedSystems(cmdb));
         } catch (NoSuchElementException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new NotFoundException(e.getMessage());
         }
     }
 
@@ -201,7 +200,7 @@ public class GraphController {
         try {
             return ResponseEntity.ok(productInfluenceService.getDeploymentRelatedSystems(cmdb, name, env));
         } catch (NoSuchElementException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            throw new NotFoundException(String.format("Узел развертывания с cmdb = %s, name = %s, env = %s не найден", cmdb, name, env));
         } catch (ConflictValuesException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
