@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Value;
+import org.neo4j.driver.types.Node;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.util.Pair;
@@ -122,12 +123,12 @@ public class GraphConstructionService {
 
         if (existingDto == null) {
             log.warn("No cache entry for taskId: {}", taskId);
-            return ResponseEntity.notFound().build();
+            throw new NotFoundException(String.format("Граф по задаче с taskId = %s не найден", taskId));
         }
 
         if (!graphType.equalsIgnoreCase(existingDto.getType())) {
             log.warn("Cache entry type '{}' does not match requested graphType '{}'", existingDto.getType(), graphType);
-            return ResponseEntity.notFound().build();
+            throw new NotFoundException(String.format("Граф с типом %s по задаче с taskId = %s не найден", graphType, taskId));
         }
 
         return ResponseEntity.ok(existingDto);
@@ -139,7 +140,7 @@ public class GraphConstructionService {
         if (!deploymentNodes.hasNext() && isIpAddress(search)) {
             List<ProductInfraSearchDTO> products = productClient.getProductInfraByVimIp(search);
             if (products.isEmpty()) {
-                ResponseEntity.ok(result);
+                return ResponseEntity.ok(result);
             }
             List<String> originNames = products.stream()
                     .map(ProductInfraSearchDTO::getName)
@@ -150,32 +151,35 @@ public class GraphConstructionService {
 
             deploymentNodes = deploymentNodesRepository.findDeploymentNodesBySearch(search);
         }
-        while (deploymentNodes.hasNext()) {
+        List<Node> nodes = deploymentNodes.list(record -> record.get("n").asNode());
+        for (Node node : nodes) {
             try {
-
-                Record deployment = deploymentNodes.next();
-                Record system = getParentSoftwareSystem(deployment.get("n").asNode().id());
-                Record environment = getParentEnvironment(deployment.get("n").asNode().id());
-                result.add(DeploymentNodeDTO.builder()
-                                   .id(deployment.get("n").asNode().id())
-                                   .deploymentName(deployment.get("n").asNode().get("originalName").asString())
-                                   .environmentName(environment.get("parent.name").asString())
-                                   .cmdb(system.get("d").asNode().get("cmdb").asString())
-                                   .ip(deployment.get("n").asNode().containsKey("ip") ? deployment.get("n")
-                                           .asNode()
-                                           .get("ip")
-                                           .asString() : null)
-                                   .host(deployment.get("n").asNode().containsKey("host") ? deployment.get("n")
-                                           .asNode()
-                                           .get("host")
-                                           .asString() : null)
-                                   .build());
+                result.add(toDeploymentNodeDTO(node));
             } catch (Exception e) {
-                log.error(e.getMessage(), e.getStackTrace());
+                log.error("Не удалось собрать deploymentNode id=" + node.id(), e);
             }
         }
 
         return ResponseEntity.ok(result);
+    }
+
+    private DeploymentNodeDTO toDeploymentNodeDTO(Node node) {
+        Record system = getParentSoftwareSystem(node.id());
+        Record environment = getParentEnvironment(node.id());
+        return DeploymentNodeDTO.builder()
+                .id(node.id())
+                .deploymentName(node.get("originalName").asString(null))
+                .environmentName(environment != null ? environment.get("parent.name").asString(null) : null)
+                .cmdb(system != null ? system.get("d").asNode().get("cmdb").asString(null) : cmdbFromName(node))
+                .ip(node.containsKey("ip") ? node.get("ip").asString() : null)
+                .host(node.containsKey("host") ? node.get("host").asString() : null)
+                .build();
+    }
+
+    private String cmdbFromName(Node node) {
+        String name = node.get("name").asString(null);
+        int separator = name == null ? -1 : name.lastIndexOf('~');
+        return separator < 0 || separator == name.length() - 1 ? null : name.substring(separator + 1);
     }
 
     private Record getParentSoftwareSystem(Long id) {
@@ -184,25 +188,23 @@ public class GraphConstructionService {
             Record record = result.next();
             Long parentSystemId = record.get("parent").asNode().id();
             return softwareSystemRepository.getSystemById(parentSystemId).next();
-        } else {
-            log.info("search ParentDeployment for id=" + id);
-            Result parentNodeResult = deploymentNodesRepository.getParentDeploymentNodeId(id);
-            Record record = parentNodeResult.next();
-            Long parentNodeId = record.get("parent").asNode().id();
-            return getParentSoftwareSystem(parentNodeId);
         }
+        Long parentNodeId = getParentDeploymentNodeId(id);
+        return parentNodeId == null ? null : getParentSoftwareSystem(parentNodeId);
     }
 
     private Record getParentEnvironment(Long nodeId) {
         Result result = environmentRepository.getDeploymentNodeEnvironmentNameByIdChild(nodeId);
         if (result.hasNext()) {
             return result.next();
-        } else {
-            Result parentNodeResult = deploymentNodesRepository.getParentDeploymentNodeId(nodeId);
-            Record record = parentNodeResult.next();
-            Long parentNodeId = record.get("parentNodeId").asLong();
-            return getParentEnvironment(parentNodeId);
         }
+        Long parentNodeId = getParentDeploymentNodeId(nodeId);
+        return parentNodeId == null ? null : getParentEnvironment(parentNodeId);
+    }
+
+    private Long getParentDeploymentNodeId(Long id) {
+        Result parentNodeResult = deploymentNodesRepository.getParentDeploymentNodeId(id);
+        return parentNodeResult.hasNext() ? parentNodeResult.next().get("parent").asNode().id() : null;
     }
 
     public ResponseEntity<String> createSequence(List<SequenceDto> sequenceDtos) {
